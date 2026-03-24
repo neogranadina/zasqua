@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: CSS Foundations
-**Goal**: The new visual identity is expressed entirely as CSS custom properties — correct typefaces loaded, all colour tokens defined, no hardcoded values remaining
+**Goal**: Tailwind CSS v4 standalone CLI integrated into the build pipeline, all design tokens defined via @theme, Google Fonts updated to DM Sans / Crimson Text / Cormorant Garamond, all templates converted to utility classes, main.css reduced to a Tailwind input stylesheet with @layer components for complex components — no hardcoded hex values remaining
 **Depends on**: Nothing (first phase)
 **Requirements**: VIS-01, VIS-02, COL-01, COL-02, COL-03, COL-04
 **Success Criteria** (what must be TRUE):
@@ -28,7 +28,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. No blue or orange accent colours remain — all interactive elements use periwinkle or burgundy
   4. The page background is warm white (#FAFAF9) rather than pure white
   5. Inspecting the stylesheet shows no hardcoded hex values outside the `:root` custom properties block
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Infrastructure: Tailwind CLI, input.css with @theme tokens, Google Fonts, build pipeline
+- [ ] 01-02-PLAN.md — Layout shell: header, footer, hero, masonry, buttons, breadcrumb, cards + template conversion
+- [ ] 01-03-PLAN.md — Interactive components: search, Miller columns, description page, TIFY, children tree + visual verification
+
 **UI hint**: yes
 
 ### Phase 2: Component Updates
@@ -61,6 +67,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. CSS Foundations | 0/? | Not started | - |
+| 1. CSS Foundations | 0/3 | Planned | - |
 | 2. Component Updates | 0/? | Not started | - |
 | 3. AHRB Import | 0/? | Not started | - |
