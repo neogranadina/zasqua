@@ -1,12 +1,12 @@
 <nav class="breadcrumb" aria-label="Breadcrumb">
   <div class="container">
-    <a href="/">{{ ui.breadcrumb.home }}</a>
+    <a href="/" class="text-sm text-stone-400 hover:text-burgundy-light">{{ ui.breadcrumb.home }}</a>
     {% for crumb in breadcrumbs %}
-      <span class="breadcrumb-separator">&rsaquo;</span>
+      <span class="breadcrumb-separator text-stone-400">&rsaquo;</span>
       {% if crumb.url %}
-        <a href="{{ crumb.url }}">{{ crumb.title }}</a>
+        <a href="{{ crumb.url }}" class="text-sm text-stone-400 hover:text-burgundy-light">{{ crumb.title }}</a>
       {% else %}
-        <span>{{ crumb.title }}</span>
+        <span class="text-sm text-stone-500">{{ crumb.title }}</span>
       {% endif %}
     {% endfor %}
   </div>
