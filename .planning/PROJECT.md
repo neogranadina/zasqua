@@ -27,10 +27,13 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ### Active
 
-- New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals
 - Redesigned header, footer, and interactive elements to match Figma visual identity spec
 - AHRB notarial volume import — export backend data, rebuild frontend with ~2K new AHRB descriptions
 - Homepage masonry grid preserved (consistent with Neogranadina's design)
+
+### Recently Validated
+
+- New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals — Phase 1 (CSS Foundations)
 
 ### Out of Scope
 
@@ -39,7 +42,7 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ## Context
 
-- **Codebase:** Eleventy 3, Nunjucks, Pagefind, TIFY, vanilla JS/CSS
+- **Codebase:** Eleventy 3, Nunjucks, Tailwind CSS v4 (standalone CLI), Pagefind, TIFY, vanilla JS
 - **Shipped:** v0.3.2 (2026-03-10) — R2 hosting migration + parallel deploy pipeline
 - **Data:** 104K+ description pages, 1,602 tree JSON files, ~211K total files / 2.3 GB built site
 - **Infrastructure:** Cloudflare R2 (`zasqua-site` bucket), Cloudflare Worker, GitHub Actions CI/CD
@@ -61,6 +64,7 @@ Open-access discovery interface for digitised historical archives — fast, cach
 | Miller columns over accordion | Better for deep hierarchies | Good — lazy-loaded, scales well |
 | R2 + Worker over Netlify | No file count limits, faster deploys | Good — 10 min deploys vs 2+ hours |
 | Parallel upload over rclone | rclone bottlenecked at 30ms/file RTT | Good — 345 files/s |
+| Tailwind v4 standalone CLI over npm | No npm dependency, single binary | Good — fast compilation, no build chain complexity |
 
 ## Current Milestone: v0.4.0 Visual Identity & AHRB Volumes
 
