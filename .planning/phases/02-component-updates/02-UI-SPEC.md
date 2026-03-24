@@ -43,10 +43,12 @@ Declared values (multiples of 4):
 | 3xl | 64px | Page-level spacing |
 
 Exceptions:
-- Container side padding: 15px (existing convention — do not change)
-- Header height: 70px (`--header-height` layout constant — not a spacing token)
 - Nav border-bottom hover underline: 2px (exact, for D-01 periwinkle underline)
 - Border-radius on interactive elements: 50px (pill shape — shared visual language)
+- Header height: 70px (`--header-height` layout constant — not a spacing token)
+
+**Frozen legacy value — outside token system, not modified in this phase:**
+Container side padding is 15px. This value was established before the token system and is locked. It is not a declared spacing token and is not changed in Phase 2. It does not participate in the 4-point scale.
 
 Source: RESEARCH.md + shared-visual-language.md + input.css `:root` block.
 
@@ -54,22 +56,22 @@ Source: RESEARCH.md + shared-visual-language.md + input.css `:root` block.
 
 ## Typography
 
-| Role | Family | Size | Weight | Line Height | Class |
-|------|--------|------|--------|-------------|-------|
-| Body | DM Sans | 16px (1rem) | 400 | 1.6 | `font-sans` |
-| UI label / nav | DM Sans | 14px (0.875rem) | 400–500 | 1.5 | `font-sans` |
-| Metadata label | DM Sans | 13px (0.8125rem) | 400 | 1.5 | `font-sans text-sm` |
-| Heading (h3) | DM Sans | 20px (1.25rem) | 600 | 1.3 | `font-sans font-semibold` |
-| Heading (h2) | DM Sans | 28px (1.75rem) | 600 | 1.3 | `font-sans font-semibold` |
-| Heading (h1) | DM Sans | 32px (2rem) | 600 | 1.3 | `font-sans font-semibold` |
-| Logotype | Crimson Text | 25.6px (1.6rem) | 700 | 0.9 | `font-serif font-bold` |
-| Hero title | Crimson Text | per template | 400–600 | 1.2 | `font-serif` |
-| Display heading | Cormorant Garamond | per template | 600–700 | 1.2 | `font-display` |
-| Filter pill label | DM Sans | 12px (0.75rem) | 400 | 1.0 | `font-sans text-xs` |
-| Pagination label | DM Sans | 14px (0.875rem) | 400 | 1.0 | `font-sans text-sm` |
+Phase 2 is a CSS tokenisation pass. No new type sizes or weights are introduced. The typography system is inherited in full from Phase 1 — this section documents it for executor reference only.
 
-Effective type scale for this phase: 12, 13, 14, 16, 20, 28, 32px.
-Effective weights for UI elements: regular (400) and semibold (600). Bold (700) reserved for logotype only.
+**Inherited type scale (Phase 1, not changed in Phase 2):** 14px, 16px, 20px, 28px.
+
+**Inherited weights (Phase 1, not changed in Phase 2):** regular (400) and semibold (600).
+
+Note: Bold (700) exists in the codebase for the logotype (`font-serif font-bold`). It is a Phase 1 legacy value and is not introduced or modified in Phase 2. It falls outside this phase's type contract.
+
+| Role | Family | Size | Weight | Line Height |
+|------|--------|------|--------|-------------|
+| Body | DM Sans | 16px | 400 | 1.6 |
+| UI label / nav | DM Sans | 14px | 400 | 1.5 |
+| Heading (h3/h2/h1) | DM Sans | 20–28px | 600 | 1.3 |
+| Filter pill label | DM Sans | 14px | 400 | 1.0 |
+
+This table is an inherited reference. Phase 2 does not add, remove, or change any type size or weight.
 
 Source: input.css `@layer base` (direct read), design-tokens.md Typography section.
 
