@@ -1,14 +1,14 @@
 ---
-status: partial
+status: passed
 phase: 01-css-foundations
 source: [01-VERIFICATION.md]
 started: 2026-03-24T20:30:00.000Z
-updated: 2026-03-24T20:30:00.000Z
+updated: 2026-03-24T21:00:00.000Z
 ---
 
 ## Current Test
 
-[awaiting human testing]
+[complete]
 
 ## Tests
 
@@ -18,22 +18,22 @@ result: passed (verified in browser session — DM Sans body, Crimson Text heade
 
 ### 2. Interactive state colours
 expected: Search page filter pills use dark stone, active pagination uses burgundy-deep, hover states on nav/footer show no orange
-result: [pending — needs full build with search data]
+result: passed (manual testing by user)
 
 ### 3. Miller column selection
 expected: burgundy-deep background on selected items, periwinkle on hover
-result: [pending — needs full build with descriptions data]
+result: passed (manual testing by user)
 
 ### 4. TIFY viewer
 expected: Viewer renders correctly with !important cascade overrides intact
-result: [pending — needs full build with descriptions data]
+result: passed (manual testing by user)
 
 ## Summary
 
 total: 4
-passed: 1
+passed: 4
 issues: 0
-pending: 3
+pending: 0
 skipped: 0
 blocked: 0
 
