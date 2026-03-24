@@ -6,3 +6,5 @@ src/_data/export/
 *.log
 logs/
 .env
+tailwindcss
+tailwindcss-*

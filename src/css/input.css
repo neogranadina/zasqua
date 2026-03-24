@@ -1,4 +1,4 @@
-@import "tailwindcss" source("../src");
+@import "tailwindcss" source("..");
 
 @theme {
   /* Brand colours — per D-08, matching zasqua-catalogacion */
