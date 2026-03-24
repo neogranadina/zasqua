@@ -1,0 +1,63 @@
+@import "tailwindcss" source("../src");
+
+@theme {
+  /* Brand colours — per D-08, matching zasqua-catalogacion */
+  --color-burgundy: #8B2942;
+  --color-burgundy-deep: #6B1F33;
+  --color-burgundy-light: #B14D66;
+  --color-burgundy-dark: #4A1522;
+  --color-pale-rose: #F5E6EA;
+  --color-ochre: #C5965F;
+  --color-sage: #8A9B8E;
+  --color-periwinkle: #C9D5FF;
+  --color-bg: #FAFAF9;
+
+  /* Font stacks — per D-07 */
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-serif: "Crimson Text", ui-serif, Georgia, Cambria, "Times New Roman",
+    Times, serif;
+  --font-display: "Cormorant Garamond", ui-serif, Georgia, Cambria,
+    "Times New Roman", Times, serif;
+}
+
+/* Layout constants — NOT in @theme (used in calc(), not as utility tokens) */
+:root {
+  --max-width: 1200px;
+  --header-height: 70px;
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+    line-height: 1.6;
+    background-color: var(--color-bg);
+  }
+  body {
+    @apply font-sans text-stone-600;
+    margin: 0;
+    padding: 0;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-semibold text-stone-900;
+    margin-top: 0;
+    line-height: 1.3;
+  }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.25rem; }
+  a {
+    @apply text-stone-900 no-underline;
+  }
+  a:hover {
+    @apply text-burgundy-light underline;
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@layer components {
+  /* Component styles migrated from main.css — added in Plans 02 and 03 */
+}
