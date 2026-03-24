@@ -1,24 +1,61 @@
-# State
-
-## Current Position
-
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-24 — Milestone v0.4.0 started
+# Project State
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Defining milestone v0.4.0 requirements
+**Current focus:** Phase 1 — CSS Foundations
+
+## Current Position
+
+Phase: 1 of 3 (CSS Foundations)
+Plan: Not yet planned
+Status: Ready to plan
+Last activity: 2026-03-24 — Roadmap created; v0.4.0 phases defined
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 0
+- Average duration: —
+- Total execution time: —
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+**Recent Trend:**
+- Last 5 plans: —
+- Trend: —
+
+*Updated after each plan completion*
 
 ## Accumulated Context
 
-- Visual identity specs sourced from Figma Make file (bOunUsW8BHk1eqZrJu7Nxt)
-- Typography: DM Sans (body), Crimson Text (logotype), Cormorant Garamond (display headings)
-- Colour palette: burgundy primary (#8B2942), periwinkle secondary (#C9D5FF), warm gray neutrals
-- Homepage masonry grid layout must be preserved (Neogranadina brand consistency)
-- AHRB backend work complete (v0.4.0): 542 volumes tiled, 392 description records, IIIF manifests on R2
-- AHRB frontend export to B2 not yet done — needs export_frontend_data + upload before build
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- Visual identity: Figma Make file (bOunUsW8BHk1eqZrJu7Nxt) is the spec source
+- Phase order: CSS foundations first so component work picks up correct tokens automatically
+- Phase order: AHRB import last so new pages render in the finished design
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+- AHRB-01 requires the backend `export_frontend_data` command to be run in zasqua-backend-dev before Phase 3 can start — coordinate timing
+
+## Session Continuity
+
+Last session: 2026-03-24
+Stopped at: Roadmap created; ready to plan Phase 1
+Resume file: None
