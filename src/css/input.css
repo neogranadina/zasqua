@@ -325,6 +325,16 @@
     outline: none;
     background: transparent;
     border-radius: 50px 0 0 50px;
+    color: #1C1917;
+  }
+
+  .hero .search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2378716C'%3E%3Cpath d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/%3E%3C/svg%3E") center/contain no-repeat;
+    cursor: pointer;
   }
 
   .hero .search-button {
@@ -960,8 +970,8 @@
   .search-landing-hints {
     max-width: 420px;
     color: #A8A29E;
-    font-size: 0.85rem;
-    line-height: 1.6;
+    font-size: 0.95rem;
+    line-height: 1.7;
   }
 
   .search-landing-hints p {
@@ -971,7 +981,7 @@
   .search-landing-hints em {
     font-style: normal;
     font-weight: 700;
-    color: #78716C;
+    color: #57534E;
   }
 
   .results-info {
