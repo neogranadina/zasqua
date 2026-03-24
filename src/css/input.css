@@ -108,6 +108,7 @@
     font-family: var(--font-serif);
     font-size: 1.6rem;
     font-weight: 400;
+    white-space: nowrap;
     color: #1C1917;
     line-height: 0.9;
   }
@@ -269,9 +270,11 @@
   }
 
   .hero-logo {
+    display: block;
     max-height: 200px;
     width: auto;
-    filter: invert(1) drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+    margin-inline: auto;
+    filter: brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,0.6));
     margin-bottom: 0;
   }
 
@@ -551,7 +554,10 @@
   }
 
   .footer-right {
-    text-align: right;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    justify-content: flex-end;
   }
 
   .footer-seal {
@@ -569,7 +575,7 @@
     }
 
     .footer-right {
-      text-align: center;
+      justify-content: center;
     }
   }
 
