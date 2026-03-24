@@ -12,7 +12,7 @@ Three phases deliver the v0.4.0 milestone. Phase 1 lays the CSS foundations — 
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: CSS Foundations** - New typography and colour palette as CSS custom properties
+- [x] **Phase 1: CSS Foundations** - New typography and colour palette as CSS custom properties (completed 2026-03-24)
 - [ ] **Phase 2: Component Updates** - All page components updated to use the new visual identity
 - [ ] **Phase 3: AHRB Import** - Backend export, frontend rebuild, and deploy with ~106K pages
 
@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — Infrastructure: Tailwind CLI, input.css with @theme tokens, Google Fonts, build pipeline
 - [x] 01-02-PLAN.md — Layout shell: header, footer, hero, masonry, buttons, breadcrumb, cards + template conversion
-- [ ] 01-03-PLAN.md — Interactive components: search, Miller columns, description page, TIFY, children tree + visual verification
+- [x] 01-03-PLAN.md — Interactive components: search, Miller columns, description page, TIFY, children tree + visual verification
 
 **UI hint**: yes
 
@@ -67,6 +67,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. CSS Foundations | 2/3 | In Progress|  |
+| 1. CSS Foundations | 3/3 | Complete   | 2026-03-24 |
 | 2. Component Updates | 0/? | Not started | - |
 | 3. AHRB Import | 0/? | Not started | - |
