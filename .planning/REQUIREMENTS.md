@@ -9,12 +9,12 @@ Requirements for the Visual Identity & AHRB Volumes milestone. Each maps to road
 
 ### Visual Identity — Typography
 
-- [ ] **VIS-01**: Google Fonts import updated to load DM Sans, Crimson Text, and Cormorant Garamond (replacing Lato and IM Fell DW Pica)
-- [ ] **VIS-02**: `--font-body` and `--font-heading` set to DM Sans; `--font-logo` set to Crimson Text; `--font-serif` remains Cormorant Garamond
+- [x] **VIS-01**: Google Fonts import updated to load DM Sans, Crimson Text, and Cormorant Garamond (replacing Lato and IM Fell DW Pica)
+- [x] **VIS-02**: `--font-body` and `--font-heading` set to DM Sans; `--font-logo` set to Crimson Text; `--font-serif` remains Cormorant Garamond
 
 ### Visual Identity — Colour Palette
 
-- [ ] **COL-01**: CSS custom properties updated with new palette — burgundy primary (`#8B2942`), periwinkle secondary (`#C9D5FF`), warm gray neutrals, dark burgundy footer (`#4A1522`)
+- [x] **COL-01**: CSS custom properties updated with new palette — burgundy primary (`#8B2942`), periwinkle secondary (`#C9D5FF`), warm gray neutrals, dark burgundy footer (`#4A1522`)
 - [ ] **COL-02**: All hardcoded colour values in `main.css` replaced with CSS variables or updated to match the new palette
 - [ ] **COL-03**: Accent/selection colour changed from blue to periwinkle across search, Miller columns, filter pills, and pagination
 - [ ] **COL-04**: Hover accent changed from orange to periwinkle/burgundy across links, buttons, and interactive elements
@@ -56,9 +56,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIS-01 | Phase 1 | Pending |
-| VIS-02 | Phase 1 | Pending |
-| COL-01 | Phase 1 | Pending |
+| VIS-01 | Phase 1 | Complete |
+| VIS-02 | Phase 1 | Complete |
+| COL-01 | Phase 1 | Complete |
 | COL-02 | Phase 1 | Pending |
 | COL-03 | Phase 1 | Pending |
 | COL-04 | Phase 1 | Pending |

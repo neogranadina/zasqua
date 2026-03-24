@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 1 UI-SPEC approved
-last_updated: "2026-03-24T19:06:09.245Z"
-last_activity: 2026-03-24 — Roadmap created; v0.4.0 phases defined
+status: Ready to execute
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-03-24T19:43:00.827Z"
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
@@ -21,16 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 1 — CSS Foundations
+**Current focus:** Phase 01 — css-foundations
 
 ## Current Position
 
-Phase: 1 of 3 (CSS Foundations)
-Plan: Not yet planned
-Status: Ready to plan
-Last activity: 2026-03-24 — Roadmap created; v0.4.0 phases defined
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 01 (css-foundations) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -52,6 +46,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01 P01 | 172s | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -63,6 +58,8 @@ Recent decisions affecting current work:
 - Visual identity: Figma Make file (bOunUsW8BHk1eqZrJu7Nxt) is the spec source
 - Phase order: CSS foundations first so component work picks up correct tokens automatically
 - Phase order: AHRB import last so new pages render in the finished design
+- [Phase 01]: source(..) in @import resolves to src/ from src/css/input.css — not source(../src) as written in the plan
+- [Phase 01]: check-css-tokens.sh checks input.css for @theme token definitions — compiled main.css only includes tokens when utility classes using them are present in scanned templates
 
 ### Pending Todos
 
@@ -74,6 +71,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T19:06:09.242Z
-Stopped at: Phase 1 UI-SPEC approved
-Resume file: .planning/phases/01-css-foundations/01-UI-SPEC.md
+Last session: 2026-03-24T19:43:00.824Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None
