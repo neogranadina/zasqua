@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-24T19:43:00.827Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-24T20:00:43.289Z"
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 01 (css-foundations) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ Plan: 2 of 3
 
 *Updated after each plan completion*
 | Phase 01 P01 | 172s | 2 tasks | 6 files |
+| Phase 01 P02 | 1020s (~17 min) | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,8 @@ Recent decisions affecting current work:
 - Phase order: AHRB import last so new pages render in the finished design
 - [Phase 01]: source(..) in @import resolves to src/ from src/css/input.css — not source(../src) as written in the plan
 - [Phase 01]: check-css-tokens.sh checks input.css for @theme token definitions — compiled main.css only includes tokens when utility classes using them are present in scanned templates
+- [Phase 01]: Layout shell CSS kept in @layer components (not utility-only) to preserve JS-compatible class names and desktop-first responsive media queries
+- [Phase 01]: Old CSS variables (--accent-*, --footer-bg, --spacing-*) eliminated entirely — replaced with rem values and brand token references
 
 ### Pending Todos
 
@@ -71,6 +74,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T19:43:00.824Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-03-24T20:00:43.286Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

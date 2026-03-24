@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Infrastructure: Tailwind CLI, input.css with @theme tokens, Google Fonts, build pipeline
-- [ ] 01-02-PLAN.md — Layout shell: header, footer, hero, masonry, buttons, breadcrumb, cards + template conversion
+- [x] 01-02-PLAN.md — Layout shell: header, footer, hero, masonry, buttons, breadcrumb, cards + template conversion
 - [ ] 01-03-PLAN.md — Interactive components: search, Miller columns, description page, TIFY, children tree + visual verification
 
 **UI hint**: yes
@@ -67,6 +67,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. CSS Foundations | 1/3 | In Progress|  |
+| 1. CSS Foundations | 2/3 | In Progress|  |
 | 2. Component Updates | 0/? | Not started | - |
 | 3. AHRB Import | 0/? | Not started | - |
