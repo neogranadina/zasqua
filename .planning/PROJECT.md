@@ -27,7 +27,10 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ### Active
 
-(None — next milestone not yet defined)
+- New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals
+- Redesigned header, footer, and interactive elements to match Figma visual identity spec
+- AHRB notarial volume import — export backend data, rebuild frontend with ~2K new AHRB descriptions
+- Homepage masonry grid preserved (consistent with Neogranadina's design)
 
 ### Out of Scope
 
@@ -59,9 +62,34 @@ Open-access discovery interface for digitised historical archives — fast, cach
 | R2 + Worker over Netlify | No file count limits, faster deploys | Good — 10 min deploys vs 2+ hours |
 | Parallel upload over rclone | rclone bottlenecked at 30ms/file RTT | Good — 345 files/s |
 
+## Current Milestone: v0.4.0 Visual Identity & AHRB Volumes
+
+**Goal:** Unify the frontend under Zasqua's new visual identity and publish 542 AHRB notarial volumes on zasqua.org.
+
+**Target features:**
+- New visual identity across all page types (home, search, repository, description)
+- AHRB notarial volume import — backend export to B2, frontend rebuild, deploy
+
 ## Tech Debt
 
 (None identified)
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-03-24 — initial GSD setup*
+*Last updated: 2026-03-24 — milestone v0.4.0 started*
