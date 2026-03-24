@@ -65,7 +65,7 @@ Exceptions:
 
 | Role | Font Family | Tailwind Token | Weights Loaded |
 |------|-------------|---------------|----------------|
-| Sans (body, UI) | `"DM Sans", ui-sans-serif, system-ui, sans-serif` | `--font-sans` → `font-sans` | 400, 500, 600, 700 |
+| Sans (body, UI) | `"DM Sans", ui-sans-serif, system-ui, sans-serif` | `--font-sans` → `font-sans` | 400, 600 |
 | Serif (wordmark, titles) | `"Crimson Text", ui-serif, Georgia, serif` | `--font-serif` → `font-serif` | 400, 700 |
 | Display (section headings) | `"Cormorant Garamond", ui-serif, Georgia, serif` | `--font-display` → `font-display` | 600 |
 
@@ -73,10 +73,12 @@ Exceptions:
 
 ### Type Scale
 
+Two weights only: `font-normal` (400) and `font-semibold` (600).
+
 | Role | Size | Weight | Line Height | Font | Tailwind |
 |------|------|--------|-------------|------|---------|
 | Body | 16px | 400 | 1.6 | DM Sans | `text-base font-normal` |
-| Label / UI | 14px | 500 | 1.4 | DM Sans | `text-sm font-medium` |
+| Label / UI | 14px | 400 | 1.4 | DM Sans | `text-sm font-normal` |
 | Heading (h3, section) | 20px | 600 | 1.3 | DM Sans or Cormorant Garamond | `text-xl font-semibold` |
 | Display (h1, h2) | 28px–32px | 600 | 1.2 | Cormorant Garamond or Crimson Text | `text-3xl font-semibold` |
 
@@ -91,10 +93,10 @@ Replace current `<link>` in `src/_layouts/base.njk` with:
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Crimson+Text:wght@400;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=Crimson+Text:wght@400;700&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet" />
 ```
 
-Rationale: trimmed to actual weights per CONTEXT.md D-06 (no variable range for DM Sans, no italic or weight 600 for Crimson Text, only weight 600 for Cormorant Garamond).
+Rationale: trimmed to two weights for DM Sans (400 and 600 only — weight 500 dropped per typography contract). Crimson Text loads 400 and 700 for serif body and wordmark use. Cormorant Garamond loads 600 only.
 
 ---
 
