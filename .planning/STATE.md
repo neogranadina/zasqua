@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: Completed 03-ahrb-import-03-02-PLAN.md — awaiting human verification checkpoint (Task 3)
-last_updated: "2026-03-25T06:18:34.542Z"
+stopped_at: Completed 03-ahrb-import-03-02-PLAN.md — Phase 3 complete, v0.4.0 live at zasqua.org
+last_updated: "2026-03-25T15:31:53.683Z"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -54,6 +54,7 @@ Plan: 2 of 2
 | Phase 02 P03 | 1800 | 2 tasks | 1 files |
 | Phase 03-ahrb-import P01 | 300 | 2 tasks | 1 files |
 | Phase 03-ahrb-import P02 | 2700 | 2 tasks | 15 files |
+| Phase 03-ahrb-import P02 | 2700 | 3 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,7 @@ Recent decisions affecting current work:
 - [Phase 03-ahrb-import]: export_frontend_data run from zasqua-backend-dev using public backend's venv (public venv shares Django setup; dev repo has updated AHRB export logic not yet in public)
 - [Phase 03-ahrb-import]: Porting done in 8 thematic commits (visual identity, assets, layout, templates, search, build pipeline, tooling, version bump) — version bump last per D-11
 - [Phase 03-ahrb-import]: Tailwind CSS step ported with build pipeline in Commit 6 — input.css already in place from Commit 1, preventing CI failure
+- [Phase 03-ahrb-import]: Porting done in 8 thematic commits — version bump last per D-11; Tailwind input.css ported before deploy.yml to prevent CI failure
 
 ### Pending Todos
 
@@ -94,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T06:18:34.539Z
-Stopped at: Completed 03-ahrb-import-03-02-PLAN.md — awaiting human verification checkpoint (Task 3)
+Last session: 2026-03-25T15:31:53.680Z
+Stopped at: Completed 03-ahrb-import-03-02-PLAN.md — Phase 3 complete, v0.4.0 live at zasqua.org
 Resume file: None

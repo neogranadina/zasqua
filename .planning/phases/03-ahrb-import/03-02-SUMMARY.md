@@ -67,7 +67,7 @@ completed: 2026-03-25
 - **Duration:** ~45 min (8 commits + 28 min CI build)
 - **Started:** 2026-03-25T05:47Z
 - **Completed:** 2026-03-25T06:17Z
-- **Tasks:** 2 of 3 complete (Task 3 is human verification checkpoint)
+- **Tasks:** 3 of 3 complete
 - **Files modified in public repo:** 15 (4 new, 11 changed)
 
 ## Accomplishments
@@ -143,11 +143,30 @@ None — all data is live from the AHRB export. IIIF manifests present on ~880 o
 
 None — all CI secrets were already set from previous deployments.
 
+## Live Site Verification (Task 3)
+
+User approved all 6 spot-checks on 2026-03-25:
+
+1. Homepage — DM Sans / burgundy palette visible, AHRB in masonry grid
+2. AHRB repository landing page (zasqua.org/co-ahrb/) — loads with correct title, subtitle, and Miller columns tree
+3. AHRB volume description page — metadata fields, periwinkle level badge, breadcrumb navigation
+4. AHRB record with IIIF viewer — TIFY viewer link present, opens correctly
+5. Footer — displays "v0.4.0"
+6. Search (zasqua.org/buscar/) — returns AHRB results for "Tunja" / "notaria"
+
 ## Next Phase Readiness
 
-Phase 3 is the final phase for milestone v0.4.0. Remaining step is Task 3 — human verification of the live site at zasqua.org (checkpoint:human-verify). Once approved, the phase and milestone are complete.
+Phase 3 is complete. v0.4.0 is live on zasqua.org. AHRB-02 and AHRB-03 are satisfied.
+
+Next: close out v0.4.0 — update CHANGELOG.md in public repos, tag, and write bilingual release notes per the release closing checklist in CLAUDE.md.
 
 Deferred item (non-blocking): GitHub Actions runner Node.js 20 deprecation warning — actions/checkout@v4, actions/setup-node@v4, actions/setup-python@v5 will need updating before June 2026.
+
+## Self-Check: PASSED
+
+- SUMMARY.md exists at `.planning/phases/03-ahrb-import/03-02-SUMMARY.md`
+- Commit `69f3873` (visual identity port) confirmed in zasqua-frontend
+- Commit `0ed8cc0` (version bump to 0.4.0) confirmed in zasqua-frontend
 
 ---
 *Phase: 03-ahrb-import*
