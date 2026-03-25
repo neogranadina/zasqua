@@ -67,7 +67,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Fresh backend export, B2 upload, version bump to 0.4.0
+- [x] 03-01-PLAN.md — Fresh backend export, B2 upload, version bump to 0.4.0
 - [ ] 03-02-PLAN.md — Port all changes to public repo, deploy, verify live site
 
 **UI hint**: no
@@ -81,4 +81,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. CSS Foundations | 3/3 | Complete   | 2026-03-24 |
 | 2. Component Updates | 3/3 | Complete   | 2026-03-25 |
-| 3. AHRB Import | 0/2 | Not started | - |
+| 3. AHRB Import | 1/2 | In Progress|  |

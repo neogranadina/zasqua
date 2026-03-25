@@ -32,7 +32,7 @@ Requirements for the Visual Identity & AHRB Volumes milestone. Each maps to road
 
 ### AHRB Import
 
-- [ ] **AHRB-01**: Backend data exported with `export_frontend_data` including all AHRB description records, uploaded to B2
+- [x] **AHRB-01**: Backend data exported with `export_frontend_data` including all AHRB description records, uploaded to B2
 - [ ] **AHRB-02**: Frontend rebuilt with AHRB data — ~106K pages generated and deployed to R2
 - [ ] **AHRB-03**: AHRB repository landing page displays correctly with volume listings and IIIF viewer links
 
@@ -70,7 +70,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-06 | Phase 2 | Complete |
 | COMP-07 | Phase 2 | Complete |
 | COMP-08 | Phase 2 | Complete |
-| AHRB-01 | Phase 3 | Pending |
+| AHRB-01 | Phase 3 | Complete |
 | AHRB-02 | Phase 3 | Pending |
 | AHRB-03 | Phase 3 | Pending |
 

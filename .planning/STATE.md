@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-25T04:13:22.326Z"
+status: Ready to execute
+stopped_at: Completed 03-ahrb-import-03-01-PLAN.md
+last_updated: "2026-03-25T05:40:35.884Z"
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 02 — component-updates
+**Current focus:** Phase 03 — ahrb-import
 
 ## Current Position
 
-Phase: 3
-Plan: Not started
+Phase: 03 (ahrb-import) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Plan: Not started
 | Phase 02 P01 | 900 | 2 tasks | 1 files |
 | Phase 02 P02 | 900 | 2 tasks | 1 files |
 | Phase 02 P03 | 1800 | 2 tasks | 1 files |
+| Phase 03-ahrb-import P01 | 300 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Recent decisions affecting current work:
 - [Phase 02]: D-10: .detail-field a keeps text-stone-900 default; burgundy-light hover inherited from @layer base a:hover
 - [Phase 02]: D-11: .miller-item.selected and .miller-item.selected-ancestor left unchanged — only neutral chrome tokenised
 - [Phase 02]: TIFY !important flags preserved on all token replacements — TIFY injected CSS requires specificity override
+- [Phase 03-ahrb-import]: export_frontend_data run from zasqua-backend-dev using public backend's venv (public venv shares Django setup; dev repo has updated AHRB export logic not yet in public)
 
 ### Pending Todos
 
@@ -89,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T04:13:22.323Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-ahrb-import/03-CONTEXT.md
+Last session: 2026-03-25T05:40:35.881Z
+Stopped at: Completed 03-ahrb-import-03-01-PLAN.md
+Resume file: None
