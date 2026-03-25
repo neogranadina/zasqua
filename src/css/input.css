@@ -327,7 +327,7 @@
     outline: none;
     background: transparent;
     border-radius: 50px 0 0 50px;
-    color: #1C1917;
+    @apply text-stone-900;
   }
 
   .hero .search-input::-webkit-search-cancel-button {
@@ -344,14 +344,14 @@
     border: none;
     padding: 14px 16px 14px 8px;
     cursor: pointer;
-    color: #A8A29E;
+    @apply text-stone-400;
     display: flex;
     align-items: center;
     justify-content: center;
   }
 
   .hero .search-button:hover {
-    color: #1C1917;
+    @apply text-stone-900;
   }
 
   .hero .search-button .material-symbols-outlined {
@@ -382,7 +382,7 @@
     line-height: 1.8;
     max-width: 650px;
     margin: 0 auto 1rem;
-    color: #1C1917;
+    @apply text-stone-900;
   }
 
   .section-intro strong {
@@ -483,7 +483,7 @@
     right: 0;
     bottom: 0;
     left: 0;
-    background: rgba(107, 31, 51, 0.85);
+    background: rgba(139, 41, 66, 0.85);
     opacity: 0;
     visibility: hidden;
     transition: all 0.2s ease-in-out;
@@ -636,12 +636,12 @@
   }
 
   .btn-secondary {
-    background: #F5F5F4;
-    color: #1C1917;
+    @apply bg-stone-100;
+    @apply text-stone-900;
   }
 
   .btn-secondary:hover {
-    background: #d8d8d8;
+    background: var(--color-stone-300);
     text-decoration: none;
   }
 
@@ -651,9 +651,9 @@
 
   .breadcrumb {
     font-size: 14px;
-    color: #A8A29E;
+    @apply text-stone-400;
     padding: 1rem 0;
-    background: #F5F5F4;
+    @apply bg-stone-100;
   }
 
   .breadcrumb .container {
@@ -663,7 +663,7 @@
   }
 
   .breadcrumb a {
-    color: #A8A29E;
+    @apply text-stone-400;
   }
 
   .breadcrumb a:hover {
@@ -696,7 +696,7 @@
 
   .detail-header {
     padding: 2rem 0;
-    background: #F5F5F4;
+    @apply bg-stone-100;
   }
 
   .detail-title {
@@ -705,7 +705,7 @@
   }
 
   .detail-meta {
-    color: #A8A29E;
+    @apply text-stone-400;
     font-size: 14px;
   }
 
@@ -721,8 +721,8 @@
     font-size: 1rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #A8A29E;
-    border-bottom: 1px solid #dedede;
+    @apply text-stone-400;
+    border-bottom: 1px solid var(--color-stone-300);
     padding-bottom: 0.5rem;
     margin-bottom: 1rem;
   }
@@ -733,13 +733,13 @@
 
   .detail-label {
     font-weight: 600;
-    color: #1C1917;
+    @apply text-stone-900;
     display: block;
     margin-bottom: 4px;
   }
 
   .detail-value {
-    color: #78716C;
+    @apply text-stone-500;
   }
 
   ul.detail-list {
@@ -802,7 +802,7 @@
      ==================== */
 
   .description-list {
-    border: 1px solid #dedede;
+    border: 1px solid var(--color-stone-300);
     border-radius: 4px;
     overflow: hidden;
   }
@@ -812,8 +812,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid #f0f0f0;
-    color: #1C1917;
+    border-bottom: 1px solid var(--color-stone-100);
+    @apply text-stone-900;
     transition: background-color 0.15s ease;
   }
 
@@ -822,7 +822,7 @@
   }
 
   .description-item:hover {
-    background-color: #F5F5F4;
+    @apply bg-stone-100;
     text-decoration: none;
   }
 
@@ -834,19 +834,19 @@
     font-size: 1.1rem;
     font-weight: 600;
     margin: 0 0 4px;
-    color: #1C1917;
+    @apply text-stone-900;
   }
 
   .description-item-meta {
     font-size: 0.875rem;
-    color: #A8A29E;
+    @apply text-stone-400;
     display: flex;
     gap: 1rem;
   }
 
   .description-item-arrow {
     font-size: 1.5rem;
-    color: #A8A29E;
+    @apply text-stone-400;
     margin-left: 1rem;
   }
 
@@ -856,7 +856,7 @@
 
   .placeholder-img {
     background-color: var(--color-bg);
-    border: 2px solid #ededed;
+    border: 2px solid var(--color-stone-200);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -875,8 +875,8 @@
 
   /* Note: .text-center, .mt-0, .mb-0 are covered by Tailwind native utilities.
      Keeping only those with custom values or non-standard Tailwind equivalents. */
-  .text-muted { color: #A8A29E; }
-  .bg-gray { background-color: #F5F5F4; }
+  .text-muted { @apply text-stone-400; }
+  .bg-gray { @apply bg-stone-100; }
   .mb-md { margin-bottom: 1rem; }
   .mb-lg { margin-bottom: 1.5rem; }
 
@@ -905,7 +905,7 @@
   .error-message {
     font-family: var(--font-sans);
     font-size: 1.1rem;
-    color: #78716C;
+    @apply text-stone-500;
     line-height: 1.8;
     margin-bottom: 2rem;
   }
