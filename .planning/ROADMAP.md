@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: CSS Foundations** - New typography and colour palette as CSS custom properties (completed 2026-03-24)
 - [x] **Phase 2: Component Updates** - All page components updated to use the new visual identity (completed 2026-03-25)
-- [ ] **Phase 3: AHRB Import** - Backend export, frontend rebuild, and deploy with ~106K pages
+- [x] **Phase 3: AHRB Import** - Backend export, frontend rebuild, and deploy with ~106K pages (completed 2026-03-25)
 
 ## Phase Details
 
@@ -68,7 +68,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Fresh backend export, B2 upload, version bump to 0.4.0
-- [ ] 03-02-PLAN.md — Port all changes to public repo, deploy, verify live site
+- [x] 03-02-PLAN.md — Port all changes to public repo, deploy, verify live site
 
 **UI hint**: no
 
@@ -81,4 +81,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. CSS Foundations | 3/3 | Complete   | 2026-03-24 |
 | 2. Component Updates | 3/3 | Complete   | 2026-03-25 |
-| 3. AHRB Import | 1/2 | In Progress|  |
+| 3. AHRB Import | 2/2 | Complete   | 2026-03-25 |
