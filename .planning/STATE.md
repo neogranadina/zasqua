@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-24T23:07:44.218Z"
+status: Ready to execute
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-25T01:00:01.293Z"
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 01 — css-foundations
+**Current focus:** Phase 02 — component-updates
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 02 (component-updates) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Plan: Not started
 | Phase 01 P01 | 172s | 2 tasks | 6 files |
 | Phase 01 P02 | 1020s (~17 min) | 2 tasks | 9 files |
 | Phase 01 P03 | 600 | 2 tasks | 4 files |
+| Phase 02 P01 | 900 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - [Phase 01]: filter-pill uses dark stone background not periwinkle — keeps pills high-contrast at small size
 - [Phase 01]: level-badge switched to periwinkle background — satisfies COL-03 interactive accent replacement
 - [Phase 01]: TIFY font-family override changed from Lato to var(--font-sans) — eliminates last Lato reference in CSS
+- [Phase 02]: D-01: Nav hover/active uses border-bottom: 2px solid var(--color-periwinkle) with padding-bottom: calc(0.5rem - 2px) to preserve layout
+- [Phase 02]: D-06: .repo-overlay updated from rgba(107,31,51,0.85) (burgundy-deep) to rgba(139,41,66,0.85) (primary burgundy) per D-06
+- [Phase 02]: [Phase 02-01]: @apply text-stone-N inside @layer components and var(--color-stone-N) for borders both resolve correctly in Tailwind v4
 
 ### Pending Todos
 
@@ -78,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T23:07:44.215Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-component-updates/02-CONTEXT.md
+Last session: 2026-03-25T01:00:01.290Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None

@@ -21,14 +21,14 @@ Requirements for the Visual Identity & AHRB Volumes milestone. Each maps to road
 
 ### Visual Identity — Components
 
-- [ ] **COMP-01**: Header redesigned — pomegranate logo + "Neogranadina: Zasqua" lockup in Crimson Text, DM Sans navigation, periwinkle hover underlines
-- [ ] **COMP-02**: Footer redesigned — dark burgundy background (`#4A1522`) replacing navy, updated text styling
-- [ ] **COMP-03**: Homepage hero updated — burgundy search button with periwinkle hover, Crimson Text title
-- [ ] **COMP-04**: Homepage masonry grid preserved — only colour/typography changes (hover overlay becomes burgundy instead of blue)
+- [x] **COMP-01**: Header redesigned — pomegranate logo + "Neogranadina: Zasqua" lockup in Crimson Text, DM Sans navigation, periwinkle hover underlines
+- [x] **COMP-02**: Footer redesigned — dark burgundy background (`#4A1522`) replacing navy, updated text styling
+- [x] **COMP-03**: Homepage hero updated — burgundy search button with periwinkle hover, Crimson Text title
+- [x] **COMP-04**: Homepage masonry grid preserved — only colour/typography changes (hover overlay becomes burgundy instead of blue)
 - [ ] **COMP-05**: Search page updated — burgundy active filter pills, periwinkle active pagination, updated sort/facet styling
 - [ ] **COMP-06**: Description page updated — periwinkle level badges, burgundy links, updated metadata section headers
 - [ ] **COMP-07**: Repository page updated — periwinkle Miller column selection, burgundy links
-- [ ] **COMP-08**: Background colour changed to warm white (`#FAFAF9`) from pure white
+- [x] **COMP-08**: Background colour changed to warm white (`#FAFAF9`) from pure white
 
 ### AHRB Import
 
@@ -62,14 +62,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COL-02 | Phase 1 | Complete |
 | COL-03 | Phase 1 | Complete |
 | COL-04 | Phase 1 | Complete |
-| COMP-01 | Phase 2 | Pending |
-| COMP-02 | Phase 2 | Pending |
-| COMP-03 | Phase 2 | Pending |
-| COMP-04 | Phase 2 | Pending |
+| COMP-01 | Phase 2 | Complete |
+| COMP-02 | Phase 2 | Complete |
+| COMP-03 | Phase 2 | Complete |
+| COMP-04 | Phase 2 | Complete |
 | COMP-05 | Phase 2 | Pending |
 | COMP-06 | Phase 2 | Pending |
 | COMP-07 | Phase 2 | Pending |
-| COMP-08 | Phase 2 | Pending |
+| COMP-08 | Phase 2 | Complete |
 | AHRB-01 | Phase 3 | Pending |
 | AHRB-02 | Phase 3 | Pending |
 | AHRB-03 | Phase 3 | Pending |

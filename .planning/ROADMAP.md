@@ -50,7 +50,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Header tokenisation + nav hover underline (D-01), hero/masonry/footer/buttons/breadcrumb/cards tokenisation + masonry overlay (D-06)
+- [x] 02-01-PLAN.md — Header tokenisation + nav hover underline (D-01), hero/masonry/footer/buttons/breadcrumb/cards tokenisation + masonry overlay (D-06)
 - [ ] 02-02-PLAN.md — Search page tokenisation: sort/facets (D-09), active filter pills (D-07), active pagination (D-08)
 - [ ] 02-03-PLAN.md — Miller columns, description page, TIFY overrides, children tree tokenisation (D-10/D-11/D-12) + visual verification
 
@@ -74,5 +74,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. CSS Foundations | 3/3 | Complete   | 2026-03-24 |
-| 2. Component Updates | 0/3 | Not started | - |
+| 2. Component Updates | 1/3 | In Progress|  |
 | 3. AHRB Import | 0/? | Not started | - |
