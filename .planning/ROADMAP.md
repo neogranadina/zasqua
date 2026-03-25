@@ -51,7 +51,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Header tokenisation + nav hover underline (D-01), hero/masonry/footer/buttons/breadcrumb/cards tokenisation + masonry overlay (D-06)
-- [ ] 02-02-PLAN.md — Search page tokenisation: sort/facets (D-09), active filter pills (D-07), active pagination (D-08)
+- [x] 02-02-PLAN.md — Search page tokenisation: sort/facets (D-09), active filter pills (D-07), active pagination (D-08)
 - [ ] 02-03-PLAN.md — Miller columns, description page, TIFY overrides, children tree tokenisation (D-10/D-11/D-12) + visual verification
 
 **UI hint**: yes

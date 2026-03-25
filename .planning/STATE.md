@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-25T01:00:01.293Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-25T01:27:16.001Z"
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 02 (component-updates) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Plan: 2 of 3
 | Phase 01 P02 | 1020s (~17 min) | 2 tasks | 9 files |
 | Phase 01 P03 | 600 | 2 tasks | 4 files |
 | Phase 02 P01 | 900 | 2 tasks | 1 files |
+| Phase 02 P02 | 900 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase 02]: D-01: Nav hover/active uses border-bottom: 2px solid var(--color-periwinkle) with padding-bottom: calc(0.5rem - 2px) to preserve layout
 - [Phase 02]: D-06: .repo-overlay updated from rgba(107,31,51,0.85) (burgundy-deep) to rgba(139,41,66,0.85) (primary burgundy) per D-06
 - [Phase 02]: [Phase 02-01]: @apply text-stone-N inside @layer components and var(--color-stone-N) for borders both resolve correctly in Tailwind v4
+- [Phase 02-02]: D-07: filter-pill base background changed to var(--color-burgundy) — all rendered pills are active selections per search.js audit
+- [Phase 02-02]: D-08: pagination-link.active changed to var(--color-periwinkle) with text-stone-900 instead of burgundy-deep with white text
 
 ### Pending Todos
 
@@ -82,6 +85,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T01:00:01.290Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-25T01:27:15.997Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
