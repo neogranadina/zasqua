@@ -1387,7 +1387,7 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.25rem 0.5rem;
-    background: #292524;
+    background: var(--color-burgundy);
     color: #fff;
     border-radius: 50px;
     font-size: 0.75rem;
@@ -1409,18 +1409,18 @@
   }
 
   .clear-filters-btn {
-    background: #e8e8e8;
+    @apply bg-stone-200;
     border: none;
     padding: 0.25rem 0.5rem;
     border-radius: 50px;
     font-size: 0.75rem;
     font-family: var(--font-sans);
-    color: #333;
+    @apply text-stone-800;
     cursor: pointer;
   }
 
   .clear-filters-btn:hover {
-    background: #d8d8d8;
+    background: var(--color-stone-300);
   }
 
   .search-pagination {
@@ -1432,10 +1432,10 @@
 
   .pagination-link {
     padding: 8px 12px;
-    border: 1px solid #dedede;
+    border: 1px solid var(--color-stone-300);
     border-radius: 50px;
     font-size: 14px;
-    color: #1C1917;
+    @apply text-stone-900;
     text-decoration: none;
     cursor: pointer;
   }
@@ -1446,13 +1446,13 @@
   }
 
   .pagination-link.active {
-    background: var(--color-burgundy-deep);
-    color: #fff;
-    border-color: var(--color-burgundy-deep);
+    background: var(--color-periwinkle);
+    @apply text-stone-900;
+    border-color: var(--color-periwinkle);
   }
 
   .pagination-link.disabled {
-    color: #A8A29E;
+    @apply text-stone-400;
     cursor: default;
   }
 
@@ -1462,13 +1462,13 @@
 
   .pagination-ellipsis {
     padding: 8px 4px;
-    color: #A8A29E;
+    @apply text-stone-400;
   }
 
   .search-loading {
     text-align: center;
     padding: 3rem 0;
-    color: #A8A29E;
+    @apply text-stone-400;
     font-size: 0.9rem;
     display: flex;
     align-items: center;
@@ -1521,7 +1521,7 @@
 
   .browse-prompt-count {
     font-size: 1.1rem;
-    color: #1C1917;
+    @apply text-stone-900;
     margin: 0 0 0.25rem;
   }
 
@@ -1531,43 +1531,43 @@
 
   .browse-prompt-hint {
     font-size: 0.85rem;
-    color: #A8A29E;
+    @apply text-stone-400;
     line-height: 1.6;
     margin: 0;
   }
 
   .browse-prompt-btn {
-    background: #e8e8e8;
+    @apply bg-stone-200;
     border: none;
     border-radius: 50px;
     padding: 0.45rem 1.25rem;
     font-size: 0.8rem;
     font-family: var(--font-sans);
-    color: #333;
+    @apply text-stone-800;
     cursor: pointer;
     margin-top: 0.75rem;
   }
 
   .browse-prompt-btn:hover {
-    background: #d8d8d8;
+    background: var(--color-stone-300);
   }
 
   .browse-prompt-warning {
     font-size: 0.75rem;
-    color: #aaa;
+    @apply text-stone-400;
     margin-top: 6px;
   }
 
   .search-prompt {
     padding: 3rem 0;
-    color: #A8A29E;
+    @apply text-stone-400;
     font-size: 0.95rem;
   }
 
   .search-no-results {
     text-align: center;
     padding: 3rem 0;
-    color: #A8A29E;
+    @apply text-stone-400;
   }
 
   .search-no-results p {
@@ -1581,7 +1581,7 @@
   .search-error {
     text-align: center;
     padding: 3rem 0;
-    color: #A8A29E;
+    @apply text-stone-400;
   }
 
   .search-error p {
@@ -1591,12 +1591,12 @@
   .mobile-filter-toggle {
     display: none;
     border-radius: 50px;
-    background: #e8e8e8;
+    @apply bg-stone-200;
     border: none;
     padding: 0.75rem 1rem;
     font-size: 1rem;
     font-family: var(--font-sans);
-    color: #333;
+    @apply text-stone-800;
     cursor: pointer;
     margin-bottom: 1rem;
   }
@@ -1630,7 +1630,7 @@
 
     .search-sidebar.sidebar-open {
       display: block;
-      background: #e8e8e8;
+      @apply bg-stone-200;
       border-radius: 24px;
       padding: 0 1.25rem 1.25rem;
     }
@@ -1650,7 +1650,7 @@
       font-family: var(--font-serif);
       font-size: 1.5rem;
       font-weight: 400;
-      color: #1C1917;
+      @apply text-stone-900;
     }
 
     .filter-panel-close {
@@ -1658,7 +1658,7 @@
       border: none;
       cursor: pointer;
       padding: 0.25rem;
-      color: #1C1917;
+      @apply text-stone-900;
       line-height: 1;
     }
 
@@ -1676,7 +1676,7 @@
       background: none;
       border: none;
       cursor: pointer;
-      color: #A8A29E;
+      @apply text-stone-400;
       font-family: var(--font-sans);
       font-size: 0.85rem;
       display: flex;
