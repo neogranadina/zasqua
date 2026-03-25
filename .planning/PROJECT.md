@@ -34,6 +34,7 @@ Open-access discovery interface for digitised historical archives — fast, cach
 ### Recently Validated
 
 - New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals — Phase 1 (CSS Foundations)
+- All hardcoded hex colours in input.css replaced with Tailwind stone-scale tokens and brand colour variables — Phase 2 (Component Updates)
 
 ### Out of Scope
 
