@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.4.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-25T01:27:16.001Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-25T02:56:13.807Z"
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -51,6 +51,7 @@ Plan: 3 of 3
 | Phase 01 P03 | 600 | 2 tasks | 4 files |
 | Phase 02 P01 | 900 | 2 tasks | 1 files |
 | Phase 02 P02 | 900 | 2 tasks | 1 files |
+| Phase 02 P03 | 1800 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 02]: [Phase 02-01]: @apply text-stone-N inside @layer components and var(--color-stone-N) for borders both resolve correctly in Tailwind v4
 - [Phase 02-02]: D-07: filter-pill base background changed to var(--color-burgundy) — all rendered pills are active selections per search.js audit
 - [Phase 02-02]: D-08: pagination-link.active changed to var(--color-periwinkle) with text-stone-900 instead of burgundy-deep with white text
+- [Phase 02]: D-10: .detail-field a keeps text-stone-900 default; burgundy-light hover inherited from @layer base a:hover
+- [Phase 02]: D-11: .miller-item.selected and .miller-item.selected-ancestor left unchanged — only neutral chrome tokenised
+- [Phase 02]: TIFY !important flags preserved on all token replacements — TIFY injected CSS requires specificity override
 
 ### Pending Todos
 
@@ -85,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T01:27:15.997Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-25T02:56:13.803Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

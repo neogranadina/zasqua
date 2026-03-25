@@ -13,7 +13,7 @@ Three phases deliver the v0.4.0 milestone. Phase 1 lays the CSS foundations — 
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: CSS Foundations** - New typography and colour palette as CSS custom properties (completed 2026-03-24)
-- [ ] **Phase 2: Component Updates** - All page components updated to use the new visual identity
+- [x] **Phase 2: Component Updates** - All page components updated to use the new visual identity (completed 2026-03-25)
 - [ ] **Phase 3: AHRB Import** - Backend export, frontend rebuild, and deploy with ~106K pages
 
 ## Phase Details
@@ -52,7 +52,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Header tokenisation + nav hover underline (D-01), hero/masonry/footer/buttons/breadcrumb/cards tokenisation + masonry overlay (D-06)
 - [x] 02-02-PLAN.md — Search page tokenisation: sort/facets (D-09), active filter pills (D-07), active pagination (D-08)
-- [ ] 02-03-PLAN.md — Miller columns, description page, TIFY overrides, children tree tokenisation (D-10/D-11/D-12) + visual verification
+- [x] 02-03-PLAN.md — Miller columns, description page, TIFY overrides, children tree tokenisation (D-10/D-11/D-12) + visual verification
 
 **UI hint**: yes
 
@@ -74,5 +74,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. CSS Foundations | 3/3 | Complete   | 2026-03-24 |
-| 2. Component Updates | 1/3 | In Progress|  |
+| 2. Component Updates | 3/3 | Complete   | 2026-03-25 |
 | 3. AHRB Import | 0/? | Not started | - |

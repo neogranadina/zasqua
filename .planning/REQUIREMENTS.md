@@ -26,8 +26,8 @@ Requirements for the Visual Identity & AHRB Volumes milestone. Each maps to road
 - [x] **COMP-03**: Homepage hero updated — burgundy search button with periwinkle hover, Crimson Text title
 - [x] **COMP-04**: Homepage masonry grid preserved — only colour/typography changes (hover overlay becomes burgundy instead of blue)
 - [x] **COMP-05**: Search page updated — burgundy active filter pills, periwinkle active pagination, updated sort/facet styling
-- [ ] **COMP-06**: Description page updated — periwinkle level badges, burgundy links, updated metadata section headers
-- [ ] **COMP-07**: Repository page updated — periwinkle Miller column selection, burgundy links
+- [x] **COMP-06**: Description page updated — periwinkle level badges, burgundy links, updated metadata section headers
+- [x] **COMP-07**: Repository page updated — periwinkle Miller column selection, burgundy links
 - [x] **COMP-08**: Background colour changed to warm white (`#FAFAF9`) from pure white
 
 ### AHRB Import
@@ -67,8 +67,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMP-03 | Phase 2 | Complete |
 | COMP-04 | Phase 2 | Complete |
 | COMP-05 | Phase 2 | Complete |
-| COMP-06 | Phase 2 | Pending |
-| COMP-07 | Phase 2 | Pending |
+| COMP-06 | Phase 2 | Complete |
+| COMP-07 | Phase 2 | Complete |
 | COMP-08 | Phase 2 | Complete |
 | AHRB-01 | Phase 3 | Pending |
 | AHRB-02 | Phase 3 | Pending |
