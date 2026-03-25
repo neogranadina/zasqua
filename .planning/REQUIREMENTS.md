@@ -25,7 +25,7 @@ Requirements for the Visual Identity & AHRB Volumes milestone. Each maps to road
 - [ ] **COMP-02**: Footer redesigned — dark burgundy background (`#4A1522`) replacing navy, updated text styling
 - [ ] **COMP-03**: Homepage hero updated — burgundy search button with periwinkle hover, Crimson Text title
 - [ ] **COMP-04**: Homepage masonry grid preserved — only colour/typography changes (hover overlay becomes burgundy instead of blue)
-- [ ] **COMP-05**: Search page updated — periwinkle filter pills, burgundy active pagination, updated sort/facet styling
+- [ ] **COMP-05**: Search page updated — burgundy active filter pills, periwinkle active pagination, updated sort/facet styling
 - [ ] **COMP-06**: Description page updated — periwinkle level badges, burgundy links, updated metadata section headers
 - [ ] **COMP-07**: Repository page updated — periwinkle Miller column selection, burgundy links
 - [ ] **COMP-08**: Background colour changed to warm white (`#FAFAF9`) from pure white

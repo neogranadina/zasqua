@@ -2,8 +2,8 @@
 phase: 2
 slug: component-updates
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-24
 ---
 
@@ -38,15 +38,12 @@ created: 2026-03-24
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 1 | COMP-01 | grep | `grep 'border-bottom.*periwinkle\|hover.*underline' src/css/input.css` | ✅ | ⬜ pending |
-| 02-01-02 | 01 | 1 | COMP-01 | grep | `grep -c '#1C1917\|#dedede\|#f0f0f0\|#A8A29E' src/css/input.css` | ✅ | ⬜ pending |
-| 02-02-01 | 02 | 1 | COMP-02 | grep | `grep 'burgundy-dark\|4A1522' src/css/input.css` | ✅ | ⬜ pending |
-| 02-03-01 | 03 | 1 | COMP-03 | grep | `grep 'masonry.*overlay\|rgba.*139.*41.*66' src/css/input.css` | ✅ | ⬜ pending |
-| 02-04-01 | 04 | 1 | COMP-04 | grep | `grep 'filter-pill.*burgundy\|bg-burgundy' src/css/input.css` | ✅ | ⬜ pending |
-| 02-04-02 | 04 | 1 | COMP-05 | grep | `grep 'pagination.*periwinkle' src/css/input.css` | ✅ | ⬜ pending |
-| 02-05-01 | 05 | 1 | COMP-06 | grep | `grep 'level.*badge\|periwinkle' src/css/input.css` | ✅ | ⬜ pending |
-| 02-05-02 | 05 | 1 | COMP-07 | visual | Manual check — Miller column selection | N/A | ⬜ pending |
-| 02-06-01 | 06 | 1 | COMP-08 | grep | `grep -cE '#[0-9a-fA-F]{3,6}' src/css/input.css` (count should decrease) | ✅ | ⬜ pending |
+| 02-01-T1 | 01 | 1 | COMP-01 | grep | `grep 'border-bottom.*periwinkle' src/css/input.css` | ✅ | ⬜ pending |
+| 02-01-T2 | 01 | 1 | COMP-02, COMP-03, COMP-04, COMP-08 | grep | `grep -cE '#[0-9a-fA-F]{3,6}' src/css/input.css` + masonry overlay check | ✅ | ⬜ pending |
+| 02-02-T1 | 02 | 2 | COMP-05 | grep | `grep 'sort\|facet' src/css/input.css` — stone token verification | ✅ | ⬜ pending |
+| 02-02-T2 | 02 | 2 | COMP-05 | grep | `grep 'filter-pill' src/css/input.css` + `grep 'pagination-link.active' src/css/input.css` | ✅ | ⬜ pending |
+| 02-03-T1 | 03 | 3 | COMP-06, COMP-07 | grep | `grep -cE '#[0-9a-fA-F]{3,6}' src/css/input.css` + TIFY `!important` count | ✅ | ⬜ pending |
+| 02-03-T2 | 03 | 3 | All | visual | `npx @11ty/eleventy --dryrun` + manual visual verification of all page types | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -73,11 +70,11 @@ Existing infrastructure covers all phase requirements. No test framework install
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (N/A — no test framework needed)
+- [x] No watch-mode flags
+- [x] Feedback latency < 5s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved (plan-checker verified all tasks have automated verify commands)
