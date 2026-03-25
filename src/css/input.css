@@ -80,7 +80,7 @@
 
   .site-header {
     background-color: var(--color-bg);
-    border-bottom: 1px solid #dedede;
+    border-bottom: 1px solid var(--color-stone-300);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -109,7 +109,7 @@
     font-size: 1.6rem;
     font-weight: 400;
     white-space: nowrap;
-    color: #1C1917;
+    @apply text-stone-900;
     line-height: 0.9;
   }
 
@@ -134,20 +134,22 @@
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #1C1917;
+    @apply text-stone-900;
     padding: 0.5rem 0;
   }
 
   .site-nav a:hover,
   .site-nav a.active {
-    color: #A8A29E;
+    @apply text-stone-900;
     text-decoration: none;
+    border-bottom: 2px solid var(--color-periwinkle);
+    padding-bottom: calc(0.5rem - 2px);
   }
 
   /* Search in header */
   .header-search {
     display: flex;
-    border: 1px solid #dedede;
+    border: 1px solid var(--color-stone-300);
     border-radius: 50px;
     overflow: hidden;
     background: var(--color-bg);
@@ -167,7 +169,7 @@
     border: none;
     padding: 8px 14px;
     cursor: pointer;
-    color: #1C1917;
+    @apply text-stone-900;
     border-radius: 0 50px 50px 0;
     display: flex;
     align-items: center;
@@ -184,7 +186,7 @@
     border: none;
     cursor: pointer;
     padding: 0.5rem;
-    color: #1C1917;
+    @apply text-stone-900;
     line-height: 1;
   }
 
@@ -212,7 +214,7 @@
       width: 100%;
       gap: 0;
       padding-top: 0.75rem;
-      border-top: 1px solid #dedede;
+      border-top: 1px solid var(--color-stone-300);
       margin-top: 0.75rem;
     }
 
@@ -223,7 +225,7 @@
     .site-nav a {
       padding: 0.75rem 0;
       text-align: center;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--color-stone-100);
       width: 100%;
     }
 
