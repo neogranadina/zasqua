@@ -64,7 +64,13 @@ Plans:
   1. The AHRB repository landing page is accessible on zasqua.org and lists volume records
   2. Individual AHRB volume description pages load correctly with IIIF viewer links
   3. The rebuilt site has approximately 106K pages deployed to R2 (verified via build log or page count)
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Fresh backend export, B2 upload, version bump to 0.4.0
+- [ ] 03-02-PLAN.md — Port all changes to public repo, deploy, verify live site
+
+**UI hint**: no
 
 ## Progress
 
@@ -75,4 +81,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. CSS Foundations | 3/3 | Complete   | 2026-03-24 |
 | 2. Component Updates | 3/3 | Complete   | 2026-03-25 |
-| 3. AHRB Import | 0/? | Not started | - |
+| 3. AHRB Import | 0/2 | Not started | - |
