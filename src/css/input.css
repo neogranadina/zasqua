@@ -1739,7 +1739,7 @@
      ==================== */
 
   .miller-columns {
-    border: 1px solid #dedede;
+    border: 1px solid var(--color-stone-300);
     background: #fff;
     margin: 1.5rem 0;
     min-height: 400px;
@@ -1758,7 +1758,7 @@
     flex: 0 0 280px;
     min-width: 280px;
     max-width: 350px;
-    border-right: 1px solid #dedede;
+    border-right: 1px solid var(--color-stone-300);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -1773,9 +1773,8 @@
     padding: 10px 15px;
     font-weight: 600;
     font-size: 14px;
-    color: #1C1917;
-    background: #F5F5F4;
-    border-bottom: 1px solid #dedede;
+    @apply text-stone-900 bg-stone-100;
+    border-bottom: 1px solid var(--color-stone-300);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -1793,7 +1792,7 @@
     display: block;
     padding: 10px 15px;
     cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-stone-100);
     transition: background-color 0.15s ease;
   }
 
@@ -1846,7 +1845,7 @@
 
   .miller-item-subtitle {
     font-size: 11px;
-    color: #A8A29E;
+    @apply text-stone-400;
     font-family: monospace;
     margin-top: 2px;
   }
@@ -1857,13 +1856,13 @@
 
   .miller-item-count {
     font-size: 12px;
-    color: #A8A29E;
+    @apply text-stone-400;
   }
 
   .miller-item-arrow {
     flex-shrink: 0;
     font-size: 18px;
-    color: #ccc;
+    color: var(--color-stone-300);
     margin-left: 10px;
   }
 
@@ -1884,7 +1883,7 @@
   }
 
   .miller-item-metadata .metadata-refcode {
-    color: #A8A29E;
+    @apply text-stone-400;
     font-size: 11px;
     font-family: monospace;
     margin-bottom: 0;
@@ -1892,7 +1891,7 @@
 
   .miller-item-metadata .metadata-divider {
     border: none;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--color-stone-300);
     margin: 6px 0;
   }
 
@@ -1901,18 +1900,18 @@
   }
 
   .miller-item-metadata .metadata-count {
-    color: #A8A29E;
+    @apply text-stone-400;
     font-size: 12px;
   }
 
   .miller-item-metadata .metadata-date {
-    color: #A8A29E;
+    @apply text-stone-400;
     font-size: 12px;
     font-style: italic;
   }
 
   .miller-item-metadata .metadata-scope {
-    color: #78716C;
+    @apply text-stone-500;
   }
 
   .miller-item-metadata .metadata-link {
@@ -1955,8 +1954,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #e8e8e8;
-    color: #333;
+    @apply bg-stone-200 text-stone-800;
     border-radius: 50px;
     padding: 0.5rem 1.25rem;
     font-size: 0.85rem;
@@ -1964,8 +1962,8 @@
   }
 
   .search-collection-link:hover {
-    background: #d8d8d8;
-    color: #333;
+    background: var(--color-stone-300);
+    @apply text-stone-800;
     text-decoration: none;
   }
 
@@ -1985,7 +1983,7 @@
     width: 100%;
     margin-top: 6px;
     padding: 4px 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-stone-300);
     border-radius: 3px;
     font-size: 12px;
     outline: none;
@@ -2042,13 +2040,13 @@
     border: 1px solid #b8c4f0;
     border-radius: 3px;
     padding: 2px 8px;
-    color: #1C1917;
+    @apply text-stone-900;
     white-space: nowrap;
   }
 
   .desc-notice {
-    background: #fafafa;
-    border: 1px solid #dedede;
+    @apply bg-stone-50;
+    border: 1px solid var(--color-stone-300);
     border-radius: 4px;
     padding: 2rem;
     text-align: center;
@@ -2056,7 +2054,7 @@
 
   .desc-notice-icon {
     font-size: 48px;
-    color: #A8A29E;
+    @apply text-stone-400;
     display: block;
     margin-bottom: 1rem;
   }
@@ -2064,20 +2062,20 @@
   .desc-notice-title {
     font-weight: 600;
     font-size: 1rem;
-    color: #1C1917;
+    @apply text-stone-900;
     margin-bottom: 0.5rem;
   }
 
   .desc-notice-text {
     font-size: 14px;
-    color: #78716C;
+    @apply text-stone-500;
     line-height: 1.6;
     margin: 0 0 1rem;
   }
 
   .desc-notice-repo {
     font-size: 13px;
-    color: #A8A29E;
+    @apply text-stone-400;
     margin: 0;
   }
 
@@ -2097,15 +2095,15 @@
 
   .reuse-blurb {
     font-size: 14px;
-    color: #78716C;
+    @apply text-stone-500;
     line-height: 1.6;
     margin: 0 0 1rem;
   }
 
   .reuse-blurb a {
-    color: #1C1917;
+    @apply text-stone-900;
     text-decoration: underline;
-    text-decoration-color: #ccc;
+    text-decoration-color: var(--color-stone-300);
     text-underline-offset: 2px;
   }
 
@@ -2116,7 +2114,7 @@
   .reuse-manifest-label {
     display: block;
     font-size: 14px;
-    color: #1C1917;
+    @apply text-stone-900;
     margin-bottom: 8px;
   }
 
@@ -2129,8 +2127,7 @@
   .reuse-manifest-url {
     flex: 1;
     font-size: 13px;
-    color: #78716C;
-    background: #F5F5F4;
+    @apply text-stone-500 bg-stone-100;
     padding: 8px 12px;
     border-radius: 4px;
     overflow: hidden;
@@ -2145,18 +2142,18 @@
     align-items: center;
     gap: 4px;
     padding: 8px 14px;
-    border: 1px solid #dedede;
+    border: 1px solid var(--color-stone-300);
     border-radius: 50px;
     background: #fff;
     cursor: pointer;
     font-family: var(--font-sans);
     font-size: 13px;
-    color: #78716C;
+    @apply text-stone-500;
     transition: background-color 0.15s ease;
   }
 
   .reuse-copy-btn:hover {
-    background-color: #f5f5f5;
+    @apply bg-stone-100;
   }
 
   .reuse-copy-btn .material-symbols-outlined {
@@ -2164,9 +2161,9 @@
   }
 
   .detail-field a {
-    color: #1C1917;
+    @apply text-stone-900;
     text-decoration: underline;
-    text-decoration-color: #ccc;
+    text-decoration-color: var(--color-stone-300);
     text-underline-offset: 2px;
   }
 
@@ -2183,7 +2180,7 @@
   /* TIFY header overrides — !important required to override TIFY's internal CSS (Pitfall 5) */
   .desc-viewer .tify-header {
     background: #fff !important;
-    border-bottom: 1px solid #dedede !important;
+    border-bottom: 1px solid var(--color-stone-300) !important;
     box-shadow: none !important;
     padding: 0.35rem 0.5rem !important;
   }
@@ -2213,9 +2210,9 @@
 
   .desc-viewer .tify-page-select-button {
     border-radius: 50px !important;
-    border: 1px solid #ddd !important;
-    background: #f8f8f8 !important;
-    color: #78716C !important;
+    border: 1px solid var(--color-stone-300) !important;
+    background: var(--color-stone-50) !important;
+    color: var(--color-stone-500) !important;
     font-family: var(--font-sans) !important;
     font-size: 0.8rem !important;
     height: 36px !important;
@@ -2235,8 +2232,8 @@
 
   .desc-viewer .tify-header-button-group.-pagination .tify-header-button {
     border-radius: 50px !important;
-    border: 1px solid #ddd !important;
-    background: #f8f8f8 !important;
+    border: 1px solid var(--color-stone-300) !important;
+    background: var(--color-stone-50) !important;
     height: 36px !important;
     min-height: 36px !important;
     width: 36px !important;
@@ -2249,7 +2246,7 @@
 
   .desc-viewer .tify-header-button-group.-pagination .tify-header-button:hover {
     background: #fff !important;
-    border-color: #bbb !important;
+    border-color: var(--color-stone-400) !important;
   }
 
   .desc-viewer .tify-header-button-group.-pagination .tify-header-button svg {
@@ -2263,9 +2260,8 @@
   /* Injected pill buttons (created by description.js) */
   .viewer-pill {
     border-radius: 50px;
-    border: 1px solid #ddd;
-    background: #f8f8f8;
-    color: #78716C;
+    border: 1px solid var(--color-stone-300);
+    @apply bg-stone-50 text-stone-500;
     font-family: var(--font-sans);
     font-size: 0.8rem;
     height: 36px;
@@ -2282,7 +2278,7 @@
 
   .viewer-pill:hover {
     background: #fff;
-    border-color: #bbb;
+    border-color: var(--color-stone-400);
   }
 
   .viewer-pill .material-symbols-outlined {
@@ -2330,7 +2326,7 @@
   }
 
   .children-tree-bordered {
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--color-stone-100);
   }
 
   .children-tree-row {
@@ -2351,7 +2347,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #A8A29E;
+    @apply text-stone-400;
   }
 
   .children-tree-chevron {
@@ -2382,7 +2378,7 @@
 
   .children-tree-title {
     font-size: 0.95rem;
-    color: #1C1917;
+    @apply text-stone-900;
   }
 
   .children-tree-title:hover {
@@ -2395,21 +2391,21 @@
 
   .children-tree-meta {
     font-size: 13px;
-    color: #A8A29E;
+    @apply text-stone-400;
     margin-top: 2px;
   }
 
   .children-tree-refcode {
     font-family: monospace;
     font-size: 12px;
-    color: #A8A29E;
+    @apply text-stone-400;
     margin-top: 2px;
   }
 
   .children-tree-nested {
     display: none;
     padding-left: 2rem;
-    border-left: 2px solid #f0f0f0;
+    border-left: 2px solid var(--color-stone-100);
     margin-left: 11px;
   }
 
@@ -2422,13 +2418,13 @@
   }
 
   .children-tree-nested-bordered {
-    border-bottom: 1px solid #f5f5f5;
+    border-bottom: 1px solid var(--color-stone-100);
   }
 
   .children-tree-more {
     padding: 0.75rem 0;
     padding-left: 2rem;
-    border-left: 2px solid #f0f0f0;
+    border-left: 2px solid var(--color-stone-100);
     margin-left: 11px;
   }
 
