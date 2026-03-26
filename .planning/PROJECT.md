@@ -34,8 +34,12 @@ Open-access discovery interface for digitised historical archives — fast, cach
 - Pre-built description aggregates for entities and places (build-time, no runtime API)
 - PMTiles on R2 for serverless maps (MapLibre GL JS)
 - Fix missing nav keys in public repo ui.js (Acerca, Catalogación)
+- Build pipeline OOM verification — single vs parallel Eleventy build decision (deferred from Phase 4 to Phase 6, when entity/place templates exist to profile)
 
 ### Recently Validated
+
+- Pre-compute scripts for entity/place link shards, index files (D-06/D-07), and co-occurrence graph — v0.5.0 Phase 4
+- Build pipeline wiring (B2 downloads, pre-compute steps, passthrough copies) — v0.5.0 Phase 4
 
 - New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals — v0.4.0 Phase 1
 - All hardcoded hex colours replaced with Tailwind stone-scale tokens and brand colour variables — v0.4.0 Phase 2
@@ -63,7 +67,7 @@ Open-access discovery interface for digitised historical archives — fast, cach
 - **No runtime server** — everything is static, pre-built
 - **Client-side search only** — Pagefind indexes at build time
 - **Build time** — ~14 minutes for Eleventy + Pagefind at 106K pages; adding ~100K entity/place pages will significantly increase this unless build architecture is reworked
-- **Build architecture (open question)** — entity/place pages could fold into the existing Eleventy build, run as separate independent builds merged before upload, or use incremental builds. Research spike should explore options.
+- **Build architecture (open question)** — Phase 4 wired a single Eleventy build; parallel split deferred to Phase 6 when entity/place templates exist and build times can be profiled
 - **File count** — exceeds Cloudflare Pages' 100K limit, hence R2 + Worker
 
 ## Key Decisions
@@ -113,4 +117,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 — milestone v0.5.0 started*
+*Last updated: 2026-03-26 — Phase 4 complete, data pipeline wired*
