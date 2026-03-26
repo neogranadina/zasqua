@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-03-26T21:48:30.302Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-26T21:51:55.641Z"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -63,6 +63,8 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - Pagefind strategy for entity/place pages unresolved: separate JSON filtering vs. metadata attributes — resolve in Phase 4 planning
 - [Phase 04]: precompute-links.js renames latitude/longitude to lat/lon when writing place-index.json (D-07)
 - [Phase 04]: COOCCURRENCE_MIN_WEIGHT defaults to 3; configurable for Phase 9 threshold tuning
+- [Phase 04]: Pre-compute steps placed before npm install in CI — scripts use only Node.js stdlib
+- [Phase 04]: Single Eleventy build retained — profile first, split only if build exceeds ~25 min
 
 ### Pending Todos
 
@@ -77,6 +79,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-26T21:48:30.299Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-03-26T21:51:55.637Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None

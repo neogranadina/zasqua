@@ -14,7 +14,7 @@ Phase numbering continues from v0.4.0 (which completed at Phase 3).
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 4: Build Pipeline & Data Pre-compute** - Separate Eleventy builds, pre-computed JSON shards, CI within timeout
+- [x] **Phase 4: Build Pipeline & Data Pre-compute** - Separate Eleventy builds, pre-computed JSON shards, CI within timeout (completed 2026-03-26)
 - [ ] **Phase 5: PMTiles Infrastructure** - Tippecanoe tile generation, dedicated Cloudflare Worker, range request verification
 - [ ] **Phase 6: Entity & Place Detail Pages** - ~100K entity and place pages with embedded maps and linked description shards
 - [ ] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map
@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 Plans:
 - [x] 04-01-PLAN.md — Pre-compute scripts and data loaders
-- [ ] 04-02-PLAN.md — Build pipeline wiring (eleventy.config.js, build.sh, deploy.yml)
+- [x] 04-02-PLAN.md — Build pipeline wiring (eleventy.config.js, build.sh, deploy.yml)
 
 ### Phase 5: PMTiles Infrastructure
 **Goal**: A dedicated Cloudflare Worker serves PMTiles from R2 with correct Range request handling and CORS headers, verified end-to-end on the production domain
@@ -105,7 +105,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 4. Build Pipeline & Data Pre-compute | 1/2 | In Progress|  |
+| 4. Build Pipeline & Data Pre-compute | 2/2 | Complete   | 2026-03-26 |
 | 5. PMTiles Infrastructure | 0/? | Not started | - |
 | 6. Entity & Place Detail Pages | 0/? | Not started | - |
 | 7. Place Explorer | 0/? | Not started | - |
