@@ -15,7 +15,7 @@ Phase numbering continues from v0.4.0 (which completed at Phase 3).
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 4: Build Pipeline & Data Pre-compute** - Separate Eleventy builds, pre-computed JSON shards, CI within timeout (completed 2026-03-26)
-- [ ] **Phase 5: PMTiles Infrastructure** - Tippecanoe tile generation, dedicated Cloudflare Worker, range request verification
+- [x] **Phase 5: PMTiles Infrastructure** - Tippecanoe tile generation, dedicated Cloudflare Worker, range request verification (completed 2026-03-26)
 - [ ] **Phase 6: Entity & Place Detail Pages** - ~100K entity and place pages with embedded maps and linked description shards
 - [ ] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map
 - [ ] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list
@@ -49,7 +49,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 05-01-PLAN.md — GeoJSON conversion script and Protomaps tiles Worker
-- [ ] 05-02-PLAN.md — CI pipeline integration and end-to-end verification
+- [x] 05-02-PLAN.md — CI pipeline integration and end-to-end verification
 
 ### Phase 6: Entity & Place Detail Pages
 **Goal**: Every entity and place has a publicly accessible detail page with correct metadata, authority links, and linked archival descriptions loaded from pre-built JSON shards
@@ -108,7 +108,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 4. Build Pipeline & Data Pre-compute | 2/2 | Complete   | 2026-03-26 |
-| 5. PMTiles Infrastructure | 1/2 | In Progress|  |
+| 5. PMTiles Infrastructure | 2/2 | Complete   | 2026-03-26 |
 | 6. Entity & Place Detail Pages | 0/? | Not started | - |
 | 7. Place Explorer | 0/? | Not started | - |
 | 8. Entity Explorer — List View | 0/? | Not started | - |

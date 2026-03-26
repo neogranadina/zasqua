@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 05-pmtiles-infrastructure-01-PLAN.md
-last_updated: "2026-03-26T23:37:22.957Z"
+status: Phase complete — ready for verification
+stopped_at: "Completed 05-pmtiles-infrastructure-02-PLAN.md (Task 1); awaiting checkpoint:human-verify at Task 2"
+last_updated: "2026-03-26T23:40:57.597Z"
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -66,6 +66,7 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 04]: Pre-compute steps placed before npm install in CI — scripts use only Node.js stdlib
 - [Phase 04]: Single Eleventy build retained — profile first, split only if build exceeds ~25 min
 - [Phase 05-pmtiles-infrastructure]: Inlined protomaps/PMTiles shared helpers (pmtiles_path, tile_path) into worker-tiles/src/index.ts — monorepo-relative import path cannot resolve from standalone directory
+- [Phase 05-pmtiles-infrastructure]: Tippecanoe pinned to 2.72.0 in CI for reproducible builds; boto3 single PUT used for R2 upload to zasqua-tiles
 
 ### Pending Todos
 
@@ -80,6 +81,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-26T23:37:22.954Z
-Stopped at: Completed 05-pmtiles-infrastructure-01-PLAN.md
+Last session: 2026-03-26T23:40:57.593Z
+Stopped at: Completed 05-pmtiles-infrastructure-02-PLAN.md (Task 1); awaiting checkpoint:human-verify at Task 2
 Resume file: None
