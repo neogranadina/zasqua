@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: Entity & Place Discovery
-status: Defining requirements
-stopped_at: Milestone v0.5.0 started — defining requirements
+status: Ready to plan
+stopped_at: Roadmap created — ready to plan Phase 4
 last_updated: "2026-03-26T00:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -19,14 +19,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Defining requirements for v0.5.0 — Entity & Place Discovery
+**Current focus:** Phase 4 — Build Pipeline & Data Pre-compute
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-26 — Milestone v0.5.0 started
+Phase: 4 of 9 (Build Pipeline & Data Pre-compute)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-03-26 — v0.5.0 roadmap created; phase numbering continues from v0.4.0 Phase 3
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -41,6 +43,10 @@ Last activity: 2026-03-26 — Milestone v0.5.0 started
 | Phase 03-ahrb-import P01 | 300 | 2 tasks | 1 files |
 | Phase 03-ahrb-import P02 | 2700 | 3 tasks | 15 files |
 
+**v0.5.0 Velocity:**
+- Total plans completed: 0
+- Average duration: —
+
 ## Accumulated Context
 
 ### Decisions
@@ -52,16 +58,26 @@ Carried from v0.4.0:
 - Tailwind v4 standalone CLI — no npm dependency
 - Porting done in thematic commits — version bump last
 
+v0.5.0 decisions (pending confirmation in Phase 4 planning):
+
+- Separate Eleventy build for entity/place pages is mandatory — existing build already uses ~6 GB heap; adding 100K pages to same process will OOM on GitHub Actions
+- PMTiles requires a dedicated Cloudflare Worker — Range request pass-through and CORS must be set at Worker level; do not modify site Worker
+- Entity co-occurrence graph deferred to Phase 9 (post list-view validation) — threshold parameters require real data inspection
+- Pagefind strategy for entity/place pages unresolved: separate JSON filtering vs. metadata attributes — resolve in Phase 4 planning
+
 ### Pending Todos
 
-- Fix missing ui.js nav keys (Acerca, Catalogación) in public repo — fold into v0.5.0
+- FIX-01 (ui.js nav keys) already pushed to public repo — mark complete
 
 ### Blockers/Concerns
 
-None yet.
+- **Phase 4**: Entity/place links export format needs confirmation against actual backend export before writing `precompute-links.js`
+- **Phase 4**: Pagefind strategy for entity/place pages unresolved — affects entity explorer search UX
+- **Phase 5**: Protomaps Worker + custom domain CORS chain has known gap; allow extra debug time; test Firefox and Safari
+- **Phase 9**: Co-occurrence threshold parameters cannot be set until script runs against real data
 
 ## Session Continuity
 
 Last session: 2026-03-26
-Stopped at: Milestone v0.5.0 started — defining requirements
+Stopped at: Roadmap created — ready to plan Phase 4
 Resume file: None

@@ -1,84 +1,110 @@
-# Roadmap: Zasqua Frontend — v0.4.0 Visual Identity & AHRB Volumes
+# Roadmap: Zasqua Frontend — v0.5.0 Entity & Place Discovery
 
 ## Overview
 
-Three phases deliver the v0.4.0 milestone. Phase 1 lays the CSS foundations — new typefaces and colour palette as custom properties. Phase 2 applies those foundations across every component and page type. Phase 3 imports the AHRB notarial volumes so new content lands in the finished design.
+Six phases deliver the v0.5.0 milestone. The dependency chain is non-negotiable: the build pipeline and data pre-compute must be confirmed working before any templates are written; PMTiles infrastructure must be deployed and verified before any map code is touched; detail pages must exist before explorers can link to them; the place explorer (simpler) comes before the entity explorer (more complex); and the network graph ships after the entity explorer list view is validated against real co-occurrence data.
+
+Phase numbering continues from v0.4.0 (which completed at Phase 3).
 
 ## Phases
 
 **Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+- Integer phases (4–9): Planned milestone work
+- Decimal phases (4.1, 4.2): Urgent insertions (marked with INSERTED)
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: CSS Foundations** - New typography and colour palette as CSS custom properties (completed 2026-03-24)
-- [x] **Phase 2: Component Updates** - All page components updated to use the new visual identity (completed 2026-03-25)
-- [x] **Phase 3: AHRB Import** - Backend export, frontend rebuild, and deploy with ~106K pages (completed 2026-03-25)
+- [ ] **Phase 4: Build Pipeline & Data Pre-compute** - Separate Eleventy builds, pre-computed JSON shards, CI within timeout
+- [ ] **Phase 5: PMTiles Infrastructure** - Tippecanoe tile generation, dedicated Cloudflare Worker, range request verification
+- [ ] **Phase 6: Entity & Place Detail Pages** - ~100K entity and place pages with embedded maps and linked description shards
+- [ ] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map
+- [ ] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list
+- [ ] **Phase 9: Entity Network Graph** - Sigma.js network graph with pre-computed ForceAtlas2 layout
 
 ## Phase Details
 
-### Phase 1: CSS Foundations
-**Goal**: Tailwind CSS v4 standalone CLI integrated into the build pipeline, all design tokens defined via @theme, Google Fonts updated to DM Sans / Crimson Text / Cormorant Garamond, all templates converted to utility classes, main.css reduced to a Tailwind input stylesheet with @layer components for complex components — no hardcoded hex values remaining
-**Depends on**: Nothing (first phase)
-**Requirements**: VIS-01, VIS-02, COL-01, COL-02, COL-03, COL-04
+### Phase 4: Build Pipeline & Data Pre-compute
+**Goal**: The build system generates entity and place pages in a separate Eleventy process without OOM, pre-computed JSON shards are correct, and CI completes within the GitHub Actions timeout
+**Depends on**: Nothing (first phase of milestone; builds on the existing v0.4.0 architecture)
+**Requirements**: BUILD-01, BUILD-02, BUILD-03, BUILD-06
 **Success Criteria** (what must be TRUE):
-  1. Page text renders in DM Sans; the logotype renders in Crimson Text; display headings render in Cormorant Garamond
-  2. The primary colour throughout the site is burgundy (#8B2942) — visible in buttons and active states
-  3. No blue or orange accent colours remain — all interactive elements use periwinkle or burgundy
-  4. The page background is warm white (#FAFAF9) rather than pure white
-  5. Inspecting the stylesheet shows no hardcoded hex values outside the `:root` custom properties block
-**Plans**: 3 plans
+  1. A CI run builds all description pages and all entity/place pages as two parallel Eleventy processes and merges outputs without crashing or exceeding the GitHub Actions memory limit
+  2. Per-entity JSON shards exist in `data/entity-links/` and per-place JSON shards exist in `data/place-links/`, each containing the correct linked descriptions for a spot-checked sample
+  3. A pre-computed entity co-occurrence JSON file exists with configurable minimum edge weight filtering applied
+  4. The full build (descriptions + entity/place + Pagefind + R2 upload) completes within 60 minutes on GitHub Actions
+**Plans**: TBD
 
-Plans:
-- [x] 01-01-PLAN.md — Infrastructure: Tailwind CLI, input.css with @theme tokens, Google Fonts, build pipeline
-- [x] 01-02-PLAN.md — Layout shell: header, footer, hero, masonry, buttons, breadcrumb, cards + template conversion
-- [x] 01-03-PLAN.md — Interactive components: search, Miller columns, description page, TIFY, children tree + visual verification
-
+### Phase 5: PMTiles Infrastructure
+**Goal**: A dedicated Cloudflare Worker serves PMTiles from R2 with correct Range request handling and CORS headers, verified end-to-end on the production domain
+**Depends on**: Phase 4 (CI pipeline must handle PMTiles upload)
+**Requirements**: BUILD-04, BUILD-05
+**Success Criteria** (what must be TRUE):
+  1. `zasqua-places.pmtiles` is generated by Tippecanoe from place coordinate data and uploaded to R2 via CI
+  2. A dedicated Cloudflare Worker (separate from the site Worker) is deployed and routes requests to `tiles.zasqua.org`
+  3. HTTP 206 (partial content) responses are returned for MapLibre range requests, verified in both Firefox and Safari
+  4. CORS headers on tile responses permit cross-origin requests from zasqua.org
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 2: Component Updates
-**Goal**: Every page type — home, search, repository, and description — is fully redesigned with the new header, footer, and interactive component styling
-**Depends on**: Phase 1
-**Requirements**: COMP-01, COMP-02, COMP-03, COMP-04, COMP-05, COMP-06, COMP-07, COMP-08
+### Phase 6: Entity & Place Detail Pages
+**Goal**: Every entity and place has a publicly accessible detail page with correct metadata, authority links, and linked archival descriptions loaded from pre-built JSON shards
+**Depends on**: Phase 4 (JSON shards), Phase 5 (PMTiles for embedded maps on place pages)
+**Requirements**: PLACE-01, PLACE-02, PLACE-03, PLACE-04, PLACE-05, ENT-01, ENT-02, ENT-03, ENT-04, ENT-05
 **Success Criteria** (what must be TRUE):
-  1. The header shows the pomegranate logo and "Neogranadina: Zasqua" lockup in Crimson Text with DM Sans navigation and periwinkle hover underlines
-  2. The footer has a dark burgundy (#4A1522) background replacing the previous navy
-  3. The homepage hero search button is burgundy; hovering turns it periwinkle; the masonry grid overlay is burgundy
-  4. Search page filter pills and active pagination use periwinkle/burgundy; no blue accent colours remain
-  5. Description pages show periwinkle level badges and burgundy links; repository pages show periwinkle Miller column selection
-**Plans**: 3 plans
-
-Plans:
-- [x] 02-01-PLAN.md — Header tokenisation + nav hover underline (D-01), hero/masonry/footer/buttons/breadcrumb/cards tokenisation + masonry overlay (D-06)
-- [x] 02-02-PLAN.md — Search page tokenisation: sort/facets (D-09), active filter pills (D-07), active pagination (D-08)
-- [x] 02-03-PLAN.md — Miller columns, description page, TIFY overrides, children tree tokenisation (D-10/D-11/D-12) + visual verification
-
+  1. An entity detail page at `/entidad/{code}/` shows the entity's display name, type label in Spanish, structured name fields, date range, and primary function
+  2. An entity detail page shows name variants and biographical note (dates of existence, history) when that data is present in the source record
+  3. An entity detail page loads its linked archival descriptions from a pre-built JSON shard and displays them as a browsable list
+  4. A place detail page at `/lugar/{display_name}/` shows the place name, type label in Spanish, name variants, and an embedded interactive map for places with coordinates
+  5. A place detail page shows only the authority links (Wikidata, WHG, HGIS) that exist for that record — no empty link slots
+  6. A place detail page loads its linked archival descriptions from a pre-built JSON shard and displays them as a browsable list
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 3: AHRB Import
-**Goal**: The 542 AHRB notarial volumes are live on zasqua.org, rendered in the new visual identity
-**Depends on**: Phase 2
-**Requirements**: AHRB-01, AHRB-02, AHRB-03
+### Phase 7: Place Explorer
+**Goal**: Users can search and filter the 8,177 places and see matching results on an interactive heatmap map
+**Depends on**: Phase 5 (PMTiles), Phase 6 (place detail pages to link to)
+**Requirements**: PEXP-01, PEXP-02, PEXP-03, PEXP-04
 **Success Criteria** (what must be TRUE):
-  1. The AHRB repository landing page is accessible on zasqua.org and lists volume records
-  2. Individual AHRB volume description pages load correctly with IIIF viewer links
-  3. The rebuilt site has approximately 106K pages deployed to R2 (verified via build log or page count)
-**Plans**: 2 plans
+  1. A user on `/explorar/lugares/` can type a place name and see matching results appear without a full-page reload
+  2. A user can filter places by place type, presence of coordinates, and presence of authority links; the results list and map update in sync
+  3. Filtered results are rendered as a heatmap on a MapLibre map using PMTiles tiles; the heatmap updates as filters change
+  4. A results list alongside the map shows place names and types, each linking to the corresponding place detail page
+**Plans**: TBD
+**UI hint**: yes
 
-Plans:
-- [x] 03-01-PLAN.md — Fresh backend export, B2 upload, version bump to 0.4.0
-- [x] 03-02-PLAN.md — Port all changes to public repo, deploy, verify live site
+### Phase 8: Entity Explorer — List View
+**Goal**: Users can search and filter the 92,042 entities and browse a paginated results list without the browser rendering all 92K records to the DOM
+**Depends on**: Phase 6 (entity detail pages to link to)
+**Requirements**: EEXP-01, EEXP-02, EEXP-03
+**Success Criteria** (what must be TRUE):
+  1. A user on `/explorar/entidades/` can type an entity name and see matching results appear without a full-page reload
+  2. A user can filter entities by entity type, primary function, and date range; results update in sync
+  3. The results list uses virtual rendering or pagination — never more than a few hundred DOM nodes regardless of result count; browsing through 92K entity results does not freeze the browser
+**Plans**: TBD
+**UI hint**: yes
 
-**UI hint**: no
+### Phase 9: Entity Network Graph
+**Goal**: The entity explorer includes a network graph showing entity co-occurrence through shared documents, rendered from pre-computed layout positions with ego-network expansion on click
+**Depends on**: Phase 4 (co-occurrence JSON), Phase 8 (entity explorer to integrate with)
+**Requirements**: GRAPH-01, GRAPH-02, GRAPH-03, GRAPH-04
+**Success Criteria** (what must be TRUE):
+  1. The entity explorer page renders a network graph using Sigma.js with node positions drawn from pre-computed ForceAtlas2 layout data — no force simulation runs in the browser
+  2. Clicking a graph node expands its ego-network (the node and its immediate neighbours) and highlights those entities in the results list
+  3. Hovering a node shows the entity name; clicking navigates to the entity detail page
+  4. The graph updates to reflect the current search and facet filter state — nodes outside the filtered result set are visually suppressed or hidden
+**Plans**: TBD
+**UI hint**: yes
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3
+Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. CSS Foundations | 3/3 | Complete   | 2026-03-24 |
-| 2. Component Updates | 3/3 | Complete   | 2026-03-25 |
-| 3. AHRB Import | 2/2 | Complete   | 2026-03-25 |
+| 4. Build Pipeline & Data Pre-compute | 0/? | Not started | - |
+| 5. PMTiles Infrastructure | 0/? | Not started | - |
+| 6. Entity & Place Detail Pages | 0/? | Not started | - |
+| 7. Place Explorer | 0/? | Not started | - |
+| 8. Entity Explorer — List View | 0/? | Not started | - |
+| 9. Entity Network Graph | 0/? | Not started | - |

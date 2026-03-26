@@ -115,33 +115,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUILD-01 | — | Pending |
-| BUILD-02 | — | Pending |
-| BUILD-03 | — | Pending |
-| BUILD-04 | — | Pending |
-| BUILD-05 | — | Pending |
-| BUILD-06 | — | Pending |
-| PLACE-01 | — | Pending |
-| PLACE-02 | — | Pending |
-| PLACE-03 | — | Pending |
-| PLACE-04 | — | Pending |
-| PLACE-05 | — | Pending |
-| ENT-01 | — | Pending |
-| ENT-02 | — | Pending |
-| ENT-03 | — | Pending |
-| ENT-04 | — | Pending |
-| ENT-05 | — | Pending |
-| PEXP-01 | — | Pending |
-| PEXP-02 | — | Pending |
-| PEXP-03 | — | Pending |
-| PEXP-04 | — | Pending |
-| EEXP-01 | — | Pending |
-| EEXP-02 | — | Pending |
-| EEXP-03 | — | Pending |
-| GRAPH-01 | — | Pending |
-| GRAPH-02 | — | Pending |
-| GRAPH-03 | — | Pending |
-| GRAPH-04 | — | Pending |
+| BUILD-01 | Phase 4 | Pending |
+| BUILD-02 | Phase 4 | Pending |
+| BUILD-03 | Phase 4 | Pending |
+| BUILD-04 | Phase 5 | Pending |
+| BUILD-05 | Phase 5 | Pending |
+| BUILD-06 | Phase 4 | Pending |
+| PLACE-01 | Phase 6 | Pending |
+| PLACE-02 | Phase 6 | Pending |
+| PLACE-03 | Phase 6 | Pending |
+| PLACE-04 | Phase 6 | Pending |
+| PLACE-05 | Phase 6 | Pending |
+| ENT-01 | Phase 6 | Pending |
+| ENT-02 | Phase 6 | Pending |
+| ENT-03 | Phase 6 | Pending |
+| ENT-04 | Phase 6 | Pending |
+| ENT-05 | Phase 6 | Pending |
+| PEXP-01 | Phase 7 | Pending |
+| PEXP-02 | Phase 7 | Pending |
+| PEXP-03 | Phase 7 | Pending |
+| PEXP-04 | Phase 7 | Pending |
+| EEXP-01 | Phase 8 | Pending |
+| EEXP-02 | Phase 8 | Pending |
+| EEXP-03 | Phase 8 | Pending |
+| GRAPH-01 | Phase 9 | Pending |
+| GRAPH-02 | Phase 9 | Pending |
+| GRAPH-03 | Phase 9 | Pending |
+| GRAPH-04 | Phase 9 | Pending |
 | FIX-01 | — | Complete |
 | VIS-01 | Phase 1 | Complete |
 | VIS-02 | Phase 1 | Complete |
@@ -162,10 +162,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AHRB-03 | Phase 3 | Complete |
 
 **Coverage:**
-- v0.5.0 requirements: 27 total (1 complete, 26 pending)
-- Mapped to phases: 1
-- Unmapped: 26 (awaiting roadmap)
+- v0.5.0 requirements: 28 total (1 complete, 27 pending)
+- Mapped to phases: 27/27 pending ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-24*
-*Last updated: 2026-03-26 — v0.5.0 requirements added*
+*Last updated: 2026-03-26 — traceability filled in after roadmap creation*
