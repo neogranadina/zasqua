@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: planning
-stopped_at: Phase 4 context gathered
-last_updated: "2026-03-26T21:24:25.471Z"
-last_activity: 2026-03-26 — v0.5.0 roadmap created; phase numbering continues from v0.4.0 Phase 3
+status: Ready to execute
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-26T21:48:30.302Z"
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -21,16 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 4 — Build Pipeline & Data Pre-compute
+**Current focus:** Phase 04 — build-pipeline-data-pre-compute
 
 ## Current Position
 
-Phase: 4 of 9 (Build Pipeline & Data Pre-compute)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-26 — v0.5.0 roadmap created; phase numbering continues from v0.4.0 Phase 3
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 04 (build-pipeline-data-pre-compute) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -67,6 +61,8 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - PMTiles requires a dedicated Cloudflare Worker — Range request pass-through and CORS must be set at Worker level; do not modify site Worker
 - Entity co-occurrence graph deferred to Phase 9 (post list-view validation) — threshold parameters require real data inspection
 - Pagefind strategy for entity/place pages unresolved: separate JSON filtering vs. metadata attributes — resolve in Phase 4 planning
+- [Phase 04]: precompute-links.js renames latitude/longitude to lat/lon when writing place-index.json (D-07)
+- [Phase 04]: COOCCURRENCE_MIN_WEIGHT defaults to 3; configurable for Phase 9 threshold tuning
 
 ### Pending Todos
 
@@ -81,6 +77,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-26T21:24:25.467Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-build-pipeline-data-pre-compute/04-CONTEXT.md
+Last session: 2026-03-26T21:48:30.299Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None

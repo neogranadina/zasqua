@@ -10,8 +10,8 @@ Requirements for the Entity & Place Discovery milestone. Each maps to roadmap ph
 ### Build Infrastructure
 
 - [ ] **BUILD-01**: Build system generates ~100K entity/place pages without exceeding GitHub Actions memory limits
-- [ ] **BUILD-02**: Pre-build script aggregates entity-description and place-description links into per-entity and per-place JSON shards
-- [ ] **BUILD-03**: Pre-build script computes entity co-occurrence graph with configurable minimum edge weight threshold
+- [x] **BUILD-02**: Pre-build script aggregates entity-description and place-description links into per-entity and per-place JSON shards
+- [x] **BUILD-03**: Pre-build script computes entity co-occurrence graph with configurable minimum edge weight threshold
 - [ ] **BUILD-04**: PMTiles file generated from place coordinate data using Tippecanoe at build time
 - [ ] **BUILD-05**: Dedicated Cloudflare Worker serves PMTiles with correct Range request handling and CORS headers
 - [ ] **BUILD-06**: CI pipeline builds, merges, indexes, and deploys ~200K pages within GitHub Actions timeout
@@ -116,8 +116,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | BUILD-01 | Phase 4 | Pending |
-| BUILD-02 | Phase 4 | Pending |
-| BUILD-03 | Phase 4 | Pending |
+| BUILD-02 | Phase 4 | Complete |
+| BUILD-03 | Phase 4 | Complete |
 | BUILD-04 | Phase 5 | Pending |
 | BUILD-05 | Phase 5 | Pending |
 | BUILD-06 | Phase 4 | Pending |

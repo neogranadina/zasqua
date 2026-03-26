@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The full build (descriptions + entity/place + Pagefind + R2 upload) completes within 60 minutes on GitHub Actions
 **Plans**: 2 plans
 Plans:
-- [ ] 04-01-PLAN.md — Pre-compute scripts and data loaders
+- [x] 04-01-PLAN.md — Pre-compute scripts and data loaders
 - [ ] 04-02-PLAN.md — Build pipeline wiring (eleventy.config.js, build.sh, deploy.yml)
 
 ### Phase 5: PMTiles Infrastructure
@@ -105,7 +105,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 4. Build Pipeline & Data Pre-compute | 0/2 | Planning complete | - |
+| 4. Build Pipeline & Data Pre-compute | 1/2 | In Progress|  |
 | 5. PMTiles Infrastructure | 0/? | Not started | - |
 | 6. Entity & Place Detail Pages | 0/? | Not started | - |
 | 7. Place Explorer | 0/? | Not started | - |
