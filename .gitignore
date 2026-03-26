@@ -8,3 +8,6 @@ logs/
 .env
 tailwindcss
 tailwindcss-*
+.superpowers/
+worker-tiles/node_modules/
+worker-tiles/.wrangler/
