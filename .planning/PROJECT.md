@@ -27,33 +27,43 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ### Active
 
-- Redesigned header, footer, and interactive elements to match Figma visual identity spec
-- AHRB notarial volume import — export backend data, rebuild frontend with ~2K new AHRB descriptions
-- Homepage masonry grid preserved (consistent with Neogranadina's design)
+- Place detail pages (`/lugar/{name}/`) with authority links, coordinates, embedded map, linked descriptions
+- Entity detail pages (`/entidad/{code}/`) with structured name, dates, function, linked descriptions
+- Place explorer (`/explorar/lugares/`) with search, faceted filtering, heatmap map
+- Entity explorer (`/explorar/entidades/`) with search, faceted filtering, network graphs
+- Pre-built description aggregates for entities and places (build-time, no runtime API)
+- PMTiles on R2 for serverless maps (MapLibre GL JS)
+- Fix missing nav keys in public repo ui.js (Acerca, Catalogación)
 
 ### Recently Validated
 
-- New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals — Phase 1 (CSS Foundations)
-- All hardcoded hex colours in input.css replaced with Tailwind stone-scale tokens and brand colour variables — Phase 2 (Component Updates)
+- New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals — v0.4.0 Phase 1
+- All hardcoded hex colours replaced with Tailwind stone-scale tokens and brand colour variables — v0.4.0 Phase 2
+- Redesigned header, footer, and interactive elements to match Figma visual identity spec — v0.4.0 Phase 2
+- AHRB notarial volume import (542 volumes, ~106K pages live) — v0.4.0 Phase 3
+- Homepage masonry grid preserved — v0.4.0 Phase 2
 
 ### Out of Scope
 
 - Collaborative cataloguing — separate project (zasqua-catalogacion)
-- Entity/place detail pages — ships with a future release when zasqua-entities is ready
+- Runtime API dependency — all data pre-built at build time (API may be used as data source during build, not at page load)
 
 ## Context
 
 - **Codebase:** Eleventy 3, Nunjucks, Tailwind CSS v4 (standalone CLI), Pagefind, TIFY, vanilla JS
-- **Shipped:** v0.3.2 (2026-03-10) — R2 hosting migration + parallel deploy pipeline
-- **Data:** 104K+ description pages, 1,602 tree JSON files, ~211K total files / 2.3 GB built site
+- **Shipped:** v0.4.0 (2026-03-25) — visual identity + AHRB volumes, 106K pages live
+- **Data:** 106K description pages, 8,177 places (5,574 with coordinates), 92,042 entities, 308K entity-description links, 85K place-description links
 - **Infrastructure:** Cloudflare R2 (`zasqua-site` bucket), Cloudflare Worker, GitHub Actions CI/CD
 - **Data source:** JSON exports from Django backend, downloaded from Backblaze B2 at build time
+- **Entity data:** entities.json (29.9 MB) — entity_code, display_name, sort_name, entity_type, given_name, surname, honorific, date_earliest, date_latest, name_variants, primary_function, dates_of_existence, history
+- **Place data:** places.json (3.1 MB) — place_code, display_name, place_type, fclass, lat/lon, name_variants, wikidata_id, whg_id, tgn_id, hgis_id, admin levels, colonial divisions
 
 ## Constraints
 
 - **No runtime server** — everything is static, pre-built
 - **Client-side search only** — Pagefind indexes at build time
-- **Build time** — ~14 minutes for Eleventy + Pagefind at 104K pages
+- **Build time** — ~14 minutes for Eleventy + Pagefind at 106K pages; adding ~100K entity/place pages will significantly increase this unless build architecture is reworked
+- **Build architecture (open question)** — entity/place pages could fold into the existing Eleventy build, run as separate independent builds merged before upload, or use incremental builds. Research spike should explore options.
 - **File count** — exceeds Cloudflare Pages' 100K limit, hence R2 + Worker
 
 ## Key Decisions
@@ -67,13 +77,19 @@ Open-access discovery interface for digitised historical archives — fast, cach
 | Parallel upload over rclone | rclone bottlenecked at 30ms/file RTT | Good — 345 files/s |
 | Tailwind v4 standalone CLI over npm | No npm dependency, single binary | Good — fast compilation, no build chain complexity |
 
-## Current Milestone: v0.4.0 Visual Identity & AHRB Volumes
+## Current Milestone: v0.5.0 Entity & Place Discovery
 
-**Goal:** Unify the frontend under Zasqua's new visual identity and publish 542 AHRB notarial volumes on zasqua.org.
+**Goal:** Add entity and place detail pages plus spatial and network discovery interfaces, with all data pre-built at build time.
 
 **Target features:**
-- New visual identity across all page types (home, search, repository, description)
-- AHRB notarial volume import — backend export to B2, frontend rebuild, deploy
+- Place detail pages (`/lugar/{name}/`) — authority links, coordinates with embedded PMTiles/MapLibre map, linked descriptions
+- Entity detail pages (`/entidad/{code}/`) — structured name, dates, function, linked descriptions
+- Place explorer (`/explorar/lugares/`) — search, faceted filtering, heatmap map
+- Entity explorer (`/explorar/entidades/`) — search, faceted filtering, network graphs via shared documents
+- Pre-built description aggregates (build-time, no runtime API)
+- PMTiles hosted on R2 for serverless maps
+- Build architecture exploration — independent builds, incremental builds, or integrated
+- Fix missing ui.js nav keys in public repo
 
 ## Tech Debt
 
@@ -97,4 +113,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-24 — milestone v0.4.0 started*
+*Last updated: 2026-03-26 — milestone v0.5.0 started*

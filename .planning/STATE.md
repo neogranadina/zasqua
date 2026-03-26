@@ -1,51 +1,37 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.4.0
-milestone_name: milestone
-status: Phase complete — ready for verification
-stopped_at: Completed 03-ahrb-import-03-02-PLAN.md — Phase 3 complete, v0.4.0 live at zasqua.org
-last_updated: "2026-03-25T15:31:53.683Z"
+milestone: v0.5.0
+milestone_name: Entity & Place Discovery
+status: Defining requirements
+stopped_at: Milestone v0.5.0 started — defining requirements
+last_updated: "2026-03-26T00:00:00.000Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-24)
+See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 03 — ahrb-import
+**Current focus:** Defining requirements for v0.5.0 — Entity & Place Discovery
 
 ## Current Position
 
-Phase: 03 (ahrb-import) — EXECUTING
-Plan: 2 of 2
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-26 — Milestone v0.5.0 started
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (from v0.4.0):**
 
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: —
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| - | - | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: —
-- Trend: —
-
-*Updated after each plan completion*
 | Phase 01 P01 | 172s | 2 tasks | 6 files |
 | Phase 01 P02 | 1020s (~17 min) | 2 tasks | 9 files |
 | Phase 01 P03 | 600 | 2 tasks | 4 files |
@@ -53,7 +39,6 @@ Plan: 2 of 2
 | Phase 02 P02 | 900 | 2 tasks | 1 files |
 | Phase 02 P03 | 1800 | 2 tasks | 1 files |
 | Phase 03-ahrb-import P01 | 300 | 2 tasks | 1 files |
-| Phase 03-ahrb-import P02 | 2700 | 2 tasks | 15 files |
 | Phase 03-ahrb-import P02 | 2700 | 3 tasks | 15 files |
 
 ## Accumulated Context
@@ -61,41 +46,22 @@ Plan: 2 of 2
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Recent decisions affecting current work:
+Carried from v0.4.0:
 
 - Visual identity: Figma Make file (bOunUsW8BHk1eqZrJu7Nxt) is the spec source
-- Phase order: CSS foundations first so component work picks up correct tokens automatically
-- Phase order: AHRB import last so new pages render in the finished design
-- [Phase 01]: source(..) in @import resolves to src/ from src/css/input.css — not source(../src) as written in the plan
-- [Phase 01]: check-css-tokens.sh checks input.css for @theme token definitions — compiled main.css only includes tokens when utility classes using them are present in scanned templates
-- [Phase 01]: Layout shell CSS kept in @layer components (not utility-only) to preserve JS-compatible class names and desktop-first responsive media queries
-- [Phase 01]: Old CSS variables (--accent-*, --footer-bg, --spacing-*) eliminated entirely — replaced with rem values and brand token references
-- [Phase 01]: filter-pill uses dark stone background not periwinkle — keeps pills high-contrast at small size
-- [Phase 01]: level-badge switched to periwinkle background — satisfies COL-03 interactive accent replacement
-- [Phase 01]: TIFY font-family override changed from Lato to var(--font-sans) — eliminates last Lato reference in CSS
-- [Phase 02]: D-01: Nav hover/active uses border-bottom: 2px solid var(--color-periwinkle) with padding-bottom: calc(0.5rem - 2px) to preserve layout
-- [Phase 02]: D-06: .repo-overlay updated from rgba(107,31,51,0.85) (burgundy-deep) to rgba(139,41,66,0.85) (primary burgundy) per D-06
-- [Phase 02]: [Phase 02-01]: @apply text-stone-N inside @layer components and var(--color-stone-N) for borders both resolve correctly in Tailwind v4
-- [Phase 02-02]: D-07: filter-pill base background changed to var(--color-burgundy) — all rendered pills are active selections per search.js audit
-- [Phase 02-02]: D-08: pagination-link.active changed to var(--color-periwinkle) with text-stone-900 instead of burgundy-deep with white text
-- [Phase 02]: D-10: .detail-field a keeps text-stone-900 default; burgundy-light hover inherited from @layer base a:hover
-- [Phase 02]: D-11: .miller-item.selected and .miller-item.selected-ancestor left unchanged — only neutral chrome tokenised
-- [Phase 02]: TIFY !important flags preserved on all token replacements — TIFY injected CSS requires specificity override
-- [Phase 03-ahrb-import]: export_frontend_data run from zasqua-backend-dev using public backend's venv (public venv shares Django setup; dev repo has updated AHRB export logic not yet in public)
-- [Phase 03-ahrb-import]: Porting done in 8 thematic commits (visual identity, assets, layout, templates, search, build pipeline, tooling, version bump) — version bump last per D-11
-- [Phase 03-ahrb-import]: Tailwind CSS step ported with build pipeline in Commit 6 — input.css already in place from Commit 1, preventing CI failure
-- [Phase 03-ahrb-import]: Porting done in 8 thematic commits — version bump last per D-11; Tailwind input.css ported before deploy.yml to prevent CI failure
+- Tailwind v4 standalone CLI — no npm dependency
+- Porting done in thematic commits — version bump last
 
 ### Pending Todos
 
-None yet.
+- Fix missing ui.js nav keys (Acerca, Catalogación) in public repo — fold into v0.5.0
 
 ### Blockers/Concerns
 
-- AHRB-01 requires the backend `export_frontend_data` command to be run in zasqua-backend-dev before Phase 3 can start — coordinate timing
+None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T15:31:53.680Z
-Stopped at: Completed 03-ahrb-import-03-02-PLAN.md — Phase 3 complete, v0.4.0 live at zasqua.org
+Last session: 2026-03-26
+Stopped at: Milestone v0.5.0 started — defining requirements
 Resume file: None
