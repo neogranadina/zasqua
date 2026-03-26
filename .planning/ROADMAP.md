@@ -48,7 +48,7 @@ Plans:
   4. CORS headers on tile responses permit cross-origin requests from zasqua.org
 **Plans**: 2 plans
 Plans:
-- [ ] 05-01-PLAN.md — GeoJSON conversion script and Protomaps tiles Worker
+- [x] 05-01-PLAN.md — GeoJSON conversion script and Protomaps tiles Worker
 - [ ] 05-02-PLAN.md — CI pipeline integration and end-to-end verification
 
 ### Phase 6: Entity & Place Detail Pages
@@ -108,7 +108,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 4. Build Pipeline & Data Pre-compute | 2/2 | Complete   | 2026-03-26 |
-| 5. PMTiles Infrastructure | 0/2 | Not started | - |
+| 5. PMTiles Infrastructure | 1/2 | In Progress|  |
 | 6. Entity & Place Detail Pages | 0/? | Not started | - |
 | 7. Place Explorer | 0/? | Not started | - |
 | 8. Entity Explorer — List View | 0/? | Not started | - |

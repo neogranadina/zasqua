@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-26T22:19:39.577Z"
+status: Ready to execute
+stopped_at: Completed 05-pmtiles-infrastructure-01-PLAN.md
+last_updated: "2026-03-26T23:37:22.957Z"
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 4
+  completed_plans: 3
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 04 — build-pipeline-data-pre-compute
+**Current focus:** Phase 05 — pmtiles-infrastructure
 
 ## Current Position
 
-Phase: 5
-Plan: Not started
+Phase: 05 (pmtiles-infrastructure) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 04]: COOCCURRENCE_MIN_WEIGHT defaults to 3; configurable for Phase 9 threshold tuning
 - [Phase 04]: Pre-compute steps placed before npm install in CI — scripts use only Node.js stdlib
 - [Phase 04]: Single Eleventy build retained — profile first, split only if build exceeds ~25 min
+- [Phase 05-pmtiles-infrastructure]: Inlined protomaps/PMTiles shared helpers (pmtiles_path, tile_path) into worker-tiles/src/index.ts — monorepo-relative import path cannot resolve from standalone directory
 
 ### Pending Todos
 
@@ -79,6 +80,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-26T22:19:39.573Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-pmtiles-infrastructure/05-CONTEXT.md
+Last session: 2026-03-26T23:37:22.954Z
+Stopped at: Completed 05-pmtiles-infrastructure-01-PLAN.md
+Resume file: None
