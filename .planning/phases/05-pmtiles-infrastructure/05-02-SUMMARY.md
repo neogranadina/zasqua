@@ -2,110 +2,110 @@
 phase: 05-pmtiles-infrastructure
 plan: 02
 subsystem: infra
-tags: [pmtiles, tippecanoe, r2, cloudflare-worker, ci, github-actions]
+tags: [ci, tippecanoe, pmtiles, r2, cloudflare-worker, github-actions]
 
 requires:
   - phase: 05-01
-    provides: scripts/places-to-geojson.js for GeoJSON conversion, worker-tiles/ Protomaps Worker for R2 serving
+    provides: scripts/places-to-geojson.js for GeoJSON conversion
 provides:
-  - .github/workflows/deploy.yml — CI steps for Tippecanoe install, GeoJSON conversion, PMTiles generation, and zasqua-tiles R2 upload
+  - .github/workflows/deploy.yml — CI steps for Tippecanoe install, PMTiles generation, and zasqua-map-tiles R2 upload
   - build.sh — optional local tile generation step with command -v guard
-affects: [place-detail-pages, place-explorer, tiles.zasqua.org-verification]
+  - worker/worker.js — /tiles/ route with Range request handling (same-origin, no CORS)
+  - worker/wrangler.toml — TILES R2 binding to zasqua-map-tiles bucket
+affects: [place-detail-pages, place-explorer]
 
 tech-stack:
   added: [tippecanoe==2.72.0 (CI, via pip)]
   patterns:
-    - Tippecanoe installed via pip (not apt) on ubuntu-latest — avoids stale Ubuntu package
-    - PMTiles R2 upload via boto3 single PUT (reuses existing CI credentials and client setup)
-    - Local build guards with `command -v tippecanoe` — GeoJSON always generated, tile generation optional
+    - Same-origin tile serving via /tiles/ path on site Worker — no CORS needed
+    - R2 Range request handling in Worker for PMTiles byte-range reads
+    - Tippecanoe installed via pip (not apt) on ubuntu-latest
 
 key-files:
   created: []
   modified:
     - .github/workflows/deploy.yml
     - build.sh
+    - worker/worker.js
+    - worker/wrangler.toml
+    - scripts/places-to-geojson.js
+    - README.md
+  deleted:
+    - worker-tiles/ (replaced by /tiles/ route in site Worker)
 
 key-decisions:
-  - "Tippecanoe pinned to 2.72.0 in CI for reproducible builds (per research Open Question 3)"
-  - "Three new steps placed after Pre-compute co-occurrence graph and before Install npm dependencies — consistent with Phase 04 decision that pre-compute steps go before npm install"
-  - "boto3 single PUT used for R2 upload (already installed, reuses existing R2 credentials)"
+  - "Serve tiles from site Worker /tiles/ path instead of separate Worker — eliminates CORS entirely (same-origin), no tiles.zasqua.org custom domain needed, one Worker with two R2 bindings"
+  - "R2 bucket named zasqua-map-tiles per user preference"
+  - "GeoJSON script accepts both latitude/longitude (raw export) and lat/lon (pre-computed) field names"
+  - "Tippecanoe pinned to 2.72.0 in CI for reproducible builds"
 
 patterns-established:
-  - "Tile generation in CI uses pip-installed Tippecanoe, not apt (Ubuntu 24.04 apt package is stale)"
-  - "Local build script always generates GeoJSON but skips tile generation if Tippecanoe not installed"
+  - "Site Worker handles /tiles/ prefix with R2 Range reads — future tile sets added to zasqua-map-tiles bucket appear at /tiles/{name}"
+  - "Local build always generates GeoJSON; tile generation optional (command -v tippecanoe guard)"
 
 requirements-completed: [BUILD-04, BUILD-05]
 
-duration: 2min
+duration: ~30min
 completed: 2026-03-26
 ---
 
-# Phase 05 Plan 02: PMTiles CI Pipeline Integration Summary
+# Phase 05 Plan 02: CI Pipeline + Same-Origin Tile Serving Summary
 
-**Tippecanoe install, GeoJSON conversion, and zasqua-places.pmtiles R2 upload wired into deploy.yml; optional local tile generation added to build.sh**
+**CI pipeline generates PMTiles and uploads to R2; site Worker serves tiles at /tiles/ with HTTP 206 Range support — verified on production**
 
 ## Performance
 
-- **Duration:** ~2 min
-- **Started:** 2026-03-26T23:38:45Z
-- **Completed:** 2026-03-26T23:39:50Z
-- **Tasks:** 1 completed (Task 2 is checkpoint:human-verify, awaiting manual verification)
-- **Files modified:** 2
+- **Duration:** ~30 min (including architectural pivot and manual verification)
+- **Completed:** 2026-03-26
+- **Tasks:** 2 (1 auto + 1 human-verify checkpoint)
+- **Files modified:** 6 (+1 deleted directory)
 
 ## Accomplishments
 
-- `deploy.yml` updated with three new steps in correct order: Install Tippecanoe (pip==2.72.0), Generate PMTiles (places-to-geojson.js + tippecanoe), Upload PMTiles to R2 (boto3 PUT to zasqua-tiles bucket)
-- `build.sh` updated with optional local tile generation — GeoJSON always written, Tippecanoe run only if installed
-- No existing CI steps touched — site Worker deploy, Eleventy build, Pagefind, R2 site upload, and cache purge all unchanged
+- `deploy.yml` updated with three new steps: Install Tippecanoe (pip==2.72.0), Generate PMTiles, Upload to zasqua-map-tiles R2 bucket via boto3
+- `build.sh` updated with optional local tile generation (GeoJSON always written, Tippecanoe only if installed)
+- Site Worker (`worker/worker.js`) extended with `/tiles/` route handling Range requests from zasqua-map-tiles R2 bucket
+- `worker-tiles/` directory removed — no longer needed
+- `scripts/places-to-geojson.js` updated to accept both `latitude`/`longitude` and `lat`/`lon` field names
+- `README.md` updated with current data files, hosting section, and local tile generation docs
+
+## Architectural Pivot
+
+**Original plan:** Separate `worker-tiles/` Worker at `tiles.zasqua.org` with CORS headers.
+
+**What shipped:** `/tiles/` route on the existing site Worker. User-driven decision that simplified the architecture:
+- No separate Worker to deploy/manage
+- No custom domain or DNS record needed
+- No CORS needed (same-origin)
+- Eliminates the Firefox/Safari CORS gap blocker from STATE.md
 
 ## Task Commits
 
-1. **Task 1: Add PMTiles generation and upload to CI pipeline** - `9a2e7b9` (feat)
+1. **Task 1: CI pipeline + build.sh** — `9a2e7b9`
+2. **Site Worker /tiles/ route + worker-tiles removal** — `d63065c`
+3. **GeoJSON field name fix** — `e1fbf5b`
+4. **README update** — `3420f50`
 
-## Files Created/Modified
+## Verification (Human Checkpoint — Passed)
 
-- `.github/workflows/deploy.yml` — Three new steps after "Pre-compute co-occurrence graph": Install Tippecanoe, Generate PMTiles, Upload PMTiles to R2
-- `build.sh` — Added PMTiles generation block after co-occurrence step, with `command -v tippecanoe` guard for optional local execution
-
-## Decisions Made
-
-- **Tippecanoe version pinned to 2.72.0**: Per research Open Question 3 recommendation — reproducible CI builds, avoids potential breakage from future PyPI release changes to PMTiles output format.
-- **Steps ordered before `npm ci`**: Consistent with Phase 04 decision that pre-compute scripts using Node.js stdlib go before npm install. Tippecanoe is a system binary (pip-installed), not an npm package, so this ordering is correct.
-- **boto3 single PUT for R2 upload**: boto3 already installed in CI, S3-compatible credentials already available. Reuses existing `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_ENDPOINT` secrets without adding new tooling.
-
-## Deviations from Plan
-
-None — plan executed exactly as written.
+- PMTiles generated locally from real data: 5,574 features, 1.9 MB
+- Uploaded to zasqua-map-tiles R2 via `wrangler r2 object put --remote`
+- Worker deployed with SITE + TILES bindings
+- `curl -H "Range: bytes=0-512" https://zasqua.org/tiles/zasqua-places` → **HTTP 206**, content-range: bytes 0-512/1954896, accept-ranges: bytes
+- Same-origin: no CORS testing needed (Firefox/Safari blocker resolved by architecture)
 
 ## Issues Encountered
 
-None.
-
-## User Setup Required
-
-Before Task 2 verification can succeed, three manual steps are required (unchanged from Plan 01 documentation):
-
-1. **Create the `zasqua-tiles` R2 bucket** in Cloudflare Dashboard: R2 Object Storage → Create Bucket → name: `zasqua-tiles`
-2. **Deploy the Worker once**: `cd worker-tiles && npx wrangler deploy`
-3. **Assign `tiles.zasqua.org` custom domain** to the `zasqua-tiles` Worker: Workers & Pages → zasqua-tiles → Settings → Domains & Routes → Add Custom Domain → `tiles.zasqua.org`
-
-After setup, trigger a CI run to generate and upload the PMTiles file, then verify HTTP 206 + CORS responses per Task 2 verification steps.
-
-## Next Phase Readiness
-
-- CI pipeline is complete — tiles will be generated and uploaded on every deploy once the R2 bucket exists
-- Verification at `tiles.zasqua.org` (Task 2 checkpoint) gates readiness for place detail page development (Phase 6)
-- Known CORS/Range gap in STATE.md: test Firefox and Safari explicitly during Task 2 verification, per Pitfall 1 in RESEARCH.md
+- `workers.dev` domain returns error 1042 on /tiles/ (R2 binding restriction) — not an issue, production uses custom domain
+- GeoJSON script field name mismatch between raw export and pre-computed data — fixed
 
 ## Self-Check: PASSED
 
-- .github/workflows/deploy.yml contains 'Install Tippecanoe' — FOUND
-- .github/workflows/deploy.yml contains 'Generate PMTiles' — FOUND
-- .github/workflows/deploy.yml contains 'Upload PMTiles to R2' — FOUND
-- .github/workflows/deploy.yml contains 'zasqua-tiles' — FOUND
-- build.sh contains 'places-to-geojson' — FOUND
-- build.sh contains 'command -v tippecanoe' — FOUND
-- Commit 9a2e7b9 — FOUND
+- .github/workflows/deploy.yml contains Tippecanoe + PMTiles + R2 upload steps — FOUND
+- build.sh contains places-to-geojson + tippecanoe guard — FOUND
+- worker/worker.js contains handleTiles + Range handling — FOUND
+- worker/wrangler.toml contains TILES binding to zasqua-map-tiles — FOUND
+- HTTP 206 from zasqua.org/tiles/zasqua-places — VERIFIED
 
 ---
 *Phase: 05-pmtiles-infrastructure*
