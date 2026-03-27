@@ -5,6 +5,12 @@ export default {
     }
 
     const url = new URL(request.url);
+
+    // Serve PMTiles from /tiles/ path — same-origin, no CORS needed
+    if (url.pathname.startsWith('/tiles/')) {
+      return handleTiles(request, env, url);
+    }
+
     let path = url.pathname;
 
     // Resolve directory paths to index.html
@@ -87,4 +93,45 @@ function cacheControl(key) {
     return 'public, max-age=31536000, immutable';
   }
   return 'public, max-age=3600';
+}
+
+async function handleTiles(request, env, url) {
+  const name = url.pathname.slice('/tiles/'.length);
+  if (!name) return new Response('Not Found', { status: 404 });
+
+  // PMTiles library requests /tiles/zasqua-places — append .pmtiles extension
+  const key = name.endsWith('.pmtiles') ? name : name + '.pmtiles';
+
+  const rangeHeader = request.headers.get('Range');
+  const opts = {};
+
+  if (rangeHeader) {
+    const match = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+    if (match) {
+      const offset = parseInt(match[1]);
+      const end = match[2] ? parseInt(match[2]) : undefined;
+      opts.range = end !== undefined
+        ? { offset, length: end - offset + 1 }
+        : { offset };
+    }
+  }
+
+  const object = await env.TILES.get(key, opts);
+  if (!object) return new Response('Not Found', { status: 404 });
+
+  const headers = new Headers();
+  headers.set('content-type', 'application/octet-stream');
+  headers.set('cache-control', 'public, max-age=86400');
+  headers.set('accept-ranges', 'bytes');
+  headers.set('etag', object.httpEtag);
+
+  if (rangeHeader && object.range) {
+    const { offset, length } = object.range;
+    headers.set('content-range', `bytes ${offset}-${offset + length - 1}/${object.size}`);
+    headers.set('content-length', length);
+    return new Response(object.body, { status: 206, headers });
+  }
+
+  headers.set('content-length', object.size);
+  return new Response(object.body, { status: 200, headers });
 }

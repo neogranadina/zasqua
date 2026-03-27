@@ -15,3 +15,7 @@ compatibility_date = "2025-01-01"
 [[r2_buckets]]
 binding = "SITE"
 bucket_name = "zasqua-site"
+
+[[r2_buckets]]
+binding = "TILES"
+bucket_name = "zasqua-map-tiles"

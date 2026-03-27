@@ -81,9 +81,9 @@ jobs:
               aws_access_key_id=os.environ['R2_ACCESS_KEY_ID'],
               aws_secret_access_key=os.environ['R2_SECRET_ACCESS_KEY'],
           )
-          s3.upload_file('data/zasqua-places.pmtiles', 'zasqua-tiles', 'zasqua-places.pmtiles',
+          s3.upload_file('data/zasqua-places.pmtiles', 'zasqua-map-tiles', 'zasqua-places.pmtiles',
               ExtraArgs={'ContentType': 'application/octet-stream'})
-          print("PMTiles uploaded to zasqua-tiles/zasqua-places.pmtiles")
+          print("PMTiles uploaded to zasqua-map-tiles/zasqua-places.pmtiles")
           EOF
 
       - name: Install npm dependencies
