@@ -115,6 +115,75 @@ module.exports = {
     mentioned: "Mencionado"
   },
 
+  // Entity authority records (ISAAR CPF)
+  entity: {
+    // Type labels (ISAAR CPF — D-25)
+    types: {
+      person: "Persona",
+      corporate_body: "Entidad corporativa",
+      family: "Familia"
+    },
+    // Section headers (ISAAR CPF areas — D-27)
+    sections: {
+      identification: "Identificación",
+      history: "Historia",
+      relations: "Relaciones",
+      sources: "Fuentes"
+    },
+    // Field labels
+    fields: {
+      name: "Nombre",
+      normalizedName: "Nombre normalizado",
+      type: "Tipo",
+      datesOfExistence: "Fechas de existencia",
+      primaryFunction: "Función principal",
+      nameVariants: "Variantes del nombre",
+      history: "Historia"
+    },
+    // Page copy
+    breadcrumbParent: "Entidades",
+    timelineHeader: "Apariciones en el archivo",
+    linkedDescriptions: "Descripciones vinculadas",
+    linkedDescriptionsLink: "Ver las {count} descripciones vinculadas",
+    noLinkedDescriptions: "No se encontraron descripciones vinculadas a este registro.",
+    shardError: "No se pudieron cargar las descripciones vinculadas. Intente recargar la página.",
+    noDateLabel: "Sin fecha"
+  },
+
+  // Place authority records
+  place: {
+    // Type labels (plain Spanish geographic terms — D-26)
+    types: {
+      city: "Lugar poblado",
+      administrative_division: "División administrativa",
+      region: "Región",
+      country: "País",
+      geographical_feature: "Accidente geográfico"
+    },
+    // Section headers
+    sections: {
+      identification: "Identificación",
+      externalIds: "Identificadores externos"
+    },
+    // Field labels
+    fields: {
+      name: "Nombre",
+      type: "Tipo",
+      nameVariants: "Variantes del nombre",
+      coordinates: "Coordenadas"
+    },
+    // Page copy
+    breadcrumbParent: "Lugares",
+    timelineHeader: "Apariciones en el archivo",
+    linkedDescriptions: "Descripciones vinculadas",
+    linkedDescriptionsLink: "Ver las {count} descripciones vinculadas",
+    noLinkedDescriptions: "No se encontraron descripciones vinculadas a este registro.",
+    shardError: "No se pudieron cargar las descripciones vinculadas. Intente recargar la página.",
+    noDateLabel: "Sin fecha",
+    noCoordinatesTitle: "Ubicación no disponible",
+    noCoordinatesText: "Este lugar no cuenta con coordenadas geográficas en el registro de autoridad."
+  },
+
   // Metadata field labels
   fields: {
     referenceCode: "Código de referencia",
