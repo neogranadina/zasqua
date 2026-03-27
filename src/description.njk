@@ -32,6 +32,12 @@ eleventyComputed:
     <span data-pagefind-filter="ancestor">{{ anc.reference_code }}</span>
   {% endfor %}
   <span data-pagefind-filter="ancestor">{{ desc.reference_code }}</span>
+  {% for code in desc._entity_codes %}
+    <span data-pagefind-filter="entidad">{{ code }}</span>
+  {% endfor %}
+  {% for code in desc._place_codes %}
+    <span data-pagefind-filter="lugar">{{ code }}</span>
+  {% endfor %}
 </div>
 
 {# Breadcrumb #}

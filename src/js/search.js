@@ -34,7 +34,9 @@ class SearchPage {
       ancestor: [],
       parent: '',
       sort: '',
-      page: 1
+      page: 1,
+      entidad: [],
+      lugar: [],
     };
 
     this.facetGroupState = { country: true, repository: true, digital_status: true, level: true, date: true };
@@ -99,6 +101,8 @@ class SearchPage {
     }
     this.state.ancestor = params.getAll('ancestor');
     this.state.parent = params.get('parent') || '';
+    this.state.entidad = params.getAll('entidad');
+    this.state.lugar = params.getAll('lugar');
     this.state.sort = params.get('sort') || '';
     this.state.page = parseInt(params.get('page'), 10) || 1;
   }
@@ -134,6 +138,8 @@ class SearchPage {
       params.append('ancestor', a);
     }
     if (this.state.parent) params.set('parent', this.state.parent);
+    for (const e of this.state.entidad) params.append('entidad', e);
+    for (const l of this.state.lugar) params.append('lugar', l);
     if (this.state.sort) params.set('sort', this.state.sort);
     if (this.state.page > 1) params.set('page', this.state.page);
 
@@ -227,6 +233,8 @@ class SearchPage {
       if (this.state.parent) {
         pfFilters.parent_reference_code = this.state.parent;
       }
+      if (this.state.entidad.length) pfFilters.entidad = { any: this.state.entidad };
+      if (this.state.lugar.length) pfFilters.lugar = { any: this.state.lugar };
 
       // Build Pagefind sort
       const pfSort = {};
