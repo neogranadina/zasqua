@@ -29,9 +29,20 @@ The frontend reads pre-exported JSON data at build time. This data is produced b
 
 ```
 data/
-  descriptions.json   # All descriptions with metadata + OCR text (~150 MB)
-  repositories.json   # Repository records (~8 KB)
-  children/           # Tree children per parent (1,602 files, ~40 MB)
+  descriptions.json          # All descriptions with metadata + OCR text (~218 MB)
+  repositories.json          # Repository records (~14 KB)
+  children/                  # Tree children per parent (~1,600 files, ~40 MB)
+  entities.json              # Entity records (~31 MB)
+  places.json                # Place records (~3.3 MB)
+  entity_links.json          # Entity-to-description links
+  place_links.json           # Place-to-description links
+  entity-links/              # Pre-computed entity link shards (generated at build)
+  place-links/               # Pre-computed place link shards (generated at build)
+  entity-index.json          # Pre-computed entity index (generated at build)
+  place-index.json           # Pre-computed place index (generated at build)
+  entity-cooccurrence.json   # Pre-computed co-occurrence graph (generated at build)
+  places.geojson             # GeoJSON for Tippecanoe (generated at build)
+  zasqua-places.pmtiles      # Map tiles (generated at build, uploaded to R2)
 ```
 
 The `DATA_DIR` environment variable overrides the default `./data/` path.
@@ -136,10 +147,47 @@ The full publish workflow:
 1. **Catalog** in Django admin (backend running locally)
 2. **Export** data with `manage.py export_frontend_data`
 3. **Upload** JSON to Backblaze B2 private bucket
-4. **Build** triggered manually via GitHub Actions — downloads data from B2, runs Eleventy + Pagefind
-5. **Deploy** to Netlify CDN
+4. **Build** triggered manually via GitHub Actions — downloads data from B2, pre-computes link shards and co-occurrence graph, generates PMTiles for map data, runs Eleventy + Pagefind
+5. **Deploy** built site to Cloudflare R2, PMTiles to `zasqua-map-tiles` R2 bucket
 
 The Django backend is only needed during cataloging and export — not at runtime.
+
+## Hosting
+
+The site is served by a Cloudflare Worker (`worker/`) that reads from two R2 buckets:
+
+- **`zasqua-site`** — the built static site (HTML, CSS, JS, JSON)
+- **`zasqua-map-tiles`** — PMTiles map data, served at `/tiles/`
+
+The `/tiles/` route handles HTTP Range requests (required by the PMTiles format). Because tiles are served from the same origin, no CORS configuration is needed.
+
+### Local tile generation
+
+To generate and test map tiles locally without a full CI build:
+
+```bash
+# Export place data from the Django backend
+cd ../zasqua-backend-dev
+python manage.py export_frontend_data
+cp /tmp/zasqua-export/places.json ../zasqua-frontend-dev/data/
+
+# Generate GeoJSON and PMTiles
+cd ../zasqua-frontend-dev
+node scripts/places-to-geojson.js
+tippecanoe -Z0 -z14 --drop-densest-as-needed -l places \
+  -o data/zasqua-places.pmtiles data/places.geojson
+
+# Upload to R2 and deploy Worker
+cd worker
+npx wrangler r2 object put zasqua-map-tiles/zasqua-places.pmtiles \
+  --file ../data/zasqua-places.pmtiles
+npx wrangler deploy
+
+# Verify
+curl -v -H "Range: bytes=0-512" https://zasqua.org/tiles/zasqua-places
+```
+
+Tippecanoe is required for PMTiles generation: `brew install tippecanoe` (macOS) or `pip install tippecanoe` (Linux).
 
 ## Environment Variables
 
