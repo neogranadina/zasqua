@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-03-26
+revised: 2026-03-26
 ---
 
 # Phase 6 — UI Design Contract
@@ -68,6 +69,7 @@ Notes:
 - Section headers use **DM Sans uppercase** with 1px letter-spacing (D-06 — matching `.detail-section h3`)
 - Field labels are **block** (label above value) — `.detail-label` pattern (D-07)
 - Body text: `text-stone-600` on warm white background; field values: `text-stone-700`
+- **13px section heading vs 14px field label:** these sizes are only 1px apart. The section heading is distinguishable solely because of the `text-transform: uppercase` + `letter-spacing: 1px` treatment. The executor MUST apply both transforms — omitting either will make section headings visually indistinguishable from field labels.
 
 **Source:** `src/css/input.css` `.detail-*` rules; CONTEXT.md D-04, D-06, D-07; `docs/frontend/guidelines/design-tokens.md`
 
@@ -115,18 +117,18 @@ These components are **reused unchanged** from `src/css/input.css` — do not re
 
 | Component | Class | Notes |
 |-----------|-------|-------|
-| Name variant tag | `.variant-tag` | `stone-100` bg, `stone-700` text, 4px border-radius, 2px 8px padding, 0.78rem font |
+| Name variant tag | `.variant-tag` | `stone-100` bg, `stone-700` text, 4px border-radius, `4px 8px` padding, 0.78rem font |
 | Name variant container | `.variant-tags` | `display: flex; flex-wrap: wrap; gap: 4px` |
 | Timeline container | `.entity-timeline` | Scrollable; `max-height: 480px; overflow-y: auto` |
-| Timeline entry | `.timeline-entry` | `padding: 10px 0; border-bottom: 1px solid stone-100` |
+| Timeline entry | `.timeline-entry` | `padding: 8px 0; border-bottom: 1px solid stone-100` |
 | Timeline date | `.timeline-date` | `font-size: 0.78rem; font-weight: 600; color: stone-900` |
 | Timeline role label | `.timeline-role` | `font-size: 0.72rem; color: stone-500; text-transform: uppercase; letter-spacing: 0.04em` |
 | Timeline title link | `.timeline-title` | `color: burgundy; font-size: 0.85rem; text-decoration: none` |
-| Timeline "Sin fecha" group header | `.timeline-no-date` | `font-size: 0.72rem; color: stone-400; text-transform: uppercase; margin-top: 12px` |
+| Timeline "Sin fecha" group header | `.timeline-no-date` | `font-size: 0.72rem; color: stone-400; text-transform: uppercase; margin-top: 8px` |
 | Map container | `.place-map` | `height: 360px; border-radius: 4px; overflow: hidden; border: 1px solid stone-200` |
 | Map coordinates | `.place-map-coords` | `font-size: 0.72rem; color: stone-500; margin-top: 4px; text-align: right` |
-| Authority link pill | `.authority-pill` | `display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: burgundy; padding: 4px 10px; border-radius: 20px; background: stone-50; border: 1px solid stone-200` |
-| Authority links wrapper | `.authority-links` | `display: flex; flex-wrap: wrap; gap: 6px` |
+| Authority link pill | `.authority-pill` | `display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: burgundy; padding: 4px 8px; border-radius: 20px; background: stone-50; border: 1px solid stone-200` |
+| Authority links wrapper | `.authority-links` | `display: flex; flex-wrap: wrap; gap: 8px` |
 | Linked descriptions link | `.linked-desc-link` | `font-size: 0.9rem; color: burgundy; text-decoration: none` — arrow `→` appended inline |
 
 **Source:** `src/css/input.css` existing classes; playground styles in `entity-place-playground.html`
@@ -318,4 +320,5 @@ No component registry in use. All components are hand-authored Nunjucks + vanill
 
 *Phase: 06-entity-place-detail-pages*
 *UI-SPEC created: 2026-03-26*
+*UI-SPEC revised: 2026-03-26 — spacing fixes (5 values corrected to 4px grid); typography note added for 13px/14px distinction*
 *Pre-populated from: CONTEXT.md (28 decisions), RESEARCH.md (stack + architecture), src/css/input.css (existing tokens and component classes), entity-place-playground.html (visual direction), docs/frontend/guidelines/design-tokens.md (canonical tokens)*
