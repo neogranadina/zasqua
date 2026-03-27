@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06-entity-place-detail-pages-01-PLAN.md
-last_updated: "2026-03-27T14:17:22.551Z"
+stopped_at: Completed 06-entity-place-detail-pages-03-PLAN.md
+last_updated: "2026-03-27T14:39:04.618Z"
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 06 (entity-place-detail-pages) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -70,6 +70,8 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 06-entity-place-detail-pages]: Reverse lookups written as plain JSON objects (reference_code -> array of codes) for O(1) lookup in data loaders
 - [Phase 06]: ui.js entity/place sections follow existing roles/description pattern; CSS classes use @apply for stone-scale tokens and var(--color-*) for brand colors
 - [Phase 06-entity-place-detail-pages]: entidad/lugar search filters are URL-only (not rendered as sidebar facets) — applied when arriving from detail page links
+- [Phase 06]: Role labels hardcoded in entity.js — ui.js is build-time only, not available client-side
+- [Phase 06]: Entidades breadcrumb is plain text — entity explorer ships in Phase 8
 
 ### Pending Todos
 
@@ -84,6 +86,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-27T14:17:22.548Z
-Stopped at: Completed 06-entity-place-detail-pages-01-PLAN.md
+Last session: 2026-03-27T14:39:04.615Z
+Stopped at: Completed 06-entity-place-detail-pages-03-PLAN.md
 Resume file: None

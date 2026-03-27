@@ -66,7 +66,7 @@ Plans:
 Plans:
 - [x] 06-01-PLAN.md — Data pipeline: reverse lookups, data loader enrichment, Pagefind filters, search.js extension
 - [x] 06-02-PLAN.md — Shared UI assets: ui.js entity/place sections, CSS component classes
-- [ ] 06-03-PLAN.md — Entity detail page template and client-side timeline script
+- [x] 06-03-PLAN.md — Entity detail page template and client-side timeline script
 - [ ] 06-04-PLAN.md — Place detail page template with MapLibre map and client-side scripts
 **UI hint**: yes
 
