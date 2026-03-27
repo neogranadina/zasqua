@@ -15,5 +15,24 @@ module.exports = async function() {
     entities = entities.slice(0, DEV_LIMIT);
   }
   console.log(`[entities] Loaded ${entities.length} entities`);
+
+  // Attach _linked_count from entity-index.json
+  const countByCode = new Map();
+  try {
+    const indexPath = path.join(DATA_DIR, 'entity-index.json');
+    const indexRaw = fs.readFileSync(indexPath, 'utf8');
+    const index = JSON.parse(indexRaw);
+    for (const entry of index) {
+      countByCode.set(entry.entity_code, entry.linked_description_count);
+    }
+    console.log(`[entities] Loaded entity-index.json with ${index.length} records`);
+  } catch (e) {
+    console.warn('[entities] entity-index.json not found — _linked_count will be 0 for all entities');
+  }
+
+  for (const entity of entities) {
+    entity._linked_count = countByCode.get(entity.entity_code) || 0;
+  }
+
   return entities;
 };

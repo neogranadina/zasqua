@@ -15,5 +15,24 @@ module.exports = async function() {
     places = places.slice(0, DEV_LIMIT);
   }
   console.log(`[places] Loaded ${places.length} places`);
+
+  // Attach _linked_count from place-index.json
+  const countByCode = new Map();
+  try {
+    const indexPath = path.join(DATA_DIR, 'place-index.json');
+    const indexRaw = fs.readFileSync(indexPath, 'utf8');
+    const index = JSON.parse(indexRaw);
+    for (const entry of index) {
+      countByCode.set(entry.place_code, entry.linked_description_count);
+    }
+    console.log(`[places] Loaded place-index.json with ${index.length} records`);
+  } catch (e) {
+    console.warn('[places] place-index.json not found — _linked_count will be 0 for all places');
+  }
+
+  for (const place of places) {
+    place._linked_count = countByCode.get(place.place_code) || 0;
+  }
+
   return places;
 };

@@ -162,7 +162,51 @@ async function main() {
   console.log(`[precompute-links] Wrote place-index.json with ${placeIndex.length} records`);
 
   // -------------------------------------------------------------------------
-  // 5. Summary
+  // 5. Build reverse-lookup files (D-20): reference_code -> [entity/place codes]
+  // -------------------------------------------------------------------------
+
+  // desc -> entity codes reverse lookup
+  const entityCodesForDesc = new Map();
+  for (const link of entityLinks) {
+    const refCode = link.reference_code;
+    if (!entityCodesForDesc.has(refCode)) {
+      entityCodesForDesc.set(refCode, new Set());
+    }
+    entityCodesForDesc.get(refCode).add(link.entity_code);
+  }
+
+  const descEntityLookup = {};
+  for (const [refCode, codeSet] of entityCodesForDesc) {
+    descEntityLookup[refCode] = Array.from(codeSet);
+  }
+
+  const descEntityLookupPath = path.join(DATA_DIR, 'desc-entity-lookup.json');
+  fs.writeFileSync(descEntityLookupPath, JSON.stringify(descEntityLookup));
+  console.log(`[precompute-links] Wrote desc-entity-lookup.json with ${entityCodesForDesc.size} keys`);
+
+  // desc -> place codes reverse lookup
+  const placeCodesForDesc = new Map();
+  for (const link of placeLinks) {
+    const code = link.place_code;
+    if (code === null || code === undefined) continue;
+    const refCode = link.reference_code;
+    if (!placeCodesForDesc.has(refCode)) {
+      placeCodesForDesc.set(refCode, new Set());
+    }
+    placeCodesForDesc.get(refCode).add(code);
+  }
+
+  const descPlaceLookup = {};
+  for (const [refCode, codeSet] of placeCodesForDesc) {
+    descPlaceLookup[refCode] = Array.from(codeSet);
+  }
+
+  const descPlaceLookupPath = path.join(DATA_DIR, 'desc-place-lookup.json');
+  fs.writeFileSync(descPlaceLookupPath, JSON.stringify(descPlaceLookup));
+  console.log(`[precompute-links] Wrote desc-place-lookup.json with ${placeCodesForDesc.size} keys`);
+
+  // -------------------------------------------------------------------------
+  // 6. Summary
   // -------------------------------------------------------------------------
 
   console.log(`[precompute-links] Done.`);
@@ -170,6 +214,8 @@ async function main() {
   console.log(`  Place shards written  : ${placeShardCount}`);
   console.log(`  entity-index records  : ${entityIndex.length}`);
   console.log(`  place-index records   : ${placeIndex.length}`);
+  console.log(`  Desc-entity lookup keys: ${entityCodesForDesc.size}`);
+  console.log(`  Desc-place lookup keys : ${placeCodesForDesc.size}`);
 }
 
 main().catch(err => {

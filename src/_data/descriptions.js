@@ -34,6 +34,20 @@ module.exports = async function() {
     byRefCode.set(desc.reference_code, desc);
   }
 
+  // Load reverse-lookup files for entity/place codes per description
+  let entityLookup = {};
+  let placeLookup = {};
+  try {
+    entityLookup = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'desc-entity-lookup.json'), 'utf8'));
+  } catch (e) {
+    console.warn('[descriptions] desc-entity-lookup.json not found — entity codes will be empty');
+  }
+  try {
+    placeLookup = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'desc-place-lookup.json'), 'utf8'));
+  } catch (e) {
+    console.warn('[descriptions] desc-place-lookup.json not found — place codes will be empty');
+  }
+
   // Attach precomputed data to each description
   for (const desc of descriptions) {
     // Ancestors (breadcrumb chain)
@@ -52,8 +66,13 @@ module.exports = async function() {
 
     // Repository object
     desc._repo = reposByCode.get(desc.repository_code) || null;
+
+    // Entity and place codes (for Pagefind filter spans)
+    desc._entity_codes = entityLookup[desc.reference_code] || [];
+    desc._place_codes = placeLookup[desc.reference_code] || [];
   }
 
   console.log(`[descriptions] Precomputed ancestors and repos`);
+  console.log(`[descriptions] Attached entity/place codes to ${descriptions.length} descriptions`);
   return descriptions;
 };
