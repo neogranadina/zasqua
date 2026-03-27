@@ -15,15 +15,17 @@ function main() {
   let skipped = 0;
 
   for (const p of places) {
-    if (p.lat == null || p.lon == null) {
+    const lat = p.lat ?? p.latitude;
+    const lon = p.lon ?? p.longitude;
+    if (lat == null || lon == null) {
       skipped++;
       continue;
     }
     features.push({
       type: 'Feature',
       // GeoJSON spec requires [longitude, latitude] — not [lat, lon]
-      geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-      properties: { place_code: p.place_code, display_name: p.display_name },
+      geometry: { type: 'Point', coordinates: [lon, lat] },
+      properties: { place_code: p.place_code || p.label, display_name: p.display_name },
     });
   }
 
