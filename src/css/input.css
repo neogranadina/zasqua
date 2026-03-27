@@ -2449,4 +2449,115 @@
     font-size: 18px;
   }
 
+  /* ====================
+     Entity & Place Detail Pages
+     ==================== */
+
+  .variant-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .variant-tag {
+    @apply bg-stone-100 text-stone-700;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+  }
+
+  .entity-timeline {
+    max-height: 480px;
+    overflow-y: auto;
+  }
+
+  .timeline-entry {
+    padding: 12px 0;
+    border-bottom: 1px solid;
+    @apply border-stone-100;
+  }
+
+  .timeline-entry:last-child {
+    border-bottom: none;
+  }
+
+  .timeline-date {
+    font-size: 0.78rem;
+    font-weight: 600;
+    @apply text-stone-900;
+  }
+
+  .timeline-role {
+    font-size: 0.72rem;
+    @apply text-stone-500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .timeline-title {
+    color: var(--color-burgundy);
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+
+  .timeline-title:hover {
+    text-decoration: underline;
+  }
+
+  .timeline-no-date {
+    font-size: 0.72rem;
+    @apply text-stone-400;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .place-map {
+    height: 360px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid;
+    @apply border-stone-200;
+  }
+
+  .place-map-coords {
+    font-size: 0.72rem;
+    @apply text-stone-500;
+    margin-top: 4px;
+    text-align: right;
+  }
+
+  .authority-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .authority-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    color: var(--color-burgundy);
+    padding: 4px 8px;
+    border-radius: 20px;
+    @apply bg-stone-50 border-stone-200;
+    border: 1px solid;
+    text-decoration: none;
+  }
+
+  .authority-pill:hover {
+    @apply bg-stone-100;
+    color: var(--color-burgundy-deep);
+  }
+
+  .linked-desc-link {
+    font-size: 0.9rem;
+    color: var(--color-burgundy);
+    text-decoration: none;
+  }
+
+  .linked-desc-link:hover {
+    text-decoration: underline;
+  }
+
 }
