@@ -62,7 +62,12 @@ Plans:
   4. A place detail page at `/lugar/{display_name}/` shows the place name, type label in Spanish, name variants, and an embedded interactive map for places with coordinates
   5. A place detail page shows only the authority links (Wikidata, WHG, HGIS) that exist for that record — no empty link slots
   6. A place detail page loads its linked archival descriptions from a pre-built JSON shard and displays them as a browsable list
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 06-01-PLAN.md — Data pipeline: reverse lookups, data loader enrichment, Pagefind filters, search.js extension
+- [ ] 06-02-PLAN.md — Shared UI assets: ui.js entity/place sections, CSS component classes
+- [ ] 06-03-PLAN.md — Entity detail page template and client-side timeline script
+- [ ] 06-04-PLAN.md — Place detail page template with MapLibre map and client-side scripts
 **UI hint**: yes
 
 ### Phase 7: Place Explorer
@@ -109,7 +114,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 |-------|----------------|--------|-----------|
 | 4. Build Pipeline & Data Pre-compute | 2/2 | Complete   | 2026-03-26 |
 | 5. PMTiles Infrastructure | 2/2 | Complete   | 2026-03-26 |
-| 6. Entity & Place Detail Pages | 0/? | Not started | - |
+| 6. Entity & Place Detail Pages | 0/4 | Not started | - |
 | 7. Place Explorer | 0/? | Not started | - |
 | 8. Entity Explorer — List View | 0/? | Not started | - |
 | 9. Entity Network Graph | 0/? | Not started | - |
