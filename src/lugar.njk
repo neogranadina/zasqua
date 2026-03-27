@@ -1,0 +1,143 @@
+---
+pagination:
+  data: places
+  size: 1
+  alias: place
+permalink: "/lugar/{{ place.display_name | safeSlug }}/"
+layout: base.njk
+eleventyComputed:
+  title: "{{ place.display_name }}"
+---
+
+{# Breadcrumb #}
+<nav class="breadcrumb" aria-label="Breadcrumb" data-pagefind-ignore>
+  <div class="container">
+    <a href="/">{{ ui.breadcrumb.home }}</a>
+    <span class="breadcrumb-separator">&rsaquo;</span>
+    <span>{{ ui.place.breadcrumbParent }}</span>
+    <span class="breadcrumb-separator">&rsaquo;</span>
+    <span>{{ place.display_name }}</span>
+  </div>
+</nav>
+
+{# Header #}
+<div class="detail-header" data-pagefind-ignore>
+  <div class="container">
+    <h1 class="detail-title font-sans font-semibold text-stone-900">{{ place.display_name }}</h1>
+    <div class="detail-meta text-sm text-stone-500">
+      <span class="level-badge">{{ ui.place.types[place.place_type] or place.place_type }}</span>
+    </div>
+  </div>
+</div>
+
+{# Two-column layout #}
+<div class="detail-content" data-pagefind-ignore>
+  <div class="container">
+    <div class="desc-layout">
+
+      {# Left column: metadata #}
+      <div class="desc-metadata">
+
+        {# Section: Identificacion #}
+        <div class="detail-section">
+          <h3 class="font-semibold text-stone-400">{{ ui.place.sections.identification }}</h3>
+
+          <div class="detail-field">
+            <span class="detail-label">{{ ui.place.fields.name }}</span>
+            <span class="detail-value">{{ place.display_name }}</span>
+          </div>
+
+          <div class="detail-field">
+            <span class="detail-label">{{ ui.place.fields.type }}</span>
+            <span class="detail-value">{{ ui.place.types[place.place_type] or place.place_type }}</span>
+          </div>
+
+          {% if place.name_variants and place.name_variants.length %}
+            <div class="detail-field">
+              <span class="detail-label">{{ ui.place.fields.nameVariants }}</span>
+              <div class="variant-tags">
+                {% for variant in place.name_variants %}
+                  <span class="variant-tag">{{ variant }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        {# Section: Identificadores externos (only if at least one authority ID present) #}
+        {% if place.wikidata_id or place.whg_id or place.hgis_id %}
+          <div class="detail-section">
+            <h3 class="font-semibold text-stone-400">{{ ui.place.sections.externalIds }}</h3>
+            <div class="authority-links">
+              {% if place.wikidata_id %}
+                <a href="https://www.wikidata.org/wiki/{{ place.wikidata_id }}" target="_blank" rel="noopener" class="authority-pill">
+                  Wikidata <span class="material-symbols-outlined" style="font-size: 14px">open_in_new</span>
+                </a>
+              {% endif %}
+              {% if place.whg_id %}
+                <a href="https://whgazetteer.org/places/{{ place.whg_id }}/portal" target="_blank" rel="noopener" class="authority-pill">
+                  WHG <span class="material-symbols-outlined" style="font-size: 14px">open_in_new</span>
+                </a>
+              {% endif %}
+            </div>
+            {% if place.hgis_id %}
+              <div class="detail-field" style="margin-top: 8px">
+                <span class="detail-label">HGIS</span>
+                <span class="detail-value text-stone-700">{{ place.hgis_id }}</span>
+              </div>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        {# Section: Descripciones vinculadas #}
+        <div class="detail-section">
+          <h3 class="font-semibold text-stone-400">{{ ui.place.linkedDescriptions }}</h3>
+          <a href="/buscar/?lugar={{ place.place_code }}" class="linked-desc-link" id="linked-desc-cta">
+            {{ ui.place.linkedDescriptionsLink | replace("{count}", place._linked_count) }} &rarr;
+          </a>
+        </div>
+
+      </div>
+
+      {# Right column: aside with map (if coordinates) and timeline #}
+      <div class="desc-aside">
+
+        {% if place.latitude and place.longitude %}
+          <div class="place-map" id="place-map" data-lat="{{ place.latitude }}" data-lon="{{ place.longitude }}"></div>
+          <p class="place-map-coords">{{ place.latitude }}, {{ place.longitude }}</p>
+        {% else %}
+          <div class="desc-notice">
+            <span class="material-symbols-outlined desc-notice-icon">location_off</span>
+            <div class="desc-notice-title">{{ ui.place.noCoordinatesTitle }}</div>
+            <p class="desc-notice-text">{{ ui.place.noCoordinatesText }}</p>
+          </div>
+        {% endif %}
+
+        <div class="detail-section">
+          <h3 class="font-semibold text-stone-400">{{ ui.place.timelineHeader }}</h3>
+          <div class="entity-timeline" id="place-timeline" data-place-code="{{ place.place_code }}">
+            <p class="text-stone-500 text-sm">{{ ui.general.loading }}</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% block head %}
+  {% if place.latitude and place.longitude %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.css" />
+    <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.js"></script>
+    <script type="module">
+      import { Protocol } from 'https://cdn.jsdelivr.net/npm/pmtiles@4/dist/pmtiles.js';
+      const protocol = new Protocol();
+      maplibregl.addProtocol('pmtiles', protocol.tile);
+    </script>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  <script src="/js/place.js"></script>
+{% endblock %}
