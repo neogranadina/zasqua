@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 6 context gathered
-last_updated: "2026-03-27T01:53:38.616Z"
+status: Ready to execute
+stopped_at: Completed 06-entity-place-detail-pages-01-PLAN.md
+last_updated: "2026-03-27T14:17:22.551Z"
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 8
+  completed_plans: 6
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 05 — pmtiles-infrastructure
+**Current focus:** Phase 06 — entity-place-detail-pages
 
 ## Current Position
 
-Phase: 6
-Plan: Not started
+Phase: 06 (entity-place-detail-pages) — EXECUTING
+Plan: 3 of 4
 
 ## Performance Metrics
 
@@ -67,6 +67,9 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 04]: Single Eleventy build retained — profile first, split only if build exceeds ~25 min
 - [Phase 05-pmtiles-infrastructure]: Inlined protomaps/PMTiles shared helpers (pmtiles_path, tile_path) into worker-tiles/src/index.ts — monorepo-relative import path cannot resolve from standalone directory
 - [Phase 05-pmtiles-infrastructure]: Tippecanoe pinned to 2.72.0 in CI for reproducible builds; boto3 single PUT used for R2 upload to zasqua-tiles
+- [Phase 06-entity-place-detail-pages]: Reverse lookups written as plain JSON objects (reference_code -> array of codes) for O(1) lookup in data loaders
+- [Phase 06]: ui.js entity/place sections follow existing roles/description pattern; CSS classes use @apply for stone-scale tokens and var(--color-*) for brand colors
+- [Phase 06-entity-place-detail-pages]: entidad/lugar search filters are URL-only (not rendered as sidebar facets) — applied when arriving from detail page links
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-27T01:53:38.613Z
-Stopped at: Phase 6 context gathered
-Resume file: .planning/phases/06-entity-place-detail-pages/06-CONTEXT.md
+Last session: 2026-03-27T14:17:22.548Z
+Stopped at: Completed 06-entity-place-detail-pages-01-PLAN.md
+Resume file: None

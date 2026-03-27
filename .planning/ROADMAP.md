@@ -64,8 +64,8 @@ Plans:
   6. A place detail page loads its linked archival descriptions from a pre-built JSON shard and displays them as a browsable list
 **Plans**: 4 plans
 Plans:
-- [ ] 06-01-PLAN.md — Data pipeline: reverse lookups, data loader enrichment, Pagefind filters, search.js extension
-- [ ] 06-02-PLAN.md — Shared UI assets: ui.js entity/place sections, CSS component classes
+- [x] 06-01-PLAN.md — Data pipeline: reverse lookups, data loader enrichment, Pagefind filters, search.js extension
+- [x] 06-02-PLAN.md — Shared UI assets: ui.js entity/place sections, CSS component classes
 - [ ] 06-03-PLAN.md — Entity detail page template and client-side timeline script
 - [ ] 06-04-PLAN.md — Place detail page template with MapLibre map and client-side scripts
 **UI hint**: yes
@@ -114,7 +114,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 |-------|----------------|--------|-----------|
 | 4. Build Pipeline & Data Pre-compute | 2/2 | Complete   | 2026-03-26 |
 | 5. PMTiles Infrastructure | 2/2 | Complete   | 2026-03-26 |
-| 6. Entity & Place Detail Pages | 0/4 | Not started | - |
+| 6. Entity & Place Detail Pages | 2/4 | In Progress|  |
 | 7. Place Explorer | 0/? | Not started | - |
 | 8. Entity Explorer — List View | 0/? | Not started | - |
 | 9. Entity Network Graph | 0/? | Not started | - |
