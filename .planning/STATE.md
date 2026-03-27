@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 06-entity-place-detail-pages-03-PLAN.md
-last_updated: "2026-03-27T14:39:04.618Z"
+stopped_at: "Completed plans 06-01 through 06-04 tasks 1-2; awaiting checkpoint:human-verify at 06-04 Task 3"
+last_updated: "2026-03-27T14:41:01.711Z"
 progress:
   total_phases: 6
   completed_phases: 2
@@ -70,8 +70,13 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 06-entity-place-detail-pages]: Reverse lookups written as plain JSON objects (reference_code -> array of codes) for O(1) lookup in data loaders
 - [Phase 06]: ui.js entity/place sections follow existing roles/description pattern; CSS classes use @apply for stone-scale tokens and var(--color-*) for brand colors
 - [Phase 06-entity-place-detail-pages]: entidad/lugar search filters are URL-only (not rendered as sidebar facets) — applied when arriving from detail page links
+<<<<<<< HEAD
 - [Phase 06]: Role labels hardcoded in entity.js — ui.js is build-time only, not available client-side
 - [Phase 06]: Entidades breadcrumb is plain text — entity explorer ships in Phase 8
+=======
+- [Phase 06]: Used place.place_code (not place.id) for shard fetch path and search URL — matches precompute-links.js output and Pagefind filter values
+- [Phase 06]: MapLibre CDN conditional on coordinates in lugar.njk — saves ~700KB JS for coordinate-less place pages; pmtiles protocol registered in template head module script only
+>>>>>>> worktree-agent-a5b62bbd
 
 ### Pending Todos
 
@@ -86,6 +91,11 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
+<<<<<<< HEAD
 Last session: 2026-03-27T14:39:04.615Z
 Stopped at: Completed 06-entity-place-detail-pages-03-PLAN.md
+=======
+Last session: 2026-03-27T14:40:54.555Z
+Stopped at: Completed 06-04-PLAN.md Tasks 1 and 2; awaiting checkpoint:human-verify at Task 3
+>>>>>>> worktree-agent-a5b62bbd
 Resume file: None
