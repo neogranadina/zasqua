@@ -38,6 +38,9 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ### Recently Validated
 
+- Entity explorer (`/explorar/entidades/`) with Pagefind-powered search, entity type/function/date facets, pagination, URL state — v0.5.0 Phase 8
+- Place explorer migrated from in-memory JSON filtering to Pagefind place index — v0.5.0 Phase 8
+- Three separate Pagefind indices (descriptions, entities, places) built in CI — v0.5.0 Phase 8
 - Pre-compute scripts for entity/place link shards, index files (D-06/D-07), and co-occurrence graph — v0.5.0 Phase 4
 - Build pipeline wiring (B2 downloads, pre-compute steps, passthrough copies) — v0.5.0 Phase 4
 
@@ -117,4 +120,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-26 — Phase 4 complete, data pipeline wired*
+*Last updated: 2026-03-28 — Phase 8 complete, entity explorer + Pagefind migration*
