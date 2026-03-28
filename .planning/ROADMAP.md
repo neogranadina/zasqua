@@ -94,7 +94,11 @@ Plans:
   1. A user on `/explorar/entidades/` can type an entity name and see matching results appear without a full-page reload
   2. A user can filter entities by entity type, primary function, and date range; results update in sync
   3. The results list uses virtual rendering or pagination — never more than a few hundred DOM nodes regardless of result count; browsing through 92K entity results does not freeze the browser
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 08-01-PLAN.md — Pagefind metadata on templates, yearRange filter, CI three-index build
+- [ ] 08-02-PLAN.md — Entity explorer page, EntityExplorer JS class, CSS classes
+- [ ] 08-03-PLAN.md — Place explorer migration from in-memory JSON to Pagefind
 **UI hint**: yes
 
 ### Phase 9: Entity Network Graph
@@ -120,5 +124,5 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 | 5. PMTiles Infrastructure | 2/2 | Complete   | 2026-03-26 |
 | 6. Entity & Place Detail Pages | 2/4 | In Progress|  |
 | 7. Place Explorer | 1/3 | In Progress|  |
-| 8. Entity Explorer — List View | 0/? | Not started | - |
+| 8. Entity Explorer — List View | 0/3 | Not started | - |
 | 9. Entity Network Graph | 0/? | Not started | - |
