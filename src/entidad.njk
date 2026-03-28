@@ -96,14 +96,6 @@ eleventyComputed:
           </div>
         {% endif %}
 
-        {# Section: Descripciones vinculadas #}
-        <div class="detail-section">
-          <h3 class="font-semibold text-stone-400">{{ ui.entity.linkedDescriptions }}</h3>
-          <a href="/buscar/?entidad={{ ent.entity_code }}" class="linked-desc-link" id="linked-desc-cta">
-            {{ ui.entity.linkedDescriptionsLink | replace("{count}", ent._linked_count) }} &rarr;
-          </a>
-        </div>
-
       </div>
 
       {# Right column: aside with timeline #}
@@ -113,6 +105,9 @@ eleventyComputed:
           <div class="entity-timeline" id="entity-timeline" data-entity-code="{{ ent.entity_code }}">
             <p class="text-stone-500 text-sm">{{ ui.general.loading }}</p>
           </div>
+          <a href="/buscar/?entidad={{ ent.entity_code }}" class="linked-desc-link" id="linked-desc-cta" style="margin-top: 12px; display: inline-block">
+            {{ ui.entity.linkedDescriptionsLink | replace("{count}", ent._linked_count) }} &rarr;
+          </a>
         </div>
       </div>
 
