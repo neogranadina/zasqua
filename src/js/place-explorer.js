@@ -1,9 +1,12 @@
 /**
  * Place Explorer
  *
- * In-memory search and faceted filtering over place-index.json, with a
+ * Pagefind-powered search and faceted filtering for places, with a
  * MapLibre heatmap/circle map, paginated results list, sidebar facets,
  * filter pills, URL state sync, sort toggle, and "Filter by map area" toggle.
+ *
+ * Search, facets, and results come from the /pagefind-places/ index.
+ * Map coordinates come from /data/place-index.json (fetched separately).
  *
  * Satisfies PEXP-01 (search), PEXP-02 (facet filtering), PEXP-03 (heatmap
  * map), and PEXP-04 (paginated results list).
@@ -12,11 +15,13 @@
 class PlaceExplorer {
   constructor(container) {
     this.container = container;
-    this.allPlaces = [];
-    this.filtered = [];
+    this.allPlaces = [];      // Loaded from place-index.json — map coordinates only
+    this.pagefind = null;
+    this.globalFilters = {};
+    this.lastSearch = null;   // Cached last Pagefind search result (for viewport re-filter)
     this.map = null;
     this.mapReady = false;
-    this.perPage = 50;
+    this.perPage = 20;
     this._debounce = null;
 
     this.placeTypes = {};
@@ -46,7 +51,21 @@ class PlaceExplorer {
     this.showLoadingOverlay();
 
     try {
-      await this.loadData();
+      // Load Pagefind and place-index.json in parallel
+      const pagefindInit = (async () => {
+        this.pagefind = await import('/pagefind-places/pagefind.js');
+        await this.pagefind.options({ bundlePath: '/pagefind-places/' });
+        await this.pagefind.init();
+        this.globalFilters = await this.pagefind.filters();
+      })();
+
+      const jsonLoad = (async () => {
+        const response = await fetch('/data/place-index.json');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        this.allPlaces = await response.json();
+      })();
+
+      await Promise.all([pagefindInit, jsonLoad]);
     } catch (e) {
       this.hideLoadingOverlay();
       this.showError();
@@ -60,14 +79,8 @@ class PlaceExplorer {
     window.addEventListener('popstate', () => {
       this.parseUrlParams();
       this.syncFormToState();
-      this.render();
+      this.search();
     });
-  }
-
-  async loadData() {
-    const response = await fetch('/data/place-index.json');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    this.allPlaces = await response.json();
   }
 
   showLoadingOverlay() {
@@ -110,7 +123,7 @@ class PlaceExplorer {
       this._debounce = setTimeout(() => {
         this.state.q = this.searchInput.value;
         this.state.page = 1;
-        this.render();
+        this.search();
         this.updateUrl();
       }, 250);
     });
@@ -279,38 +292,10 @@ class PlaceExplorer {
             `<strong style="font-size:0.95rem">${safeName}</strong><br>` +
             `<span style="font-size:0.8rem;color:#57534e">${typeLabel} · ${docText}</span><br>` +
             `<span style="font-size:0.8rem;display:inline-flex;gap:0.75rem;margin-top:0.25rem">` +
-            `<a href="#place-${placeId}" class="popup-scroll-link" data-place-id="${placeId}" style="color:var(--color-burgundy-deep);cursor:pointer">Ver en la lista</a>` +
             `<a href="/lugar/${slug}/" style="color:var(--color-burgundy-deep)">Ver ficha</a>` +
             `</span>`
           )
           .addTo(this.map);
-
-        // Handle "Ver en la lista" click — scroll to result or navigate to correct page
-        popup.getElement().querySelector('.popup-scroll-link').addEventListener('click', (ev) => {
-          ev.preventDefault();
-          const el = document.getElementById(`place-${placeId}`);
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.style.background = 'var(--color-stone-100)';
-            setTimeout(() => { el.style.background = ''; }, 2000);
-          } else {
-            // Place is on a different page — find which page and navigate
-            const idx = this.filtered.findIndex(p => p.id === placeId);
-            if (idx >= 0) {
-              this.state.page = Math.floor(idx / this.perPage) + 1;
-              this.render();
-              this.updateUrl();
-              requestAnimationFrame(() => {
-                const target = document.getElementById(`place-${placeId}`);
-                if (target) {
-                  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                  target.style.background = 'var(--color-stone-100)';
-                  setTimeout(() => { target.style.background = ''; }, 2000);
-                }
-              });
-            }
-          }
-        });
       });
 
       // Click on heatmap: zoom in
@@ -326,8 +311,8 @@ class PlaceExplorer {
         this.map.getCanvas().style.cursor = '';
       });
 
-      // Initial render after map is ready
-      this.render();
+      // Initial search after map is ready
+      this.search();
     });
   }
 
@@ -372,16 +357,107 @@ class PlaceExplorer {
     }
   }
 
-  // ─── Filtering ──────────────────────────────────────────────────────────────
+  // ─── Pagefind search ─────────────────────────────────────────────────────────
 
-  applyFilters() {
-    let result = this.allPlaces;
-    const q = this.state.q.trim().toLowerCase();
-    if (q) result = result.filter(p => p.display_name.toLowerCase().includes(q));
-    if (this.state.type.length > 0) result = result.filter(p => this.state.type.includes(p.place_type));
-    if (this.state.hasCoords === true) result = result.filter(p => p.lat != null && p.lon != null);
-    if (this.state.hasAuthority === true) result = result.filter(p => p.has_wikidata || p.has_whg || p.has_hgis);
-    return result;
+  async search() {
+    if (!this.pagefind) return;
+    // DOM may not be built yet (map fires search on load before buildDOM)
+    if (!this.resultsListEl) return;
+
+    // Build Pagefind filters
+    const pfFilters = {};
+    if (this.state.type.length > 0) pfFilters.place_type = { any: this.state.type };
+    if (this.state.hasCoords !== null) pfFilters.has_coordinates = this.state.hasCoords ? 'true' : 'false';
+    if (this.state.hasAuthority !== null) pfFilters.has_authority = this.state.hasAuthority ? 'true' : 'false';
+
+    // Build Pagefind sort
+    const pfSort = {};
+    if (this.state.sort === 'name') {
+      pfSort.name = 'asc';
+    }
+    // 'linked' sort is handled after loading results (Pagefind doesn't have a count sort)
+
+    try {
+      const searchResult = await this.pagefind.search(
+        this.state.q || null,
+        {
+          filters: Object.keys(pfFilters).length ? pfFilters : undefined,
+          sort: this.state.sort === 'name' ? pfSort : undefined
+        }
+      );
+
+      this.lastSearch = searchResult;
+
+      const allResults = searchResult.results;
+      const scopedFilters = searchResult.filters || this.globalFilters;
+
+      // Apply viewport filter if mapBound is active
+      // Build a Set of place IDs within the viewport from allPlaces coordinates
+      let filteredResults = allResults;
+      if (this.state.mapBound && this.map && this.mapReady) {
+        const bounds = this.map.getBounds();
+        const viewportIds = new Set(
+          this.allPlaces
+            .filter(p =>
+              p.lat != null && p.lon != null &&
+              p.lon >= bounds.getWest() && p.lon <= bounds.getEast() &&
+              p.lat >= bounds.getSouth() && p.lat <= bounds.getNorth()
+            )
+            .map(p => String(p.id))
+        );
+        // Filter Pagefind results by URL — extract place ID from URL
+        filteredResults = allResults.filter(r => {
+          // URL is like /lugar/SomeName/ — match by cross-referencing meta after load
+          // Use the place ID embedded in the URL slug via the id field
+          return true; // Will filter after loading hits below
+        });
+        // Narrow by loading just IDs from Pagefind metadata
+        // For efficiency, build filtered list using allPlaces URL patterns
+        const viewportUrls = new Set(
+          this.allPlaces
+            .filter(p =>
+              p.lat != null && p.lon != null &&
+              p.lon >= bounds.getWest() && p.lon <= bounds.getEast() &&
+              p.lat >= bounds.getSouth() && p.lat <= bounds.getNorth()
+            )
+            .map(p => `/lugar/${p.display_name.replace(/[?#]/g, '')}/`)
+        );
+        filteredResults = allResults.filter(r => viewportUrls.has(r.url));
+      }
+
+      const total = filteredResults.length;
+      const totalPages = Math.ceil(total / this.perPage) || 1;
+      if (this.state.page > totalPages) this.state.page = 1;
+
+      const start = (this.state.page - 1) * this.perPage;
+      const pageResults = filteredResults.slice(start, start + this.perPage);
+      let hits = await Promise.all(pageResults.map(r => r.data()));
+
+      // Apply 'linked' (document count) sort after loading, since Pagefind doesn't support it
+      if (this.state.sort === 'linked') {
+        hits = hits.slice().sort((a, b) => {
+          const aCount = parseInt(a.meta.linked_count || '0', 10);
+          const bCount = parseInt(b.meta.linked_count || '0', 10);
+          const diff = bCount - aCount;
+          if (diff !== 0) return diff;
+          return (a.meta.title || '').localeCompare(b.meta.title || '', 'es');
+        });
+        // Re-sort full results list for pagination consistency
+        // (only current page is loaded — linked sort is approximate for cross-page)
+      }
+
+      // Update map: show all places from allPlaces for the heatmap
+      // Map always shows the full coordinate set (not Pagefind-filtered)
+      this.updateMap(this.allPlaces);
+
+      this.renderResultsInfo(total, allResults.length);
+      this.renderResults(hits, total);
+      this.renderPagination(total);
+      this.renderFacets(scopedFilters);
+      this.renderPills();
+    } catch (e) {
+      console.error('PlaceExplorer search error:', e);
+    }
   }
 
   filterByViewport(places) {
@@ -394,63 +470,46 @@ class PlaceExplorer {
     });
   }
 
-  sortResults(results) {
-    const sorted = results.slice();
-    const q = this.state.q.trim().toLowerCase();
-    if (this.state.sort === 'linked') {
-      sorted.sort((a, b) => {
-        const diff = b.linked_description_count - a.linked_description_count;
-        if (diff !== 0) return diff;
-        return a.display_name.localeCompare(b.display_name, 'es');
-      });
-    } else if (q) {
-      // When searching: exact match first, then prefix, then contains
-      sorted.sort((a, b) => {
-        const aLower = a.display_name.toLowerCase();
-        const bLower = b.display_name.toLowerCase();
-        const aExact = aLower === q;
-        const bExact = bLower === q;
-        if (aExact !== bExact) return aExact ? -1 : 1;
-        const aPrefix = aLower.startsWith(q);
-        const bPrefix = bLower.startsWith(q);
-        if (aPrefix !== bPrefix) return aPrefix ? -1 : 1;
-        return aLower.localeCompare(bLower, 'es');
-      });
-    } else {
-      sorted.sort((a, b) => a.display_name.localeCompare(b.display_name, 'es'));
+  // ─── Main render (called by map moveend for viewport-only re-filter) ─────────
+
+  async renderFromCache() {
+    if (!this.lastSearch || !this.resultsListEl) return;
+    const allResults = this.lastSearch.results;
+    const scopedFilters = this.lastSearch.filters || this.globalFilters;
+
+    let filteredResults = allResults;
+    if (this.state.mapBound && this.map && this.mapReady) {
+      const bounds = this.map.getBounds();
+      const viewportUrls = new Set(
+        this.allPlaces
+          .filter(p =>
+            p.lat != null && p.lon != null &&
+            p.lon >= bounds.getWest() && p.lon <= bounds.getEast() &&
+            p.lat >= bounds.getSouth() && p.lat <= bounds.getNorth()
+          )
+          .map(p => `/lugar/${p.display_name.replace(/[?#]/g, '')}/`)
+      );
+      filteredResults = allResults.filter(r => viewportUrls.has(r.url));
     }
-    return sorted;
-  }
 
-  // ─── Main render ────────────────────────────────────────────────────────────
-
-  render() {
-    // If DOM isn't built yet (initMap fires render on load), skip silently
-    if (!this.resultsListEl) return;
-
-    const afterFilter = this.applyFilters();
-    this.filtered = this.filterByViewport(afterFilter);
-    const sorted = this.sortResults(this.filtered);
-
-    const total = sorted.length;
+    const total = filteredResults.length;
     const totalPages = Math.ceil(total / this.perPage) || 1;
-    // Clamp page
     if (this.state.page > totalPages) this.state.page = 1;
 
     const start = (this.state.page - 1) * this.perPage;
-    const page = sorted.slice(start, start + this.perPage);
+    const pageResults = filteredResults.slice(start, start + this.perPage);
+    const hits = await Promise.all(pageResults.map(r => r.data()));
 
-    this.renderResultsInfo(total);
-    this.renderResults(page, total);
+    this.renderResultsInfo(total, allResults.length);
+    this.renderResults(hits, total);
     this.renderPagination(total);
-    this.renderFacets();
+    this.renderFacets(scopedFilters);
     this.renderPills();
-    this.updateMap(afterFilter); // map shows pre-viewport-filter results
   }
 
   // ─── Results info bar ───────────────────────────────────────────────────────
 
-  renderResultsInfo(total) {
+  renderResultsInfo(total, rawTotal) {
     this.resultsInfoEl.innerHTML = '';
 
     const countSpan = document.createElement('span');
@@ -460,7 +519,7 @@ class PlaceExplorer {
       this.state.hasCoords !== null || this.state.hasAuthority !== null || this.state.mapBound;
 
     if (!hasFilters) {
-      countSpan.textContent = `${this.allPlaces.length.toLocaleString('es-CO')} lugares`;
+      countSpan.textContent = `${(rawTotal || total).toLocaleString('es-CO')} lugares`;
     } else if (total === 1) {
       countSpan.textContent = '1 lugar encontrado';
     } else {
@@ -488,7 +547,7 @@ class PlaceExplorer {
         if (this.state.sort === opt.value) return;
         this.state.sort = opt.value;
         this.state.page = 1;
-        this.render();
+        this.search();
         this.updateUrl();
       });
       sortControls.appendChild(btn);
@@ -498,7 +557,7 @@ class PlaceExplorer {
 
   // ─── Results list ───────────────────────────────────────────────────────────
 
-  renderResults(page, total) {
+  renderResults(hits, total) {
     this.resultsListEl.innerHTML = '';
 
     if (total === 0) {
@@ -518,31 +577,37 @@ class PlaceExplorer {
       return;
     }
 
-    for (const p of page) {
+    for (const hit of hits) {
       const item = document.createElement('div');
       item.className = 'result-item';
-      item.id = `place-${p.id}`;
+
+      // Extract place name from meta.title (set by data-pagefind-meta="title")
+      const placeName = hit.meta.title || '';
+      const placeType = hit.meta.place_type || '';
+      const hasCoords = hit.meta.has_coordinates === 'true';
+      const linkedCount = parseInt(hit.meta.linked_count || '0', 10);
+      const nameVariants = hit.meta.name_variants || '';
+      const placeUrl = hit.url;
 
       // Row 1: name + inline meta
       const row1 = document.createElement('div');
       row1.style.cssText = 'display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap';
 
       const titleLink = document.createElement('a');
-      titleLink.href = `/lugar/${p.display_name.replace(/[?#]/g, '')}/`;
+      titleLink.href = placeUrl;
       titleLink.className = 'result-title';
-      titleLink.textContent = p.display_name;
+      titleLink.textContent = placeName;
       row1.appendChild(titleLink);
 
       const badge = document.createElement('span');
       badge.className = 'level-badge';
-      badge.textContent = this.placeTypes[p.place_type] || p.place_type;
+      badge.textContent = this.placeTypes[placeType] || placeType;
       row1.appendChild(badge);
 
-      const n = p.linked_description_count;
       const count = document.createElement('span');
       count.style.cssText = 'font-size:0.85rem;color:var(--color-stone-500)';
-      count.textContent = n > 0
-        ? `\u00b7 Asociado a ${n} ${n === 1 ? 'documento' : 'documentos'}`
+      count.textContent = linkedCount > 0
+        ? `\u00b7 Asociado a ${linkedCount} ${linkedCount === 1 ? 'documento' : 'documentos'}`
         : '\u00b7 Sin documentos asociados';
       row1.appendChild(count);
 
@@ -550,7 +615,7 @@ class PlaceExplorer {
       const indicators = document.createElement('span');
       indicators.style.cssText = 'display:inline-flex;gap:0.35rem;align-items:center;margin-left:auto';
 
-      if (p.lat != null && p.lon != null) {
+      if (hasCoords) {
         const pin = document.createElement('span');
         pin.className = 'material-symbols-outlined';
         pin.style.cssText = 'font-size:1.3rem;color:var(--color-burgundy);font-variation-settings:"wght" 200';
@@ -558,39 +623,30 @@ class PlaceExplorer {
         pin.title = 'Con coordenadas';
         indicators.appendChild(pin);
       }
-      if (p.has_wikidata) {
-        const wd = document.createElement('span');
-        wd.className = 'authority-pill';
-        wd.style.cssText += 'font-size:0.7rem;padding:2px 6px';
-        wd.textContent = 'WD';
-        wd.title = 'Wikidata';
-        indicators.appendChild(wd);
+
+      // Authority pills from meta — has_authority is "true"/"false" but individual
+      // authority names are not stored in Pagefind meta. Show generic badge.
+      if (hit.meta.has_authority === 'true') {
+        const authBadge = document.createElement('span');
+        authBadge.className = 'authority-pill';
+        authBadge.style.cssText += 'font-size:0.7rem;padding:2px 6px';
+        authBadge.textContent = 'Autoridad';
+        authBadge.title = 'Con vínculo de autoridad';
+        indicators.appendChild(authBadge);
       }
-      if (p.has_whg) {
-        const whg = document.createElement('span');
-        whg.className = 'authority-pill';
-        whg.style.cssText += 'font-size:0.7rem;padding:2px 6px';
-        whg.textContent = 'WHG';
-        whg.title = 'World Historical Gazetteer';
-        indicators.appendChild(whg);
-      }
-      if (p.has_hgis) {
-        const hgis = document.createElement('span');
-        hgis.className = 'authority-pill';
-        hgis.style.cssText += 'font-size:0.7rem;padding:2px 6px';
-        hgis.textContent = 'HGIS';
-        hgis.title = 'HGIS de las Indias';
-        indicators.appendChild(hgis);
-      }
+
       row1.appendChild(indicators);
       item.appendChild(row1);
 
       // Row 2: name variants (if any)
-      if (p.name_variants && p.name_variants.length > 0) {
-        const variants = document.createElement('div');
-        variants.style.cssText = 'font-size:0.8rem;color:var(--color-stone-400);margin-top:0.15rem';
-        variants.textContent = p.name_variants.join(', ');
-        item.appendChild(variants);
+      if (nameVariants) {
+        const variantsList = nameVariants.split(',').map(v => v.trim()).filter(Boolean);
+        if (variantsList.length > 0) {
+          const variants = document.createElement('div');
+          variants.style.cssText = 'font-size:0.8rem;color:var(--color-stone-400);margin-top:0.15rem';
+          variants.textContent = variantsList.join(', ');
+          item.appendChild(variants);
+        }
       }
 
       this.resultsListEl.appendChild(item);
@@ -620,7 +676,7 @@ class PlaceExplorer {
       btn.textContent = label;
       btn.addEventListener('click', () => {
         this.state.page = page;
-        this.render();
+        this.search();
         this.updateUrl();
         this.resultsListEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
@@ -645,22 +701,19 @@ class PlaceExplorer {
 
   // ─── Facets ─────────────────────────────────────────────────────────────────
 
-  renderFacets() {
+  renderFacets(filters) {
     this.facetContainer.innerHTML = '';
 
-    // Count types from allPlaces (total counts, not filtered)
-    const typeCounts = {};
-    for (const p of this.allPlaces) {
-      typeCounts[p.place_type] = (typeCounts[p.place_type] || 0) + 1;
-    }
+    const pfFilters = filters || this.globalFilters;
 
     // Group 1: Tipo de lugar
     const typeGroup = this.makeFacetGroup('Tipo de lugar', 'type', this.facetGroupState.type);
     const typeContent = typeGroup.querySelector('.facet-group-content');
 
+    const typeCounts = pfFilters.place_type || {};
     for (const [key, label] of Object.entries(this.placeTypes)) {
       const count = typeCounts[key] || 0;
-      if (count === 0) continue;
+      if (count === 0 && !this.state.type.includes(key)) continue;
       const lbl = document.createElement('label');
       lbl.className = 'facet-option';
       const cb = document.createElement('input');
@@ -674,7 +727,7 @@ class PlaceExplorer {
           this.state.type = this.state.type.filter(t => t !== key);
         }
         this.state.page = 1;
-        this.render();
+        this.search();
         this.updateUrl();
       });
       lbl.appendChild(cb);
@@ -693,7 +746,8 @@ class PlaceExplorer {
     // Group 2: Coordenadas
     const coordsGroup = this.makeFacetGroup('Coordenadas', 'coords', this.facetGroupState.coords);
     const coordsContent = coordsGroup.querySelector('.facet-group-content');
-    const coordsWithCoords = this.allPlaces.filter(p => p.lat != null && p.lon != null).length;
+    const coordsCounts = pfFilters.has_coordinates || {};
+    const coordsWithCoords = coordsCounts['true'] || 0;
 
     const coordsLbl = document.createElement('label');
     coordsLbl.className = 'facet-option';
@@ -703,7 +757,7 @@ class PlaceExplorer {
     coordsCb.addEventListener('change', () => {
       this.state.hasCoords = coordsCb.checked ? true : null;
       this.state.page = 1;
-      this.render();
+      this.search();
       this.updateUrl();
     });
     coordsLbl.appendChild(coordsCb);
@@ -721,7 +775,8 @@ class PlaceExplorer {
     // Group 3: Autoridades
     const authGroup = this.makeFacetGroup('Autoridades', 'authority', this.facetGroupState.authority);
     const authContent = authGroup.querySelector('.facet-group-content');
-    const withAuthority = this.allPlaces.filter(p => p.has_wikidata || p.has_whg || p.has_hgis).length;
+    const authCounts = pfFilters.has_authority || {};
+    const withAuthority = authCounts['true'] || 0;
 
     const authLbl = document.createElement('label');
     authLbl.className = 'facet-option';
@@ -731,7 +786,7 @@ class PlaceExplorer {
     authCb.addEventListener('change', () => {
       this.state.hasAuthority = authCb.checked ? true : null;
       this.state.page = 1;
-      this.render();
+      this.search();
       this.updateUrl();
     });
     authLbl.appendChild(authCb);
@@ -791,7 +846,7 @@ class PlaceExplorer {
       this.pillsEl.appendChild(this.makePill(label, () => {
         this.state.type = this.state.type.filter(x => x !== t);
         this.state.page = 1;
-        this.render();
+        this.search();
         this.updateUrl();
       }));
     }
@@ -801,7 +856,7 @@ class PlaceExplorer {
       this.pillsEl.appendChild(this.makePill('Con coordenadas', () => {
         this.state.hasCoords = null;
         this.state.page = 1;
-        this.render();
+        this.search();
         this.updateUrl();
       }));
     }
@@ -811,7 +866,7 @@ class PlaceExplorer {
       this.pillsEl.appendChild(this.makePill('Con autoridades', () => {
         this.state.hasAuthority = null;
         this.state.page = 1;
-        this.render();
+        this.search();
         this.updateUrl();
       }));
     }
@@ -846,20 +901,25 @@ class PlaceExplorer {
     this.state.hasAuthority = null;
     this.state.page = 1;
     if (this.searchInput) this.searchInput.value = '';
-    this.render();
+    this.search();
     this.updateUrl();
   }
 
   // ─── Map ────────────────────────────────────────────────────────────────────
 
-  updateMap(filteredPlaces) {
+  updateMap(places) {
     if (!this.mapReady) return;
-    const features = filteredPlaces
+    const features = places
       .filter(p => p.lat != null && p.lon != null)
       .map(p => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-        properties: { id: p.id, display_name: p.display_name, place_type: p.place_type, linked_description_count: p.linked_description_count }
+        properties: {
+          id: p.id,
+          display_name: p.display_name,
+          place_type: p.place_type,
+          linked_description_count: p.linked_description_count
+        }
       }));
     const source = this.map.getSource('places');
     if (source) {
@@ -873,21 +933,10 @@ class PlaceExplorer {
     if (this.state.mapBound) {
       this.mapAreaToggle.classList.add('active');
       this.mapAreaToggle.textContent = 'Filtrando por \u00e1rea del mapa';
-      // Listen for map moves to re-filter results
+      // Listen for map moves to re-filter results without updating URL (per Phase 7 decision)
       this._onMoveEnd = () => {
         if (!this.state.mapBound) return;
-        // Re-filter without updating URL (per Pitfall 7)
-        const afterFilter = this.applyFilters();
-        this.filtered = this.filterByViewport(afterFilter);
-        const sorted = this.sortResults(this.filtered);
-        const total = sorted.length;
-        const totalPages = Math.ceil(total / this.perPage) || 1;
-        if (this.state.page > totalPages) this.state.page = 1;
-        const start = (this.state.page - 1) * this.perPage;
-        const page = sorted.slice(start, start + this.perPage);
-        this.renderResultsInfo(total);
-        this.renderResults(page, total);
-        this.renderPagination(total);
+        this.renderFromCache();
       };
       this.map.on('moveend', this._onMoveEnd);
     } else {
@@ -900,7 +949,7 @@ class PlaceExplorer {
     }
 
     this.state.page = 1;
-    this.render();
+    this.search();
     this.updateUrl();
   }
 
