@@ -105,7 +105,18 @@ jobs:
           echo "Site size: $(du -sh _site | cut -f1)"
 
       - name: Index with Pagefind
-        run: npx pagefind --site _site
+        run: |
+          # Run 1: Description search index (exclude entity and place pages)
+          npx pagefind --site _site --output-subdir pagefind \
+            --exclude-selectors "[data-pagefind-entity-page],[data-pagefind-place-page]"
+
+          # Run 2: Entity explorer index
+          npx pagefind --site _site --output-subdir pagefind-entities \
+            --glob "entidad/**/*.html"
+
+          # Run 3: Place explorer index
+          npx pagefind --site _site --output-subdir pagefind-places \
+            --glob "lugar/**/*.html"
 
       - name: Deploy to R2
         env:
