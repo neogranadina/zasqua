@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: "Completed 05-pmtiles-infrastructure-02-PLAN.md (Task 1); awaiting checkpoint:human-verify at Task 2"
-last_updated: "2026-03-26T23:40:57.597Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-03-28T18:46:08.528Z"
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 4
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -67,6 +67,9 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 04]: Single Eleventy build retained — profile first, split only if build exceeds ~25 min
 - [Phase 05-pmtiles-infrastructure]: Inlined protomaps/PMTiles shared helpers (pmtiles_path, tile_path) into worker-tiles/src/index.ts — monorepo-relative import path cannot resolve from standalone directory
 - [Phase 05-pmtiles-infrastructure]: Tippecanoe pinned to 2.72.0 in CI for reproducible builds; boto3 single PUT used for R2 upload to zasqua-tiles
+- [Phase 07-place-explorer]: filterByViewport applied after applyFilters — map receives pre-viewport result set, list constrained to viewport
+- [Phase 07-place-explorer]: moveend listener updates results list only, not URL — avoids polluting browser history on every pan/zoom
+- [Phase 07-place-explorer]: Facet counts from allPlaces (not filtered) per D-19 — show total dataset counts
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-26T23:40:57.593Z
-Stopped at: Completed 05-pmtiles-infrastructure-02-PLAN.md (Task 1); awaiting checkpoint:human-verify at Task 2
+Last session: 2026-03-28T18:46:03.925Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
