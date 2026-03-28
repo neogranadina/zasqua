@@ -98,14 +98,13 @@ class PlaceExplorer {
 
     // Search input (full width, above layout)
     const searchHeader = document.createElement('div');
-    searchHeader.className = 'search-header';
-    searchHeader.style.marginBottom = '1rem';
+    searchHeader.style.cssText = 'margin-bottom:1rem';
 
     this.searchInput = document.createElement('input');
-    this.searchInput.type = 'text';
-    this.searchInput.className = 'search-input';
+    this.searchInput.type = 'search';
     this.searchInput.placeholder = 'Buscar por nombre de lugar\u2026';
     this.searchInput.value = this.state.q;
+    this.searchInput.style.cssText = 'width:100%;padding:0.75rem 1.25rem;font-size:1rem;border:1px solid var(--color-stone-300);border-radius:50px;outline:none;font-family:var(--font-sans);box-sizing:border-box';
     this.searchInput.addEventListener('input', () => {
       clearTimeout(this._debounce);
       this._debounce = setTimeout(() => {
@@ -143,7 +142,7 @@ class PlaceExplorer {
 
     // Content column: map + results
     const content = document.createElement('div');
-    content.className = 'search-content';
+    content.className = 'search-results';
 
     // Map area toggle
     const toggleRow = document.createElement('div');
@@ -200,7 +199,7 @@ class PlaceExplorer {
 
     this.map = new maplibregl.Map({
       container: 'explorer-map',
-      style: 'https://cdn.protomaps.com/basemaps/v4/en.json',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
       center: [-74.0, 5.5],
       zoom: 5
     });
@@ -223,17 +222,26 @@ class PlaceExplorer {
         source: 'places',
         maxzoom: 10,
         paint: {
-          'heatmap-weight': 1,
-          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 9, 2],
+          'heatmap-weight': [
+            'interpolate', ['linear'],
+            ['get', 'linked_description_count'],
+            0, 0.3,
+            10, 0.6,
+            100, 1
+          ],
+          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 0.6, 5, 1.2, 9, 2.5],
           'heatmap-color': [
             'interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(139,41,66,0)',
-            0.1, 'rgba(201,213,255,0.4)',
-            0.4, 'rgba(180,90,115,0.7)',
-            0.8, 'rgba(139,41,66,0.9)',
-            1, '#4A1522'
+            0, 'rgba(0,0,0,0)',
+            0.05, 'rgba(219,201,210,0.4)',
+            0.15, 'rgba(190,140,160,0.55)',
+            0.3, 'rgba(168,90,120,0.7)',
+            0.5, 'rgba(139,41,66,0.8)',
+            0.7, 'rgba(110,25,50,0.9)',
+            0.9, 'rgba(74,21,34,0.95)',
+            1, '#2D0A14'
           ],
-          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 2, 4, 9, 20],
+          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 2, 15, 5, 25, 8, 40, 10, 50],
           'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 7, 1, 10, 0]
         }
       });
@@ -257,16 +265,52 @@ class PlaceExplorer {
       this.map.on('click', 'places-circle', (e) => {
         const feat = e.features[0];
         if (!feat) return;
-        const name = feat.properties.display_name;
-        const slug = name.replace(/[?#]/g, '');
-        const safeName = this.escapeHtml(name);
-        new maplibregl.Popup()
+        const props = feat.properties;
+        const safeName = this.escapeHtml(props.display_name);
+        const typeLabel = this.escapeHtml(this.placeTypes[props.place_type] || props.place_type);
+        const n = props.linked_description_count || 0;
+        const docText = `${n} ${n === 1 ? 'documento' : 'documentos'}`;
+        const slug = props.display_name.replace(/[?#]/g, '');
+        const placeId = props.id;
+
+        const popup = new maplibregl.Popup({ maxWidth: '240px' })
           .setLngLat(feat.geometry.coordinates)
           .setHTML(
-            `<strong><a href="/lugar/${slug}/">${safeName}</a></strong><br>` +
-            '<span style="font-size:0.85rem;color:#57534e">Ver p\u00e1gina</span>'
+            `<strong style="font-size:0.95rem">${safeName}</strong><br>` +
+            `<span style="font-size:0.8rem;color:#57534e">${typeLabel} · ${docText}</span><br>` +
+            `<span style="font-size:0.8rem;display:inline-flex;gap:0.75rem;margin-top:0.25rem">` +
+            `<a href="#place-${placeId}" class="popup-scroll-link" data-place-id="${placeId}" style="color:var(--color-burgundy-deep);cursor:pointer">Ver en la lista</a>` +
+            `<a href="/lugar/${slug}/" style="color:var(--color-burgundy-deep)">Ver ficha</a>` +
+            `</span>`
           )
           .addTo(this.map);
+
+        // Handle "Ver en la lista" click — scroll to result or navigate to correct page
+        popup.getElement().querySelector('.popup-scroll-link').addEventListener('click', (ev) => {
+          ev.preventDefault();
+          const el = document.getElementById(`place-${placeId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.style.background = 'var(--color-stone-100)';
+            setTimeout(() => { el.style.background = ''; }, 2000);
+          } else {
+            // Place is on a different page — find which page and navigate
+            const idx = this.filtered.findIndex(p => p.id === placeId);
+            if (idx >= 0) {
+              this.state.page = Math.floor(idx / this.perPage) + 1;
+              this.render();
+              this.updateUrl();
+              requestAnimationFrame(() => {
+                const target = document.getElementById(`place-${placeId}`);
+                if (target) {
+                  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  target.style.background = 'var(--color-stone-100)';
+                  setTimeout(() => { target.style.background = ''; }, 2000);
+                }
+              });
+            }
+          }
+        });
       });
 
       // Click on heatmap: zoom in
@@ -352,11 +396,25 @@ class PlaceExplorer {
 
   sortResults(results) {
     const sorted = results.slice();
+    const q = this.state.q.trim().toLowerCase();
     if (this.state.sort === 'linked') {
       sorted.sort((a, b) => {
         const diff = b.linked_description_count - a.linked_description_count;
         if (diff !== 0) return diff;
         return a.display_name.localeCompare(b.display_name, 'es');
+      });
+    } else if (q) {
+      // When searching: exact match first, then prefix, then contains
+      sorted.sort((a, b) => {
+        const aLower = a.display_name.toLowerCase();
+        const bLower = b.display_name.toLowerCase();
+        const aExact = aLower === q;
+        const bExact = bLower === q;
+        if (aExact !== bExact) return aExact ? -1 : 1;
+        const aPrefix = aLower.startsWith(q);
+        const bPrefix = bLower.startsWith(q);
+        if (aPrefix !== bPrefix) return aPrefix ? -1 : 1;
+        return aLower.localeCompare(bLower, 'es');
       });
     } else {
       sorted.sort((a, b) => a.display_name.localeCompare(b.display_name, 'es'));
@@ -463,30 +521,78 @@ class PlaceExplorer {
     for (const p of page) {
       const item = document.createElement('div');
       item.className = 'result-item';
+      item.id = `place-${p.id}`;
+
+      // Row 1: name + inline meta
+      const row1 = document.createElement('div');
+      row1.style.cssText = 'display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap';
 
       const titleLink = document.createElement('a');
       titleLink.href = `/lugar/${p.display_name.replace(/[?#]/g, '')}/`;
       titleLink.className = 'result-title';
       titleLink.textContent = p.display_name;
-
-      const meta = document.createElement('div');
-      meta.className = 'result-meta';
+      row1.appendChild(titleLink);
 
       const badge = document.createElement('span');
       badge.className = 'level-badge';
       badge.textContent = this.placeTypes[p.place_type] || p.place_type;
-      meta.appendChild(badge);
+      row1.appendChild(badge);
 
-      const sep = document.createTextNode('\u00a0\u00b7\u00a0');
-      meta.appendChild(sep);
-
-      const count = document.createElement('span');
       const n = p.linked_description_count;
-      count.textContent = `${n} ${n === 1 ? 'documento' : 'documentos'}`;
-      meta.appendChild(count);
+      const count = document.createElement('span');
+      count.style.cssText = 'font-size:0.85rem;color:var(--color-stone-500)';
+      count.textContent = n > 0
+        ? `\u00b7 Asociado a ${n} ${n === 1 ? 'documento' : 'documentos'}`
+        : '\u00b7 Sin documentos asociados';
+      row1.appendChild(count);
 
-      item.appendChild(titleLink);
-      item.appendChild(meta);
+      // Indicators (pushed right)
+      const indicators = document.createElement('span');
+      indicators.style.cssText = 'display:inline-flex;gap:0.35rem;align-items:center;margin-left:auto';
+
+      if (p.lat != null && p.lon != null) {
+        const pin = document.createElement('span');
+        pin.className = 'material-symbols-outlined';
+        pin.style.cssText = 'font-size:1.3rem;color:var(--color-burgundy);font-variation-settings:"wght" 200';
+        pin.textContent = 'location_on';
+        pin.title = 'Con coordenadas';
+        indicators.appendChild(pin);
+      }
+      if (p.has_wikidata) {
+        const wd = document.createElement('span');
+        wd.className = 'authority-pill';
+        wd.style.cssText += 'font-size:0.7rem;padding:2px 6px';
+        wd.textContent = 'WD';
+        wd.title = 'Wikidata';
+        indicators.appendChild(wd);
+      }
+      if (p.has_whg) {
+        const whg = document.createElement('span');
+        whg.className = 'authority-pill';
+        whg.style.cssText += 'font-size:0.7rem;padding:2px 6px';
+        whg.textContent = 'WHG';
+        whg.title = 'World Historical Gazetteer';
+        indicators.appendChild(whg);
+      }
+      if (p.has_hgis) {
+        const hgis = document.createElement('span');
+        hgis.className = 'authority-pill';
+        hgis.style.cssText += 'font-size:0.7rem;padding:2px 6px';
+        hgis.textContent = 'HGIS';
+        hgis.title = 'HGIS de las Indias';
+        indicators.appendChild(hgis);
+      }
+      row1.appendChild(indicators);
+      item.appendChild(row1);
+
+      // Row 2: name variants (if any)
+      if (p.name_variants && p.name_variants.length > 0) {
+        const variants = document.createElement('div');
+        variants.style.cssText = 'font-size:0.8rem;color:var(--color-stone-400);margin-top:0.15rem';
+        variants.textContent = p.name_variants.join(', ');
+        item.appendChild(variants);
+      }
+
       this.resultsListEl.appendChild(item);
     }
   }
@@ -753,7 +859,7 @@ class PlaceExplorer {
       .map(p => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [p.lon, p.lat] },
-        properties: { id: p.id, display_name: p.display_name }
+        properties: { id: p.id, display_name: p.display_name, place_type: p.place_type, linked_description_count: p.linked_description_count }
       }));
     const source = this.map.getSource('places');
     if (source) {
