@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: PMTiles Infrastructure** - Tippecanoe tile generation, dedicated Cloudflare Worker, range request verification (completed 2026-03-26)
 - [ ] **Phase 6: Entity & Place Detail Pages** - ~100K entity and place pages with embedded maps and linked description shards
 - [ ] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map
-- [ ] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list
+- [x] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list (completed 2026-03-28)
 - [ ] **Phase 9: Entity Network Graph** - Sigma.js network graph with pre-computed ForceAtlas2 layout
 
 ## Phase Details
@@ -97,8 +97,8 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 08-01-PLAN.md — Pagefind metadata on templates, yearRange filter, CI three-index build
-- [ ] 08-02-PLAN.md — Entity explorer page, EntityExplorer JS class, CSS classes
-- [ ] 08-03-PLAN.md — Place explorer migration from in-memory JSON to Pagefind
+- [x] 08-02-PLAN.md — Entity explorer page, EntityExplorer JS class, CSS classes
+- [x] 08-03-PLAN.md — Place explorer migration from in-memory JSON to Pagefind
 **UI hint**: yes
 
 ### Phase 9: Entity Network Graph
@@ -124,5 +124,5 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 | 5. PMTiles Infrastructure | 2/2 | Complete   | 2026-03-26 |
 | 6. Entity & Place Detail Pages | 2/4 | In Progress|  |
 | 7. Place Explorer | 1/3 | In Progress|  |
-| 8. Entity Explorer — List View | 0/3 | Not started | - |
+| 8. Entity Explorer — List View | 3/3 | Complete   | 2026-03-28 |
 | 9. Entity Network Graph | 0/? | Not started | - |

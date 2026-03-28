@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 08-entity-explorer-list-view-01-PLAN.md
-last_updated: "2026-03-28T23:05:53.955Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 08-entity-explorer-list-view-02-PLAN.md
+last_updated: "2026-03-28T23:12:14.568Z"
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 14
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 08 (entity-explorer-list-view) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -72,6 +72,11 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 07-place-explorer]: Facet counts from allPlaces (not filtered) per D-19 — show total dataset counts
 - [Phase 08-entity-explorer-list-view]: entity-index.json passthrough removed — entity pages now indexed via Pagefind (D-15)
 - [Phase 08]: exclude-selectors used on description Pagefind run instead of glob negation for portability
+- [Phase 08-entity-explorer-list-view]: EntityExplorer modelled after SearchPage (Pagefind-based) — entity dataset requires index-based search
+- [Phase 08-entity-explorer-list-view]: Browse prompt shown pre-search — Explorar todas triggers full entity search on demand
+- [Phase 08-entity-explorer-list-view]: URL params in Spanish: tipo, funcion, fecha_nivel, fecha_valor, orden, pagina
+- [Phase 08-entity-explorer-list-view]: entity-index.json generation kept in precompute-links.js — entities.js reads it for _linked_count at build time
+- [Phase 08-entity-explorer-list-view]: PlaceExplorer viewport filtering uses URL-based matching against allPlaces coordinates — avoids loading all Pagefind result metadata upfront
 
 ### Pending Todos
 
@@ -86,6 +91,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-28T23:05:53.951Z
-Stopped at: Completed 08-entity-explorer-list-view-01-PLAN.md
+Last session: 2026-03-28T23:12:06.707Z
+Stopped at: Completed 08-entity-explorer-list-view-02-PLAN.md
 Resume file: None
