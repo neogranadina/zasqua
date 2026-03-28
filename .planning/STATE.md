@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 7 context gathered
-last_updated: "2026-03-28T17:24:15.473Z"
+status: Ready to execute
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-28T18:41:18.866Z"
 progress:
   total_phases: 6
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 9
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 7
-Plan: Not started
+Phase: 07 (place-explorer) — EXECUTING
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -74,6 +74,8 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 06]: Entidades breadcrumb is plain text — entity explorer ships in Phase 8
 - [Phase 06]: MapLibre CDN conditional on coordinates in lugar.njk — saves ~700KB JS for coordinate-less place pages; pmtiles protocol registered in template head module script only
 - [Phase 06]: place.id used for shard fetch and search URL — places.json has no place_code field; precompute-links.js will need matching fix when place_links.json is exported
+- [Phase 07]: place-index.json uses id field (not place_code) — places.json has no place_code field; id is the correct identifier
+- [Phase 07]: MapLibre CDN loaded unconditionally on explorer page — explorer always renders a map, unlike lugar.njk where it's conditional on coordinates
 
 ### Pending Todos
 
@@ -90,11 +92,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-<<<<<<< HEAD
-Last session: 2026-03-28T17:24:15.469Z
-Stopped at: Phase 7 context gathered
-=======
-Last session: 2026-03-27T14:40:54.555Z
-Stopped at: Completed 06-04-PLAN.md Tasks 1 and 2; awaiting checkpoint:human-verify at Task 3
->>>>>>> worktree-agent-a5b62bbd
-Resume file: .planning/phases/07-place-explorer/07-CONTEXT.md
+Last session: 2026-03-28T18:41:18.863Z
+Stopped at: Completed 07-01-PLAN.md
+Resume file: None

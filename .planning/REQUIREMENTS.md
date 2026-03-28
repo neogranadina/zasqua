@@ -34,10 +34,10 @@ Requirements for the Entity & Place Discovery milestone. Each maps to roadmap ph
 
 ### Place Explorer
 
-- [ ] **PEXP-01**: User can search places by name on `/explorar/lugares/`
-- [ ] **PEXP-02**: User can filter places by facets (place type, has coordinates, has authority links)
+- [x] **PEXP-01**: User can search places by name on `/explorar/lugares/`
+- [x] **PEXP-02**: User can filter places by facets (place type, has coordinates, has authority links)
 - [ ] **PEXP-03**: Place explorer renders filtered results as a heatmap on an interactive map (MapLibre + PMTiles)
-- [ ] **PEXP-04**: Place explorer shows a results list alongside the map
+- [x] **PEXP-04**: Place explorer shows a results list alongside the map
 
 ### Entity Explorer
 
@@ -131,10 +131,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ENT-03 | Phase 6 | Complete |
 | ENT-04 | Phase 6 | Complete |
 | ENT-05 | Phase 6 | Complete |
-| PEXP-01 | Phase 7 | Pending |
-| PEXP-02 | Phase 7 | Pending |
+| PEXP-01 | Phase 7 | Complete |
+| PEXP-02 | Phase 7 | Complete |
 | PEXP-03 | Phase 7 | Pending |
-| PEXP-04 | Phase 7 | Pending |
+| PEXP-04 | Phase 7 | Complete |
 | EEXP-01 | Phase 8 | Pending |
 | EEXP-02 | Phase 8 | Pending |
 | EEXP-03 | Phase 8 | Pending |
