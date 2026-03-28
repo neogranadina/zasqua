@@ -131,4 +131,8 @@ eleventyComputed:
   {% endif %}
 {% endblock %}
 
-{% block scripts %}{% endblock %}
+{% block scripts %}
+  {% if place.latitude and place.longitude %}
+    <script src="/js/place.js"></script>
+  {% endif %}
+{% endblock %}

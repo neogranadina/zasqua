@@ -31,7 +31,7 @@ module.exports = async function() {
   }
 
   for (const place of places) {
-    place._linked_count = countByCode.get(place.place_code) || 0;
+    place._linked_count = countByCode.get(place.id) || 0;
   }
 
   return places;
