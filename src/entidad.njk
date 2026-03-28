@@ -9,8 +9,34 @@ eleventyComputed:
   title: "{{ ent.display_name }}"
 ---
 
+{# Pagefind metadata for entity index #}
+<div style="display:none">
+  <span data-pagefind-filter="entity_type">{{ ent.entity_type }}</span>
+  {% if ent.primary_function %}
+    <span data-pagefind-filter="primary_function">{{ ent.primary_function }}</span>
+  {% endif %}
+  {% for y in ent.date_earliest | yearRange(ent.date_latest) %}
+    <span data-pagefind-filter="year">{{ y }}</span>
+  {% endfor %}
+  <span data-pagefind-sort="name">{{ ent.sort_name or ent.display_name }}</span>
+  <span data-pagefind-sort="date">{{ ent.date_earliest or '' }}</span>
+  <span data-pagefind-sort="count">{{ ent._linked_count }}</span>
+  <span data-pagefind-meta="entity_type">{{ ent.entity_type }}</span>
+  <span data-pagefind-meta="date_earliest">{{ ent.date_earliest or '' }}</span>
+  <span data-pagefind-meta="date_latest">{{ ent.date_latest or '' }}</span>
+  <span data-pagefind-meta="primary_function">{{ ent.primary_function or '' }}</span>
+  <span data-pagefind-meta="linked_count">{{ ent._linked_count }}</span>
+  {% if ent.name_variants and ent.name_variants.length %}
+    <span data-pagefind-meta="name_variants">{{ ent.name_variants | join(', ') }}</span>
+  {% endif %}
+</div>
+<div data-pagefind-body style="display:none">
+  {{ ent.display_name }}
+  {% if ent.name_variants %}{{ ent.name_variants | join(' ') }}{% endif %}
+</div>
+
 {# Breadcrumb #}
-<nav class="breadcrumb" aria-label="Breadcrumb" data-pagefind-ignore>
+<nav class="breadcrumb" aria-label="Breadcrumb" data-pagefind-ignore data-pagefind-entity-page>
   <div class="container">
     <a href="/">{{ ui.breadcrumb.home }}</a>
     <span class="breadcrumb-separator">&rsaquo;</span>

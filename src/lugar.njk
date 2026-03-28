@@ -9,8 +9,26 @@ eleventyComputed:
   title: "{{ place.display_name }}"
 ---
 
+{# Pagefind metadata for place index #}
+<div style="display:none">
+  <span data-pagefind-filter="place_type">{{ place.place_type }}</span>
+  <span data-pagefind-filter="has_coordinates">{% if place.latitude and place.longitude %}true{% else %}false{% endif %}</span>
+  <span data-pagefind-filter="has_authority">{% if place.wikidata_id or place.whg_id or place.hgis_id %}true{% else %}false{% endif %}</span>
+  <span data-pagefind-sort="name">{{ place.display_name }}</span>
+  <span data-pagefind-meta="place_type">{{ place.place_type }}</span>
+  <span data-pagefind-meta="has_coordinates">{% if place.latitude and place.longitude %}true{% else %}false{% endif %}</span>
+  <span data-pagefind-meta="linked_count">{{ place._linked_count }}</span>
+  {% if place.name_variants and place.name_variants.length %}
+    <span data-pagefind-meta="name_variants">{{ place.name_variants | join(', ') }}</span>
+  {% endif %}
+</div>
+<div data-pagefind-body style="display:none">
+  {{ place.display_name }}
+  {% if place.name_variants %}{{ place.name_variants | join(' ') }}{% endif %}
+</div>
+
 {# Breadcrumb #}
-<nav class="breadcrumb" aria-label="Breadcrumb" data-pagefind-ignore>
+<nav class="breadcrumb" aria-label="Breadcrumb" data-pagefind-ignore data-pagefind-place-page>
   <div class="container">
     <a href="/">{{ ui.breadcrumb.home }}</a>
     <span class="breadcrumb-separator">&rsaquo;</span>

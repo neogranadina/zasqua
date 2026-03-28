@@ -13,7 +13,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ "data/place-links": "data/place-links" });
 
   // Explorer search index files (loaded once by explorer pages, per D-03)
-  eleventyConfig.addPassthroughCopy({ "data/entity-index.json": "data/entity-index.json" });
+  // entity index removed: entity pages now indexed via Pagefind (D-15)
   eleventyConfig.addPassthroughCopy({ "data/place-index.json": "data/place-index.json" });
 
   // Entity co-occurrence graph (loaded by network graph in Phase 9)
@@ -85,6 +85,19 @@ module.exports = function(eleventyConfig) {
     if (!dateStr) return null;
     const year = String(dateStr).substring(0, 4);
     return /^\d{4}$/.test(year) ? year : null;
+  });
+
+  // Generate an array of integers from start year to end year, capped at 500 years
+  // Used by entity Pagefind metadata to create one filter span per year in range (D-06)
+  eleventyConfig.addFilter("yearRange", function(start, end) {
+    if (!start) return [];
+    const s = parseInt(start, 10);
+    if (isNaN(s)) return [];
+    const e = end ? parseInt(end, 10) : s;
+    const cap = Math.min(e, s + 500);
+    const years = [];
+    for (let y = s; y <= cap; y++) years.push(y);
+    return years;
   });
 
   // Truncate text with ellipsis
