@@ -82,8 +82,8 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 07-01-PLAN.md — Data pipeline fix (place_code/id), ui.js labels, template shell, CSS classes
-- [ ] 07-02-PLAN.md — PlaceExplorer JS class (search, facets, map, results, pagination, URL state)
-- [ ] 07-03-PLAN.md — Visual and functional verification checkpoint
+- [x] 07-02-PLAN.md — PlaceExplorer JS class (search, facets, map, results, pagination, URL state)
+- [x] 07-03-PLAN.md — Visual and functional verification checkpoint
 **UI hint**: yes
 
 ### Phase 8: Entity Explorer — List View
