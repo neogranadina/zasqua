@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-03-28
+revised: 2026-03-28
 ---
 
 # Phase 8 — UI Design Contract
@@ -34,8 +35,8 @@ Standard 8-point scale used throughout the codebase. All values match the existi
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon gaps, inline padding, badge internal gaps |
-| sm | 8px | Compact element spacing, gap between inline meta items |
+| xs | 4px | Icon gaps, inline padding, badge vertical padding |
+| sm | 8px | Compact element spacing, gap between inline meta items, badge horizontal padding |
 | md | 16px | Default element spacing, result-item padding |
 | lg | 24px | Section padding, sidebar group spacing |
 | xl | 32px | Layout gaps (`.search-layout` gap: 2rem) |
@@ -52,20 +53,34 @@ Exceptions: `.search-sidebar` width is 260px (not a spacing token — a layout d
 
 All fonts are loaded from Google Fonts CDN with `display=swap`. Font variables defined in Tailwind `@layer theme`.
 
+### Declared size tiers (4 maximum)
+
+| Tier | Size | Usage |
+|------|------|-------|
+| 1 | 14px (0.875rem) | Metadata, badges, secondary text — `.result-meta`, `.result-snippet`, `.variant-tag`, `.entity-type-badge`, `.entity-result-function`, `.entity-result-doccount`, `.entity-result-variants` |
+| 2 | 16px (1rem) | Body, UI labels, facet options, intro paragraph |
+| 3 | 17.6px (1.1rem) | Result titles — `.result-title` |
+| 4 | 28px (1.75rem) | Page heading — `font-display`, `text-[1.75rem]` as in `lugares.njk` |
+
+**Existing-code sizes outside the 4-tier scale (inherited — do not change):**
+
+| Element | Size | Source |
+|---------|------|--------|
+| Sidebar heading (`.search-sidebar-heading`) | 24px (1.5rem) | `main.css` — existing across all explorers |
+| Facet group title (`.facet-group-title`) | 15.2px (0.95rem) | `main.css` — existing across all explorers |
+
+These are not new introductions in Phase 8. They are pre-existing values in `main.css` shared by the description search and place explorer. Do not alter them; do not fold them into the 4-tier scale.
+
+### Full role table
+
 | Role | Font | CSS Var / Class | Size | Weight | Line Height |
 |------|------|-----------------|------|--------|-------------|
 | Body / UI labels | DM Sans | `var(--font-sans)` / `font-sans` | 16px (1rem) | 400 | 1.5 |
-| Small meta / badges | DM Sans | `var(--font-sans)` | 13–14px (0.875rem) | 400 | 1.4 |
+| Small meta / badges | DM Sans | `var(--font-sans)` | 14px (0.875rem) | 400 | 1.4 |
 | Result title | DM Sans | `var(--font-sans)` | 17.6px (1.1rem) | 400 | 1.4 |
 | Page title | Cormorant Garamond | `var(--font-display)` / `font-display` | 28px (1.75rem) | 600 | 1.2 |
 | Sidebar heading | Crimson Text | `var(--font-serif)` | 24px (1.5rem) | 400 | 1.3 |
 | Facet group title | DM Sans | `var(--font-sans)` | 15.2px (0.95rem) | 600 | 1.4 |
-
-**Declared sizes (3 functional tiers):**
-1. **14px** — metadata, badges, secondary text (`result-meta`, `result-snippet`, `.variant-tag`)
-2. **16px** — body, UI labels, facet options, intro paragraph
-3. **17.6px** — result titles (`.result-title`, existing `1.1rem`)
-4. **28px** — page heading (`font-display`, `text-[1.75rem]` as used in `lugares.njk`)
 
 **Declared weights (2):** 400 (regular) and 600 (semibold).
 
@@ -119,7 +134,7 @@ All components are extensions of existing CSS classes. No new design patterns in
 | `.sort-wrap` / `.sort-btn` / `.sort-btn.active` | main.css | Sort controls (Nombre / Fecha / Documentos) |
 | `.result-item` | main.css | Individual entity row (1rem padding, stone-100 hover) |
 | `.result-title` | main.css | Entity name link (1.1rem, stone-900 → burgundy-light hover) |
-| `.result-meta` | main.css | Secondary metadata line (13px, stone-400) |
+| `.result-meta` | main.css | Secondary metadata line (0.875rem, stone-400) |
 | `.facet-group` / `.facet-group-toggle` / `.facet-group-title` | main.css | Collapsible facet sections |
 | `.facet-option` / `.facet-count` | main.css | Individual filter checkboxes with counts |
 | `.date-tree` / `.date-tree-row` / `.date-tree-children` | main.css | Century → decade → year drill-down |
@@ -136,10 +151,10 @@ All components are extensions of existing CSS classes. No new design patterns in
 
 | Class | Specification |
 |-------|--------------|
-| `.entity-type-badge` | Inline badge for Persona / Entidad corporativa / Familia. `background: var(--color-burgundy)`, `color: #fff`, `border-radius: 4px` (square — matches `.variant-tag` pattern, NOT rounded pill), `padding: 2px 6px`, `font-size: 0.75rem`, `font-weight: 600`. Display: `inline-block`. |
+| `.entity-type-badge` | Inline badge for Persona / Entidad corporativa / Familia. `background: var(--color-burgundy)`, `color: #fff`, `border-radius: 4px` (square — matches `.variant-tag` pattern, NOT rounded pill), `padding: 4px 8px` (xs vertical / sm horizontal), `font-size: 0.875rem`, `font-weight: 600`. Display: `inline-block`. |
 | `.entity-result-function` | Primary function secondary text. `font-size: 0.875rem`, `color: var(--color-stone-500)`. Inline after the meta row. |
-| `.entity-result-doccount` | Document count ("Asociado a N documentos"). `font-size: 0.8rem`, `color: var(--color-stone-400)`. Separated from function by `·` separator. |
-| `.entity-result-variants` | Name variants subtitle. `font-size: 0.8rem`, `color: var(--color-stone-500)`. Block below the meta row. Uses `var(--color-stone-400)` label prefix "También conocido como:". |
+| `.entity-result-doccount` | Document count ("Asociado a N documentos"). `font-size: 0.875rem`, `color: var(--color-stone-400)`. Separated from function by `·` separator. |
+| `.entity-result-variants` | Name variants subtitle. `font-size: 0.875rem`, `color: var(--color-stone-500)`. Block below the meta row. Uses `var(--color-stone-400)` label prefix "También conocido como:". |
 
 **Note on badge shape:** Type badges use `border-radius: 4px` (square corners) — NOT `border-radius: 50px` (pill). The rounded pill shape is reserved for interactive controls (filter pills, buttons, pagination). Informational badges use sharp corners, consistent with `.variant-tag`.
 
@@ -206,7 +221,7 @@ También conocido como: [variant1], [variant2]
 ### Mobile
 - Sidebar hidden by default; `.mobile-filter-toggle` button appears
 - On toggle: sidebar gains `.sidebar-open` — full width, stone-200 background, `border-radius: 24px`
-- Filter panel shows close button (Material Symbols `close`)
+- Filter panel close button: Material Symbols `close` icon, `aria-label="Cerrar filtros"` required (icon-only — no visible label fallback)
 
 ### Loading state
 - `.search-results.results-loading` dims content (opacity 0.3)
@@ -243,7 +258,7 @@ All user-facing copy in Colombian Spanish (Latin American). Page titles and brea
 | Active filter pill prefix | (none — label only, e.g. "Persona") |
 | Clear filters button | Limpiar filtros |
 | Mobile filter toggle (open) | Filtrar resultados ▾ |
-| Mobile filter toggle (close) | (shown as × icon in panel header) |
+| Mobile filter toggle (close) | (× icon, `aria-label="Cerrar filtros"`) |
 | Mobile filter panel title | Filtros |
 | Browse prompt count | **{N}** entidades en el archivo |
 | Browse prompt hint | Empieza a escribir para buscar, o explora filtrando por tipo o fecha. |
@@ -284,7 +299,7 @@ All user-facing copy in Colombian Spanish (Latin American). Page titles and brea
         [filter-panel-header] (mobile only)
         <div.refine-search>[search input]</div>
         <div.facet-group> × 3
-        [filter-panel-bottom-close] (mobile only)
+        [filter-panel-bottom-close] (mobile only, aria-label="Cerrar filtros")
 
       <div.search-results>
         <div.search-results-info>
