@@ -79,7 +79,11 @@ Plans:
   2. A user can filter places by place type, presence of coordinates, and presence of authority links; the results list and map update in sync
   3. Filtered results are rendered as a heatmap on a MapLibre map using PMTiles tiles; the heatmap updates as filters change
   4. A results list alongside the map shows place names and types, each linking to the corresponding place detail page
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 07-01-PLAN.md — Data pipeline fix (place_code/id), ui.js labels, template shell, CSS classes
+- [ ] 07-02-PLAN.md — PlaceExplorer JS class (search, facets, map, results, pagination, URL state)
+- [ ] 07-03-PLAN.md — Visual and functional verification checkpoint
 **UI hint**: yes
 
 ### Phase 8: Entity Explorer — List View
@@ -115,6 +119,6 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 | 4. Build Pipeline & Data Pre-compute | 2/2 | Complete   | 2026-03-26 |
 | 5. PMTiles Infrastructure | 2/2 | Complete   | 2026-03-26 |
 | 6. Entity & Place Detail Pages | 2/4 | In Progress|  |
-| 7. Place Explorer | 0/? | Not started | - |
+| 7. Place Explorer | 0/3 | Not started | - |
 | 8. Entity Explorer — List View | 0/? | Not started | - |
 | 9. Entity Network Graph | 0/? | Not started | - |
