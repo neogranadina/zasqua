@@ -13,11 +13,10 @@ requires:
 
 provides:
   - src/lugar.njk — Eleventy pagination template generating /lugar/{display_name}/ pages for all places
-  - src/js/place.js — Client-side MapLibre map init and place-links shard fetch + timeline render
 
 affects:
-  - 06-03 (entity detail pages — same architectural pattern, place.js mirrors entity.js structure)
-  - build pipeline (lugar.njk generates ~8,177 place pages; place.js passthrough needed in eleventy.config.js)
+  - 06-03 (entity detail pages — same architectural pattern)
+  - build pipeline (lugar.njk generates ~8,177 place pages)
   - Phase 7 place explorer (detail pages are the target for place explorer links)
 
 # Tech tracking
@@ -34,11 +33,15 @@ tech-stack:
 key-files:
   created:
     - src/lugar.njk
-    - src/js/place.js
-  modified: []
+  modified:
+    - src/entidad.njk
+  removed:
+    - src/js/place.js (timeline removed from place pages during visual review)
 
 key-decisions:
-  - "Used place.place_code (not place.id) for shard path and search URL — matches precompute-links.js output and Pagefind filter values"
+  - "Used place.id for search URL and shard path — places.json has no place_code field"
+  - "Removed timeline from place pages — places have the map as right-column content; timeline is entity-specific"
+  - "Moved linked descriptions CTA below entity timeline — avoids redundant section"
   - "MapLibre CDN conditional on coordinates — saves ~700KB JS download for ~30% of places without coordinates"
   - "pmtiles protocol registered once in template head module script; place.js does not call addProtocol"
   - "Protomaps default light basemap for detail page embed — provides geographic context without custom tile source"
@@ -65,14 +68,16 @@ completed: 2026-03-27
 - **Duration:** ~7 min
 - **Started:** 2026-03-27T14:33:22Z
 - **Completed:** 2026-03-27T14:40:18Z
-- **Tasks:** 2 of 3 (paused at checkpoint:human-verify)
+- **Tasks:** 3 of 3 (checkpoint approved after visual review)
 - **Files modified:** 2
 
 ## Accomplishments
 - `src/lugar.njk` generates `/lugar/{display_name}/` pages for all 8,177 places via Eleventy pagination
 - Conditional MapLibre CDN: JS/CSS only loaded on pages with coordinates (~70% of places), saving ~700KB for coordinate-less pages
-- `src/js/place.js` initialises MapLibre map with burgundy pin, fetches place-links shard, renders chronological timeline
+- Map with burgundy pin marker for places with coordinates; "Ubicación no disponible" notice for those without
 - Authority links section renders Wikidata and WHG as external-link pills; HGIS as plain text — all conditional on field presence
+- Timeline removed from place pages during visual review — places use the map as right-column content; timeline is entity-specific
+- Linked descriptions CTA moved below entity timeline (entidad.njk) to eliminate redundant section
 
 ## Task Commits
 
@@ -80,7 +85,7 @@ Each task was committed atomically:
 
 1. **Task 1: Create place detail page template (lugar.njk)** - `f28cc38` (feat)
 2. **Task 2: Create place.js client-side script** - `d23a816` (feat)
-3. **Task 3: Visual verification** — awaiting checkpoint
+3. **Task 3: Visual verification** — `ce1b809`, `1dba308` (approved with fixes: removed timeline from places, moved CTA below entity timeline, fixed place.id)
 
 ## Files Created/Modified
 - `src/lugar.njk` — Eleventy pagination template for place detail pages at /lugar/{display_name}/
