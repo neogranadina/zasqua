@@ -146,7 +146,7 @@ async function main() {
   console.log(`[precompute-links] places.json: ${places.length} records`);
 
   const placeIndex = places.map(p => ({
-    place_code: p.place_code,
+    id: p.id,
     display_name: p.display_name,
     place_type: p.place_type,
     lat: p.latitude,       // D-07: rename latitude -> lat
@@ -154,7 +154,7 @@ async function main() {
     has_wikidata: !!p.wikidata_id,
     has_whg: !!p.whg_id,
     has_hgis: !!p.hgis_id,
-    linked_description_count: (byPlace.get(p.place_code) || []).length,
+    linked_description_count: (byPlace.get(p.id) || []).length,
   }));
 
   const placeIndexPath = path.join(DATA_DIR, 'place-index.json');

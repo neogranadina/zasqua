@@ -158,7 +158,9 @@ module.exports = {
       administrative_division: "División administrativa",
       region: "Región",
       country: "País",
-      geographical_feature: "Accidente geográfico"
+      geographical_feature: "Accidente geográfico",
+      river: "Cuerpo de agua",
+      other: "Accidente geográfico"
     },
     // Section headers
     sections: {

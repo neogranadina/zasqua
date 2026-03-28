@@ -23,7 +23,7 @@ module.exports = async function() {
     const indexRaw = fs.readFileSync(indexPath, 'utf8');
     const index = JSON.parse(indexRaw);
     for (const entry of index) {
-      countByCode.set(entry.place_code, entry.linked_description_count);
+      countByCode.set(entry.id, entry.linked_description_count);
     }
     console.log(`[places] Loaded place-index.json with ${index.length} records`);
   } catch (e) {
