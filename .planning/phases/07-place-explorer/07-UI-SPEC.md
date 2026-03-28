@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-03-28
+revised: 2026-03-28
 ---
 
 # Phase 7 — UI Design Contract: Place Explorer
@@ -27,6 +28,12 @@ created: 2026-03-28
 | Font — display | Cormorant Garamond (`--font-display`) |
 
 Source: `src/css/main.css` `:root` block, `docs/frontend/guidelines/design-tokens.md`
+
+---
+
+## Visuals
+
+**Primary focal point:** The map container (`.explorer-map`) is the primary visual anchor of the page — occupying 50vh at the top of the main column, it establishes spatial context before the user reads the results list below it.
 
 ---
 
@@ -60,15 +67,15 @@ All sizes in rem; px equivalents at 16px base.
 | Role | Size | Weight | Line Height | Font | Class / Token |
 |------|------|--------|-------------|------|---------------|
 | Body / result text | 16px (1rem) | 400 | 1.5 | DM Sans | `font-sans` |
-| Label / meta / count | 13–14px (0.875rem) | 400 | 1.4 | DM Sans | `font-sans text-sm` |
+| Label / meta / count | 14px (0.875rem) | 400 | 1.4 | DM Sans | `font-sans text-sm` |
 | Sidebar heading | 24px (1.5rem) | 400 | 1.2 | Crimson Text | `.search-sidebar-heading` |
 | Page title | 28px (1.75rem) | 400–600 | 1.2 | Cormorant Garamond | `font-display` |
 
-Notes:
-- Facet group titles: 0.95rem, weight 600, `--color-stone-600` — existing `.facet-group-title`
-- Place type badge text: 11px uppercase, letter-spacing 0.5px — existing `.level-badge` pattern
-- Pagination links: 14px, weight 400 — existing `.pagination-link`
-- Result place name (link): 1.1rem, weight 400 — existing `.result-title` pattern
+Notes (inherited — no change; this phase introduces no new font sizes beyond the four above):
+- Facet group titles: 0.95rem, weight 600, `--color-stone-600` — existing `.facet-group-title` — inherited — no change
+- Place type badge text: 11px uppercase, letter-spacing 0.5px — existing `.level-badge` pattern — inherited — no change
+- Pagination links: 14px, weight 400 — existing `.pagination-link` — inherited — no change
+- Result place name (link): 1.1rem, weight 400 — existing `.result-title` pattern — inherited — no change
 
 Source: `src/css/main.css` component layer; `docs/frontend/guidelines/design-tokens.md`
 
@@ -265,7 +272,7 @@ Two new classes needed in `src/css/main.css` under `@layer components`:
   background: var(--color-stone-200);
   border: none;
   border-radius: 50px;
-  padding: 0.375rem 0.875rem;
+  padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-family: var(--font-sans);
   color: var(--color-stone-800);
