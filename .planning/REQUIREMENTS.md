@@ -18,25 +18,25 @@ Requirements for the Entity & Place Discovery milestone. Each maps to roadmap ph
 
 ### Place Detail Pages
 
-- [x] **PLACE-01**: User can view a place detail page at `/lugar/{display_name}/` showing display name and place type label in Spanish
-- [x] **PLACE-02**: Place detail page shows name variants when available
+- [ ] **PLACE-01**: User can view a place detail page at `/lugar/{display_name}/` showing display name and place type label in Spanish
+- [ ] **PLACE-02**: Place detail page shows name variants when available
 - [ ] **PLACE-03**: Place detail page shows an embedded interactive map (MapLibre + PMTiles) for places with coordinates
-- [x] **PLACE-04**: Place detail page shows clickable authority links (Wikidata, WHG) and HGIS identifier, only for those that exist
-- [x] **PLACE-05**: Place detail page shows linked archival descriptions loaded from pre-built JSON shards
+- [ ] **PLACE-04**: Place detail page shows clickable authority links (Wikidata, WHG) and HGIS identifier, only for those that exist
+- [ ] **PLACE-05**: Place detail page shows linked archival descriptions loaded from pre-built JSON shards
 
 ### Entity Detail Pages
 
-- [x] **ENT-01**: User can view an entity detail page at `/entidad/{entity_code}/` showing display name and entity type in Spanish
-- [x] **ENT-02**: Entity detail page shows structured name (given name, surname, honorific), date range, and primary function
-- [x] **ENT-03**: Entity detail page shows name variants when available
-- [x] **ENT-04**: Entity detail page shows dates of existence and history when available
-- [x] **ENT-05**: Entity detail page shows linked archival descriptions loaded from pre-built JSON shards
+- [ ] **ENT-01**: User can view an entity detail page at `/entidad/{entity_code}/` showing display name and entity type in Spanish
+- [ ] **ENT-02**: Entity detail page shows structured name (given name, surname, honorific), date range, and primary function
+- [ ] **ENT-03**: Entity detail page shows name variants when available
+- [ ] **ENT-04**: Entity detail page shows dates of existence and history when available
+- [ ] **ENT-05**: Entity detail page shows linked archival descriptions loaded from pre-built JSON shards
 
 ### Place Explorer
 
 - [x] **PEXP-01**: User can search places by name on `/explorar/lugares/`
 - [x] **PEXP-02**: User can filter places by facets (place type, has coordinates, has authority links)
-- [ ] **PEXP-03**: Place explorer renders filtered results as a heatmap on an interactive map (MapLibre + PMTiles)
+- [x] **PEXP-03**: Place explorer renders filtered results as a heatmap on an interactive map (MapLibre + PMTiles)
 - [x] **PEXP-04**: Place explorer shows a results list alongside the map
 
 ### Entity Explorer
@@ -121,19 +121,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BUILD-04 | Phase 5 | Complete |
 | BUILD-05 | Phase 5 | Complete |
 | BUILD-06 | Phase 4 | Complete |
-| PLACE-01 | Phase 6 | Complete |
-| PLACE-02 | Phase 6 | Complete |
+| PLACE-01 | Phase 6 | Pending |
+| PLACE-02 | Phase 6 | Pending |
 | PLACE-03 | Phase 6 | Pending |
-| PLACE-04 | Phase 6 | Complete |
-| PLACE-05 | Phase 6 | Complete |
-| ENT-01 | Phase 6 | Complete |
-| ENT-02 | Phase 6 | Complete |
-| ENT-03 | Phase 6 | Complete |
-| ENT-04 | Phase 6 | Complete |
-| ENT-05 | Phase 6 | Complete |
+| PLACE-04 | Phase 6 | Pending |
+| PLACE-05 | Phase 6 | Pending |
+| ENT-01 | Phase 6 | Pending |
+| ENT-02 | Phase 6 | Pending |
+| ENT-03 | Phase 6 | Pending |
+| ENT-04 | Phase 6 | Pending |
+| ENT-05 | Phase 6 | Pending |
 | PEXP-01 | Phase 7 | Complete |
 | PEXP-02 | Phase 7 | Complete |
-| PEXP-03 | Phase 7 | Pending |
+| PEXP-03 | Phase 7 | Complete |
 | PEXP-04 | Phase 7 | Complete |
 | EEXP-01 | Phase 8 | Pending |
 | EEXP-02 | Phase 8 | Pending |
