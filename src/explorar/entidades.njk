@@ -1,0 +1,29 @@
+---
+layout: base.njk
+title: "Explorar entidades"
+permalink: /explorar/entidades/
+---
+
+{# Breadcrumb #}
+<nav class="breadcrumb" aria-label="Breadcrumb" data-pagefind-ignore>
+  <div class="container">
+    <a href="/">{{ ui.breadcrumb.home }}</a>
+    <span class="breadcrumb-separator">&rsaquo;</span>
+    <span>Explorar entidades</span>
+  </div>
+</nav>
+
+<div class="container font-sans" data-pagefind-ignore>
+  {# Page title + intro #}
+  <h1 class="font-display text-[1.75rem]" style="margin-bottom: 0.5rem">Explorar entidades</h1>
+  <p class="text-stone-600 text-base" style="margin-bottom: 1.5rem">Explora las 92.042 entidades vinculadas a las descripciones de Zasqua. Busca por nombre, filtra por tipo de entidad o por rango de fechas.</p>
+
+  {# Explorer container — JS renders all dynamic content here #}
+  <div id="entity-explorer"
+       data-entity-types='{{ ui.entity.types | dump | safe }}'>
+  </div>
+</div>
+
+{% block scripts %}
+  <script src="/js/entity-explorer.js"></script>
+{% endblock %}

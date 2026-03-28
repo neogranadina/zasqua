@@ -2560,4 +2560,36 @@
     text-decoration: underline;
   }
 
+  /* ====================
+     Entity Explorer Result Row Components
+     ==================== */
+
+  .entity-type-badge {
+    display: inline-block;
+    background: var(--color-burgundy);
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+    vertical-align: middle;
+  }
+
+  .entity-result-function {
+    font-size: 0.875rem;
+    color: var(--color-stone-500);
+  }
+
+  .entity-result-doccount {
+    font-size: 0.875rem;
+    color: var(--color-stone-400);
+  }
+
+  .entity-result-variants {
+    font-size: 0.875rem;
+    color: var(--color-stone-500);
+    margin-top: 2px;
+  }
+
 }
