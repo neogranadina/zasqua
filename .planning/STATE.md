@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Phase 8 context gathered
-last_updated: "2026-03-28T21:52:02.557Z"
+status: Ready to execute
+stopped_at: Completed 08-entity-explorer-list-view-01-PLAN.md
+last_updated: "2026-03-28T23:05:53.955Z"
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
+  total_plans: 14
+  completed_plans: 12
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 05 — pmtiles-infrastructure
+**Current focus:** Phase 08 — entity-explorer-list-view
 
 ## Current Position
 
-Phase: 8
-Plan: Not started
+Phase: 08 (entity-explorer-list-view) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -70,6 +70,8 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 07-place-explorer]: filterByViewport applied after applyFilters — map receives pre-viewport result set, list constrained to viewport
 - [Phase 07-place-explorer]: moveend listener updates results list only, not URL — avoids polluting browser history on every pan/zoom
 - [Phase 07-place-explorer]: Facet counts from allPlaces (not filtered) per D-19 — show total dataset counts
+- [Phase 08-entity-explorer-list-view]: entity-index.json passthrough removed — entity pages now indexed via Pagefind (D-15)
+- [Phase 08]: exclude-selectors used on description Pagefind run instead of glob negation for portability
 
 ### Pending Todos
 
@@ -84,6 +86,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-28T21:52:02.554Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-entity-explorer-list-view/08-CONTEXT.md
+Last session: 2026-03-28T23:05:53.951Z
+Stopped at: Completed 08-entity-explorer-list-view-01-PLAN.md
+Resume file: None

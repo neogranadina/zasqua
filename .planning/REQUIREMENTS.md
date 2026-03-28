@@ -41,9 +41,9 @@ Requirements for the Entity & Place Discovery milestone. Each maps to roadmap ph
 
 ### Entity Explorer
 
-- [ ] **EEXP-01**: User can search entities by name on `/explorar/entidades/`
-- [ ] **EEXP-02**: User can filter entities by facets (entity type, primary function, date range)
-- [ ] **EEXP-03**: Entity explorer shows a paginated/virtual results list (never renders all 92K to DOM)
+- [x] **EEXP-01**: User can search entities by name on `/explorar/entidades/`
+- [x] **EEXP-02**: User can filter entities by facets (entity type, primary function, date range)
+- [x] **EEXP-03**: Entity explorer shows a paginated/virtual results list (never renders all 92K to DOM)
 
 ### Entity Network Graph
 
@@ -135,9 +135,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PEXP-02 | Phase 7 | Complete |
 | PEXP-03 | Phase 7 | Complete |
 | PEXP-04 | Phase 7 | Complete |
-| EEXP-01 | Phase 8 | Pending |
-| EEXP-02 | Phase 8 | Pending |
-| EEXP-03 | Phase 8 | Pending |
+| EEXP-01 | Phase 8 | Complete |
+| EEXP-02 | Phase 8 | Complete |
+| EEXP-03 | Phase 8 | Complete |
 | GRAPH-01 | Phase 9 | Pending |
 | GRAPH-02 | Phase 9 | Pending |
 | GRAPH-03 | Phase 9 | Pending |

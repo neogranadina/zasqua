@@ -96,7 +96,7 @@ Plans:
   3. The results list uses virtual rendering or pagination — never more than a few hundred DOM nodes regardless of result count; browsing through 92K entity results does not freeze the browser
 **Plans**: 3 plans
 Plans:
-- [ ] 08-01-PLAN.md — Pagefind metadata on templates, yearRange filter, CI three-index build
+- [x] 08-01-PLAN.md — Pagefind metadata on templates, yearRange filter, CI three-index build
 - [ ] 08-02-PLAN.md — Entity explorer page, EntityExplorer JS class, CSS classes
 - [ ] 08-03-PLAN.md — Place explorer migration from in-memory JSON to Pagefind
 **UI hint**: yes
