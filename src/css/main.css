@@ -2487,6 +2487,31 @@
   .linked-desc-link:hover {
     text-decoration: underline;
   }
+
+  /* Place explorer map container */
+  .explorer-map {
+    height: 50vh;
+    width: 100%;
+    border-radius: 4px;
+    background-color: var(--color-stone-100);
+  }
+
+  /* "Filter by map area" toggle button */
+  .map-area-toggle {
+    background: var(--color-stone-200);
+    border: none;
+    border-radius: 50px;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-family: var(--font-sans);
+    color: var(--color-stone-800);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .map-area-toggle.active {
+    background: var(--color-burgundy-deep);
+    color: #fff;
+  }
 }
 @property --tw-rotate-x {
   syntax: "*";
