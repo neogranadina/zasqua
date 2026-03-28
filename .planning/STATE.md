@@ -70,17 +70,16 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 06-entity-place-detail-pages]: Reverse lookups written as plain JSON objects (reference_code -> array of codes) for O(1) lookup in data loaders
 - [Phase 06]: ui.js entity/place sections follow existing roles/description pattern; CSS classes use @apply for stone-scale tokens and var(--color-*) for brand colors
 - [Phase 06-entity-place-detail-pages]: entidad/lugar search filters are URL-only (not rendered as sidebar facets) — applied when arriving from detail page links
-<<<<<<< HEAD
 - [Phase 06]: Role labels hardcoded in entity.js — ui.js is build-time only, not available client-side
 - [Phase 06]: Entidades breadcrumb is plain text — entity explorer ships in Phase 8
-=======
-- [Phase 06]: Used place.place_code (not place.id) for shard fetch path and search URL — matches precompute-links.js output and Pagefind filter values
 - [Phase 06]: MapLibre CDN conditional on coordinates in lugar.njk — saves ~700KB JS for coordinate-less place pages; pmtiles protocol registered in template head module script only
->>>>>>> worktree-agent-a5b62bbd
+- [Phase 06]: place.id used for shard fetch and search URL — places.json has no place_code field; precompute-links.js will need matching fix when place_links.json is exported
 
 ### Pending Todos
 
 - FIX-01 (ui.js nav keys) already pushed to public repo — mark complete
+- DATA-01: Clean up stub place records in backend (e.g. "Abajo del Puente" — no coords, no IDs, no variants, just noise)
+- DATA-02 (CRITICAL): WHG reconciliation contaminated name_variants — 128 places have wrong variants from mismatched WHG records (e.g. Abejorral has US town names, Altos de Guaripampa has Warsaw variants, Anaconas has Delhi). WHG IDs themselves may also be wrong. Needs audit in backend before these pages go live
 
 ### Blockers/Concerns
 

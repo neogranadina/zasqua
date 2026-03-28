@@ -92,14 +92,14 @@ eleventyComputed:
         {# Section: Descripciones vinculadas #}
         <div class="detail-section">
           <h3 class="font-semibold text-stone-400">{{ ui.place.linkedDescriptions }}</h3>
-          <a href="/buscar/?lugar={{ place.place_code }}" class="linked-desc-link" id="linked-desc-cta">
+          <a href="/buscar/?lugar={{ place.id }}" class="linked-desc-link" id="linked-desc-cta">
             {{ ui.place.linkedDescriptionsLink | replace("{count}", place._linked_count) }} &rarr;
           </a>
         </div>
 
       </div>
 
-      {# Right column: aside with map (if coordinates) and timeline #}
+      {# Right column: aside with map (if coordinates) #}
       <div class="desc-aside">
 
         {% if place.latitude and place.longitude %}
@@ -112,13 +112,6 @@ eleventyComputed:
             <p class="desc-notice-text">{{ ui.place.noCoordinatesText }}</p>
           </div>
         {% endif %}
-
-        <div class="detail-section">
-          <h3 class="font-semibold text-stone-400">{{ ui.place.timelineHeader }}</h3>
-          <div class="entity-timeline" id="place-timeline" data-place-code="{{ place.place_code }}">
-            <p class="text-stone-500 text-sm">{{ ui.general.loading }}</p>
-          </div>
-        </div>
 
       </div>
 
@@ -138,6 +131,4 @@ eleventyComputed:
   {% endif %}
 {% endblock %}
 
-{% block scripts %}
-  <script src="/js/place.js"></script>
-{% endblock %}
+{% block scripts %}{% endblock %}

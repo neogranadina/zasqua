@@ -8,8 +8,14 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', '..', 'data'
 module.exports = async function() {
   const filePath = path.join(DATA_DIR, 'entities.json');
   console.log(`[entities] Reading ${filePath}`);
-  const raw = fs.readFileSync(filePath, 'utf8');
-  let entities = JSON.parse(raw);
+  let entities;
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8');
+    entities = JSON.parse(raw);
+  } catch (e) {
+    console.warn('[entities] entities.json not found — returning empty array');
+    return [];
+  }
   if (DEV_MODE && entities.length > DEV_LIMIT) {
     console.log(`[entities] DEV_MODE: Limiting to ${DEV_LIMIT} of ${entities.length}`);
     entities = entities.slice(0, DEV_LIMIT);
