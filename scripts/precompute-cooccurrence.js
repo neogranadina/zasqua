@@ -2,6 +2,8 @@
 
 const fs = require('fs');
 const path = require('path');
+const Graph = require('graphology');
+const forceAtlas2 = require('graphology-layout-forceatlas2');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const COOCCURRENCE_MIN_WEIGHT = parseInt(process.env.COOCCURRENCE_MIN_WEIGHT || '3', 10);
@@ -20,14 +22,14 @@ async function main() {
   const entityLinks = JSON.parse(entityLinksRaw);
   console.log(`[precompute-cooccurrence] entity_links.json: ${entityLinks.length} records`);
 
-  // Group by reference_code — each value is an array of entity_codes
+  // Group by reference_code — each value is an array of { code, role } objects
   const byDescription = new Map();
   for (const link of entityLinks) {
     const refCode = link.reference_code;
     if (!byDescription.has(refCode)) {
       byDescription.set(refCode, []);
     }
-    byDescription.get(refCode).push(link.entity_code);
+    byDescription.get(refCode).push({ code: link.entity_code, role: link.role || 'unknown' });
   }
   console.log(`[precompute-cooccurrence] Unique descriptions with entity links: ${byDescription.size}`);
 
@@ -42,23 +44,41 @@ async function main() {
   }
 
   // -------------------------------------------------------------------------
-  // 2. Emit co-occurrence pairs and accumulate edge weights
+  // 2. Emit co-occurrence pairs and accumulate edge weights + role pairs
   // -------------------------------------------------------------------------
 
   const edgeWeights = new Map();
+  const edgeRolePairs = new Map();
 
-  for (const [, codes] of byDescription) {
-    // Deduplicate entity codes within this description
-    const unique = Array.from(new Set(codes));
-    if (unique.length < 2) continue;
+  for (const [, entries] of byDescription) {
+    // Deduplicate by entity code — keeping all role variants per code
+    const uniqueByCode = new Map();
+    for (const e of entries) {
+      if (!uniqueByCode.has(e.code)) uniqueByCode.set(e.code, []);
+      uniqueByCode.get(e.code).push(e.role);
+    }
+    const codes = Array.from(uniqueByCode.keys());
+    if (codes.length < 2) continue;
 
     // Emit all pairs in sorted order (source < target lexically)
-    for (let i = 0; i < unique.length; i++) {
-      for (let j = i + 1; j < unique.length; j++) {
-        const a = unique[i];
-        const b = unique[j];
-        const key = a < b ? `${a}|${b}` : `${b}|${a}`;
-        edgeWeights.set(key, (edgeWeights.get(key) || 0) + 1);
+    for (let i = 0; i < codes.length; i++) {
+      for (let j = i + 1; j < codes.length; j++) {
+        const a = codes[i] < codes[j] ? codes[i] : codes[j];
+        const b = codes[i] < codes[j] ? codes[j] : codes[i];
+        const edgeKey = `${a}|${b}`;
+        edgeWeights.set(edgeKey, (edgeWeights.get(edgeKey) || 0) + 1);
+
+        // Role pairs: combine all roles of entity a with all roles of entity b
+        if (!edgeRolePairs.has(edgeKey)) edgeRolePairs.set(edgeKey, {});
+        const pairs = edgeRolePairs.get(edgeKey);
+        const rolesA = uniqueByCode.get(a);
+        const rolesB = uniqueByCode.get(b);
+        for (const rA of rolesA) {
+          for (const rB of rolesB) {
+            const rpKey = [rA, rB].sort().join('|');
+            pairs[rpKey] = (pairs[rpKey] || 0) + 1;
+          }
+        }
       }
     }
   }
@@ -75,7 +95,7 @@ async function main() {
   for (const [key, weight] of edgeWeights) {
     if (weight < COOCCURRENCE_MIN_WEIGHT) continue;
     const [source, target] = key.split('|');
-    filteredEdges.push({ source, target, weight });
+    filteredEdges.push({ source, target, weight, role_pairs: edgeRolePairs.get(key) || {} });
     nodeSet.add(source);
     nodeSet.add(target);
   }
@@ -111,7 +131,32 @@ async function main() {
   });
 
   // -------------------------------------------------------------------------
-  // 5. Write entity-cooccurrence.json
+  // 5. Run ForceAtlas2 layout and write x/y positions to nodes
+  // -------------------------------------------------------------------------
+
+  const layoutGraph = new Graph();
+  for (const node of nodes) {
+    layoutGraph.addNode(node.id, { x: Math.random() * 100, y: Math.random() * 100, size: 1 });
+  }
+  for (const edge of filteredEdges) {
+    if (!layoutGraph.hasEdge(edge.source, edge.target)) {
+      layoutGraph.addEdge(edge.source, edge.target, { weight: edge.weight });
+    }
+  }
+
+  const settings = forceAtlas2.inferSettings(layoutGraph);
+  forceAtlas2.assign(layoutGraph, { iterations: 150, settings, getEdgeWeight: 'weight' });
+
+  for (const node of nodes) {
+    const attrs = layoutGraph.getNodeAttributes(node.id);
+    node.x = attrs.x;
+    node.y = attrs.y;
+  }
+
+  console.log(`[precompute-cooccurrence] ForceAtlas2 layout: 150 iterations`);
+
+  // -------------------------------------------------------------------------
+  // 6. Write entity-cooccurrence.json
   // -------------------------------------------------------------------------
 
   const output = {
@@ -132,6 +177,13 @@ async function main() {
   console.log(`  Nodes      : ${nodes.length}`);
   console.log(`  Edges      : ${filteredEdges.length}`);
   console.log(`  File size  : ~${fileSizeKB} KB`);
+
+  // Log role-pair stats
+  let rolePairKeyCount = 0;
+  for (const edge of filteredEdges) {
+    rolePairKeyCount += Object.keys(edge.role_pairs).length;
+  }
+  console.log(`[precompute-cooccurrence] Role pairs tracked: ${rolePairKeyCount} unique role-pair keys across all edges`);
 }
 
 main().catch(err => {

@@ -8,10 +8,16 @@
     "build:dev": "DEV_MODE=true eleventy && npx pagefind --site _site",
     "debug": "DEBUG=Eleventy* eleventy"
   },
-  "keywords": ["archive", "catalog", "11ty"],
+  "keywords": [
+    "archive",
+    "catalog",
+    "11ty"
+  ],
   "author": "Neogranadina",
   "license": "GPL-3.0-only",
   "devDependencies": {
-    "@11ty/eleventy": "^3.1.2"
+    "@11ty/eleventy": "^3.1.2",
+    "graphology": "^0.26.0",
+    "graphology-layout-forceatlas2": "^0.10.1"
   }
 }
