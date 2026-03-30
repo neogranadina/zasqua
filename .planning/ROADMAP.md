@@ -110,7 +110,11 @@ Plans:
   2. Clicking a graph node expands its ego-network (the node and its immediate neighbours) and highlights those entities in the results list
   3. Hovering a node shows the entity name; clicking navigates to the entity detail page
   4. The graph updates to reflect the current search and facet filter state — nodes outside the filtered result set are visually suppressed or hidden
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 09-01-PLAN.md — Extend precompute script with ForceAtlas2 layout and role-pair counts
+- [ ] 09-02-PLAN.md — EntityNetworkGraph class, template wiring, CSS classes
+- [ ] 09-03-PLAN.md — Visual and functional verification checkpoint
 **UI hint**: yes
 
 ## Progress
@@ -125,4 +129,4 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 | 6. Entity & Place Detail Pages | 2/4 | In Progress|  |
 | 7. Place Explorer | 1/3 | In Progress|  |
 | 8. Entity Explorer — List View | 3/3 | Complete   | 2026-03-28 |
-| 9. Entity Network Graph | 0/? | Not started | - |
+| 9. Entity Network Graph | 0/3 | Not started | - |
