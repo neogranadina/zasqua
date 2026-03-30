@@ -46,8 +46,8 @@ Declared values (must be multiples of 4):
 Exceptions:
 - Graph container height: `50vh` on desktop (matches `.explorer-map` pattern — source: `main.css` line 2493)
 - Graph container height on mobile when expanded: `40vh`
-- Tooltip padding: 8px 12px (sm horizontal, matching existing `.map-area-toggle` padding rhythm)
-- Role filter checkbox touch targets: 44px minimum height on mobile
+- Tooltip padding: `8px 12px` — the `12px` horizontal value is an implementation dimension (matched from the existing `.map-area-toggle` padding rhythm in `main.css`), not a spacing token; it is exempt from the standard set constraint.
+- Role filter checkbox touch targets: `44px` minimum height on mobile — this is an accessibility touch-target floor (WCAG 2.5.5), not a spacing token; it is exempt from the standard set constraint.
 
 **Source:** Established `.explorer-map { height: 50vh }` pattern in `main.css`.
 
@@ -80,6 +80,8 @@ Only 2 weights used: 400 (regular) and 600 (semibold) — matching `--font-weigh
 Accent reserved for: active/checked state of role filter checkboxes only. No other use.
 
 ### Graph-specific color assignments
+
+**Note:** The graph node and edge palette below is a separate semantic layer from the 60/30/10 UI color contract above. The UI contract governs chrome, surfaces, and interactive controls. The graph palette governs data encoding within the canvas. The shared use of `#8B2942` (`--color-burgundy`) for both the UI accent (role filter checkboxes) and the `person` node fill is intentional — it reinforces the entity type's visual identity — but these are distinct roles in distinct layers and should not be treated as a budget conflict.
 
 **Node colours by entity type** (D-17 — reuse entity explorer type palette):
 
@@ -118,6 +120,8 @@ Edge opacity on default state: 0.55. Edge opacity when highlighted (ego-network 
 ## Interaction Contract
 
 ### Graph panel layout (D-19)
+
+Primary focal point: the graph canvas, centred in the viewport above the results list.
 
 - **Desktop (≥769px):** Graph panel is full-width, positioned above the results list. Same vertical stacking as the heatmap on `/explorar/lugares/`. No toggle — always visible.
 - **Mobile (≤768px):** Graph panel is collapsible. A toggle button `Mostrar / ocultar red` sits above the panel, using the `.mobile-filter-toggle` button style. Panel is collapsed by default on mobile. When collapsed, height is 0 with `overflow: hidden`. When expanded, height is `40vh`.
