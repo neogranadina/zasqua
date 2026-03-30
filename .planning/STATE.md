@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-03-30T04:45:25.651Z"
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-03-30T04:56:10.671Z"
 progress:
   total_phases: 6
   completed_phases: 5
   total_plans: 17
-  completed_plans: 15
+  completed_plans: 16
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 9
-Plan: Not started
+Plan: 2 of 3 (09-02 complete)
 
 ## Performance Metrics
 
@@ -79,6 +79,8 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 - [Phase 08-entity-explorer-list-view]: PlaceExplorer viewport filtering uses URL-based matching against allPlaces coordinates — avoids loading all Pagefind result metadata upfront
 - [Phase 09-entity-network-graph]: ForceAtlas2 layout runs at build time in precompute-cooccurrence.js; x/y written to JSON — no browser-side simulation (D-22)
 - [Phase 09-entity-network-graph]: Role-pair keys are alphabetically sorted (e.g. creator|subject) for consistent lookup; null roles default to 'unknown'
+- [Phase 09]: Graph panel container placed above #entity-explorer (D-01, D-19) — EntityExplorer.renderSearchResults wipes innerHTML on every render
+- [Phase 09]: Non-invasive updateUrl patching via CustomEvent entity-explorer:filter-change — no modifications to entity-explorer.js needed
 
 ### Pending Todos
 
@@ -93,6 +95,6 @@ v0.5.0 decisions (pending confirmation in Phase 4 planning):
 
 ## Session Continuity
 
-Last session: 2026-03-30T04:45:25.648Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-03-30T04:56:10.667Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
