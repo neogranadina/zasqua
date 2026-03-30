@@ -112,7 +112,7 @@ Plans:
   4. The graph updates to reflect the current search and facet filter state — nodes outside the filtered result set are visually suppressed or hidden
 **Plans**: 3 plans
 Plans:
-- [ ] 09-01-PLAN.md — Extend precompute script with ForceAtlas2 layout and role-pair counts
+- [x] 09-01-PLAN.md — Extend precompute script with ForceAtlas2 layout and role-pair counts
 - [ ] 09-02-PLAN.md — EntityNetworkGraph class, template wiring, CSS classes
 - [ ] 09-03-PLAN.md — Visual and functional verification checkpoint
 **UI hint**: yes

@@ -47,8 +47,8 @@ Requirements for the Entity & Place Discovery milestone. Each maps to roadmap ph
 
 ### Entity Network Graph
 
-- [ ] **GRAPH-01**: Entity explorer includes a network graph showing entity co-occurrence through shared documents
-- [ ] **GRAPH-02**: Graph uses pre-computed ForceAtlas2 layout positions (no browser-side force simulation)
+- [x] **GRAPH-01**: Entity explorer includes a network graph showing entity co-occurrence through shared documents
+- [x] **GRAPH-02**: Graph uses pre-computed ForceAtlas2 layout positions (no browser-side force simulation)
 - [ ] **GRAPH-03**: User can click a graph node to expand its ego-network (immediate neighbours)
 - [ ] **GRAPH-04**: Graph filters in sync with the entity explorer search/facet state
 
@@ -138,8 +138,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EEXP-01 | Phase 8 | Complete |
 | EEXP-02 | Phase 8 | Complete |
 | EEXP-03 | Phase 8 | Complete |
-| GRAPH-01 | Phase 9 | Pending |
-| GRAPH-02 | Phase 9 | Pending |
+| GRAPH-01 | Phase 9 | Complete |
+| GRAPH-02 | Phase 9 | Complete |
 | GRAPH-03 | Phase 9 | Pending |
 | GRAPH-04 | Phase 9 | Pending |
 | FIX-01 | — | Complete |
