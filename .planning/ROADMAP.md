@@ -101,13 +101,21 @@ Plans:
 - [x] 08-03-PLAN.md — Place explorer migration from in-memory JSON to Pagefind
 **UI hint**: yes
 
-### Phase 9: Entity Network Graph — DEFERRED
+### Phase 9: Entity Network Graph — REDESIGNED
 **Original goal**: Co-occurrence network graph on the entity explorer page
-**Status**: Deferred after testing with real data (2026-03-30)
-**Reason**: The co-occurrence graph collapses documents into invisible edges, hiding the archival descriptions that give relationships meaning. A bird's-eye blob of 100 entity nodes provides no user value. The feature needs a fundamental redesign as a document-entity bipartite graph, entered from entity/description detail pages rather than the explorer.
-**Redesign**: See `docs/frontend/plans/document-entity-graph.md`
-**Infrastructure retained**: precompute-cooccurrence.js (co-occurrence data), backend entity_links/place_links export
-**Infrastructure to revert**: EntityNetworkGraph class, graph CSS, template CDN scripts, graphology/sigma/force-graph dependencies
+**Status**: Redesigned as bipartite document-entity graph (2026-03-31). Implementation in progress — working prototype on entity detail pages, explorer graph paused.
+**Reason**: Co-occurrence graph collapsed documents into invisible edges. Redesigned as bipartite graph showing entities connected through shared archival descriptions, entered from entity detail pages rather than the explorer.
+**What shipped so far**:
+  - Entity detail page: timeline view with cards, connectors, Spanish dates, reference codes, 28 Spanish role labels
+  - Entity detail page: role filter pills, view toggle (timeline/graph/search link) integrated into prose sentence
+  - Entity detail page: ego-network graph (force-graph) with click-to-expand via Pagefind + desc-entity-lookup.json
+  - Entity explorer: default count:desc sort, explorer-driven graph prototype (paused — 20 entities per page too sparse for shared documents)
+  - 35/65 layout on entity pages (metadata left, timeline/graph right)
+**Still to do**:
+  - Test and polish click-to-expand on entity detail graph (Pagefind entity lookup + incremental node addition)
+  - Entity explorer graph: fetch more than 20 entities, or collapse graph when empty
+  - Clean up unused precompute-bipartite-graph.js and entity-doc-graph.json
+  - Full site rebuild to apply template changes to all 92K entity pages
 
 ## Progress
 
@@ -118,7 +126,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 |-------|----------------|--------|-----------|
 | 4. Build Pipeline & Data Pre-compute | 2/2 | Complete   | 2026-03-26 |
 | 5. PMTiles Infrastructure | 2/2 | Complete   | 2026-03-26 |
-| 6. Entity & Place Detail Pages | 2/4 | In Progress|  |
-| 7. Place Explorer | 1/3 | In Progress|  |
+| 6. Entity & Place Detail Pages | 4/4 | Complete   | 2026-03-28 |
+| 7. Place Explorer | 3/3 | Complete   | 2026-03-28 |
 | 8. Entity Explorer — List View | 3/3 | Complete   | 2026-03-28 |
-| 9. Entity Network Graph | — | Deferred | 2026-03-30 |
+| 9. Entity Network Graph | — | In Progress | |
