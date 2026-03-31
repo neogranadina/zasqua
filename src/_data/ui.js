@@ -128,10 +128,13 @@ module.exports = {
       identification: "Identificación",
       history: "Historia",
       relations: "Relaciones",
+      control: "Control",
+      reuse: "Reutilización",
       sources: "Fuentes"
     },
     // Field labels
     fields: {
+      entityCode: "Identificador Neogranadina",
       name: "Nombre",
       normalizedName: "Nombre normalizado",
       type: "Tipo",

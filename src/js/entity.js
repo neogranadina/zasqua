@@ -189,9 +189,11 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Graph state persists across re-renders
   var graphNodes = new Map();  // id → node object
   var graphEdges = [];         // { source, target, role }
-  var docLookup = null;        // desc-entity-lookup.json (loaded once)
-  var pagefindEntity = null;   // Pagefind instance (loaded once)
+  var pagefindDesc = null;     // Pagefind descriptions instance (loaded once)
+  var pagefindEntity = null;   // Pagefind entities instance (loaded once)
   var shardCache = new Map();  // entity_code → links array
+  var activeTooltip = null;    // current tooltip element
+  var tooltipNode = null;      // node the tooltip is attached to
 
   function renderGraph(allLinks, activeFilters) {
     var canvas = document.getElementById('entity-graph-canvas');
@@ -279,32 +281,57 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (node.type === 'entity') {
           return '<strong>' + escapeHtml(node.label) + '</strong>';
         }
-        var title = node.label.length > 80 ? node.label.substring(0, 80) + '\u2026' : node.label;
-        return '<strong>' + escapeHtml(title) + '</strong>' + (node.date ? '<br>' + formatDate(node.date) : '');
+        return '';
       })
       .nodeVal(function(node) { return node.type === 'entity' ? 2 : 0.3; })
       .nodeRelSize(2.5)
-      .nodeColor(function(node) {
-        if (highlightedNodes.size > 0 && !highlightedNodes.has(node.id)) {
-          return node.type === 'entity' ? '#DDD8E0' : '#E8E4E0';
-        }
-        if (highlightedNodes.has(node.id) && node.type === 'document') return '#807060';
-        return node.color;
-      })
-      .nodeCanvasObjectMode(function(node) {
-        return node.type === 'entity' ? 'after' : undefined;
-      })
+      .nodeCanvasObjectMode(function() { return 'replace'; })
       .nodeCanvasObject(function(node, ctx, globalScale) {
-        if (node.type !== 'entity') return;
-        var show = globalScale > 1.2 || highlightedNodes.has(node.id);
-        if (!show) return;
-        var fontSize = 10 / globalScale;
-        ctx.font = 'bold ' + fontSize + 'px DM Sans, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillStyle = highlightedNodes.has(node.id) ? '#333' : '#777';
-        var r = Math.sqrt(3) * 3;
-        ctx.fillText(node.label, node.x, node.y + r / globalScale + 1);
+        var r = Math.sqrt(node.type === 'entity' ? 2 : 0.3) * 2.5;
+
+        if (node.type === 'document') {
+          // Count entity neighbours to decide filled vs empty
+          var neighbours = nodeNeighbours.get(node.id);
+          var entityNeighbourCount = 0;
+          if (neighbours) neighbours.forEach(function(nid) {
+            var n = graphNodes.get(nid);
+            if (n && n.type === 'entity') entityNeighbourCount++;
+          });
+          var filled = entityNeighbourCount > 1;
+
+          var dimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
+          var hovered = highlightedNodes.has(node.id);
+
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+          if (filled) {
+            ctx.fillStyle = dimmed ? '#E8E4E0' : hovered ? '#807060' : node.color;
+            ctx.fill();
+          } else {
+            ctx.fillStyle = '#FAFAF9';
+            ctx.fill();
+            ctx.strokeStyle = dimmed ? '#E8E4E0' : hovered ? '#807060' : node.color;
+            ctx.lineWidth = 1.2 / globalScale;
+            ctx.stroke();
+          }
+        } else {
+          // Entity node: filled circle + label
+          var dimmedE = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+          ctx.fillStyle = dimmedE ? '#DDD8E0' : node.color;
+          ctx.fill();
+
+          var show = globalScale > 1.2 || highlightedNodes.has(node.id);
+          if (show) {
+            var fontSize = 10 / globalScale;
+            ctx.font = 'bold ' + fontSize + 'px DM Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = highlightedNodes.has(node.id) ? '#333' : '#777';
+            ctx.fillText(node.label, node.x, node.y + r + 1);
+          }
+        }
       })
       .linkColor(function(link) {
         if (highlightedLinks.has(link)) return '#888';
@@ -331,28 +358,25 @@ document.addEventListener('DOMContentLoaded', async function() {
       })
       .onNodeClick(function(node) {
         if (!node) return;
+        dismissTooltip();
         if (node.type === 'entity') {
-          window.location.href = '/entidad/' + node.id + '/';
+          graphInstance.centerAt(node.x, node.y, 400);
         } else if (node.type === 'document') {
-          // Centre on this document, then expand its connected entities
-          graphInstance.centerAt(node.x, node.y, 500);
-          graphInstance.zoom(2, 500);
-          expandDocument(node.id, canvas);
+          graphInstance.centerAt(node.x, node.y, 400);
+          showDocTooltip(node, canvas);
         }
       })
-      .onNodeDragEnd(function(node) { node.fx = node.x; node.fy = node.y; });
+      .onBackgroundClick(function() { dismissTooltip(); })
+      .onNodeDragEnd(function(node) { node.fx = node.x; node.fy = node.y; })
+      .onZoom(function() { updateTooltipPosition(); });
 
     graphInstance.d3Force('charge').strength(-20);
     graphInstance.d3Force('link').distance(20).strength(0.5);
 
-    // Zoom to fit once on initial render
-    var initialFit = true;
-    graphInstance.onEngineStop(function() {
-      if (initialFit) {
-        initialFit = false;
-        graphInstance.zoomToFit(400, 30);
-      }
-    });
+    // Zoom to fit early so the graph doesn't start as a distant speck
+    setTimeout(function() {
+      if (graphInstance) graphInstance.zoomToFit(0, 30);
+    }, 300);
 
     // Resize
     new ResizeObserver(function() {
@@ -362,30 +386,103 @@ document.addEventListener('DOMContentLoaded', async function() {
     }).observe(canvas);
   }
 
+  // --- Document tooltip ---
+
+  function showDocTooltip(node, canvas) {
+    dismissTooltip();
+
+    var tooltip = document.createElement('div');
+    tooltip.className = 'graph-tooltip';
+
+    var html = '';
+    if (node.date) {
+      html += '<div class="graph-tooltip-date">' + formatDate(node.date) + '</div>';
+    }
+    html += '<div class="graph-tooltip-name"><a href="/' + escapeHtml(node.id) + '/">' + escapeHtml(node.label) + '</a></div>';
+    html += '<div class="graph-tooltip-ref">' + escapeHtml(node.id) + '</div>';
+    html += '<div class="graph-tooltip-actions">';
+    html += '<button type="button" class="graph-tooltip-btn" data-action="expand">Expandir conexiones</button>';
+    html += '</div>';
+
+    tooltip.innerHTML = html;
+    positionTooltip(tooltip, node);
+
+    canvas.appendChild(tooltip);
+    activeTooltip = tooltip;
+    tooltipNode = node;
+
+    // Wire expand button
+    tooltip.querySelector('[data-action="expand"]').addEventListener('click', async function() {
+      var btn = this;
+      btn.textContent = 'Cargando\u2026';
+      btn.disabled = true;
+      node.fx = node.x;
+      node.fy = node.y;
+      await expandDocument(node.id, canvas);
+      graphInstance.centerAt(node.x, node.y, 400);
+      dismissTooltip();
+    });
+  }
+
+  function positionTooltip(tooltip, node) {
+    var coords = graphInstance.graph2ScreenCoords(node.x, node.y);
+    tooltip.style.left = coords.x + 'px';
+    tooltip.style.top = (coords.y - 8) + 'px';
+    tooltip.style.transform = 'translate(-50%, -100%)';
+  }
+
+  function updateTooltipPosition() {
+    if (activeTooltip && tooltipNode && graphInstance) {
+      positionTooltip(activeTooltip, tooltipNode);
+    }
+  }
+
+  function dismissTooltip() {
+    if (activeTooltip) {
+      activeTooltip.remove();
+      activeTooltip = null;
+      tooltipNode = null;
+    }
+  }
+
   // --- Expand document: load connected entities ---
 
   async function expandDocument(refCode, canvas) {
-    // Load the lookup (once)
-    if (!docLookup) {
+    // Load Pagefind descriptions index (once)
+    if (!pagefindDesc) {
       try {
-        var res = await fetch('/data/desc-entity-lookup.json');
-        if (res.ok) docLookup = await res.json();
-      } catch (e) { console.error('[entity] Failed to load doc lookup:', e); }
+        pagefindDesc = await import('/pagefind/pagefind.js');
+        await pagefindDesc.options({ bundlePath: '/pagefind/' });
+        await pagefindDesc.init();
+      } catch (e) { console.error('[entity] Failed to load Pagefind descriptions:', e); return; }
     }
-    if (!docLookup || !docLookup[refCode]) return;
 
-    // Load Pagefind (once)
+    // Search for this document and read its entidad filter values
+    var entityCodes = [];
+    try {
+      var search = await pagefindDesc.search(refCode);
+      for (var si = 0; si < search.results.length; si++) {
+        var hit = await search.results[si].data();
+        if (hit.meta && hit.meta.reference_code === refCode) {
+          entityCodes = (hit.filters && hit.filters.entidad) || [];
+          break;
+        }
+      }
+    } catch (e) { console.error('[entity] Pagefind description search failed:', e); return; }
+
+    if (entityCodes.length === 0) return;
+
+    var newEntities = entityCodes.filter(function(c) { return !graphNodes.has(c); });
+    if (newEntities.length === 0) return;
+
+    // Load Pagefind entities index (once)
     if (!pagefindEntity) {
       try {
         pagefindEntity = await import('/pagefind-entities/pagefind.js');
         await pagefindEntity.options({ bundlePath: '/pagefind-entities/' });
         await pagefindEntity.init();
-      } catch (e) { console.error('[entity] Failed to load Pagefind:', e); return; }
+      } catch (e) { console.error('[entity] Failed to load Pagefind entities:', e); return; }
     }
-
-    var entityCodes = docLookup[refCode];
-    var newEntities = entityCodes.filter(function(c) { return !graphNodes.has(c); });
-    if (newEntities.length === 0) return;
 
     // Search Pagefind for each new entity to get name + type
     for (var i = 0; i < newEntities.length; i++) {

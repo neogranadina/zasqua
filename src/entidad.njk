@@ -103,11 +103,7 @@ eleventyComputed:
           {% if ent.name_variants and ent.name_variants.length %}
             <div class="detail-field">
               <span class="detail-label">{{ ui.entity.fields.nameVariants }}</span>
-              <div class="variant-tags">
-                {% for variant in ent.name_variants %}
-                  <span class="variant-tag">{{ variant }}</span>
-                {% endfor %}
-              </div>
+              <span class="detail-value">{{ ent.name_variants | join(', ') }}</span>
             </div>
           {% endif %}
         </div>
@@ -121,6 +117,27 @@ eleventyComputed:
             </div>
           </div>
         {% endif %}
+
+        {# Section: Control #}
+        <div class="detail-section">
+          <h3 class="font-semibold text-stone-400">{{ ui.entity.sections.control }}</h3>
+          <div class="detail-field">
+            <span class="detail-label">{{ ui.entity.fields.entityCode }}</span>
+            <span class="detail-value detail-value-mono">{{ ent.entity_code }}</span>
+          </div>
+        </div>
+
+        {# Section: Reutilizacion #}
+        <div class="detail-section">
+          <h3 class="font-semibold text-stone-400">{{ ui.entity.sections.reuse }}</h3>
+          <p class="reuse-blurb">Zasqua se inspira en los <a href="https://journal.code4lib.org/articles/13427" target="_blank" rel="noopener">principios FAIR</a> para hacer sus registros de autoridad más abiertos y reutilizables. Utiliza el estándar <a href="https://eac.staatsbibliothek-berlin.de/" target="_blank" rel="noopener">EAC-CPF</a> para publicar registros de autoridad en formato interoperable.</p>
+          <div class="reuse-manifest">
+            <strong class="reuse-manifest-label">EAC-CPF</strong>
+            <div class="reuse-manifest-row">
+              <code class="reuse-manifest-url reuse-coming-soon">Disponible próximamente</code>
+            </div>
+          </div>
+        </div>
 
       </div>
 

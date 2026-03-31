@@ -956,6 +956,10 @@
   .detail-value {
     color: var(--color-stone-500);
   }
+  .detail-value-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.85em;
+  }
   ul.detail-list {
     margin: 0;
     padding-left: 1.2em;
@@ -2126,6 +2130,11 @@
     white-space: nowrap;
     font-family: monospace;
   }
+  .reuse-coming-soon {
+    font-family: inherit;
+    font-style: italic;
+    color: var(--color-stone-400);
+  }
   .reuse-copy-btn {
     flex-shrink: 0;
     display: inline-flex;
@@ -2513,6 +2522,7 @@
     overflow: hidden;
   }
   .entity-graph-canvas {
+    position: relative;
     width: 100%;
     height: 480px;
   }
@@ -2713,20 +2723,57 @@
     border-radius: 4px;
     padding: 8px 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    pointer-events: none;
+    pointer-events: auto;
     max-width: 300px;
   }
-  .graph-tooltip-name {
-    font-size: 0.875rem;
+  .graph-tooltip-date {
+    font-size: 0.8rem;
     font-weight: 600;
-    line-height: 1.4;
+    line-height: 1.3;
     color: oklch(21.6% 0.006 56.043);
   }
-  .graph-tooltip-meta {
-    font-size: 0.72rem;
+  .graph-tooltip-name {
+    font-size: 0.8rem;
     font-weight: 400;
+    line-height: 1.4;
+    color: oklch(33% 0.01 56);
+    margin-top: 2px;
+  }
+  .graph-tooltip-name a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .graph-tooltip-name a:hover {
+    text-decoration: underline;
+  }
+  .graph-tooltip-ref {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.68rem;
     line-height: 1.3;
     color: oklch(55.3% 0.013 58.071);
+    margin-top: 3px;
+  }
+  .graph-tooltip-actions {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid oklch(86.9% 0.005 106.589);
+  }
+  .graph-tooltip-btn {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: oklch(39.4% 0.095 16.568);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  .graph-tooltip-btn:hover {
+    text-decoration: underline;
+  }
+  .graph-tooltip-btn:disabled {
+    color: oklch(55.3% 0.013 58.071);
+    cursor: default;
+    text-decoration: none;
   }
   .graph-mobile-toggle {
     display: none;
