@@ -19,7 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 6: Entity & Place Detail Pages** - ~100K entity and place pages with embedded maps and linked description shards
 - [ ] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map
 - [x] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list (completed 2026-03-28)
-- [ ] **Phase 9: Entity Network Graph** - Sigma.js network graph with pre-computed ForceAtlas2 layout
+- [ ] **Phase 9: Entity Network Graph** - DEFERRED — co-occurrence blob replaced by document-entity relationship graph (see docs/frontend/plans/document-entity-graph.md)
 
 ## Phase Details
 
@@ -101,21 +101,13 @@ Plans:
 - [x] 08-03-PLAN.md — Place explorer migration from in-memory JSON to Pagefind
 **UI hint**: yes
 
-### Phase 9: Entity Network Graph
-**Goal**: The entity explorer includes a network graph showing entity co-occurrence through shared documents, rendered from pre-computed layout positions with ego-network expansion on click
-**Depends on**: Phase 4 (co-occurrence JSON), Phase 8 (entity explorer to integrate with)
-**Requirements**: GRAPH-01, GRAPH-02, GRAPH-03, GRAPH-04
-**Success Criteria** (what must be TRUE):
-  1. The entity explorer page renders a network graph using Sigma.js with node positions drawn from pre-computed ForceAtlas2 layout data — no force simulation runs in the browser
-  2. Clicking a graph node expands its ego-network (the node and its immediate neighbours) and highlights those entities in the results list
-  3. Hovering a node shows the entity name; clicking navigates to the entity detail page
-  4. The graph updates to reflect the current search and facet filter state — nodes outside the filtered result set are visually suppressed or hidden
-**Plans**: 3 plans
-Plans:
-- [x] 09-01-PLAN.md — Extend precompute script with ForceAtlas2 layout and role-pair counts
-- [x] 09-02-PLAN.md — EntityNetworkGraph class, template wiring, CSS classes
-- [ ] 09-03-PLAN.md — Visual and functional verification checkpoint
-**UI hint**: yes
+### Phase 9: Entity Network Graph — DEFERRED
+**Original goal**: Co-occurrence network graph on the entity explorer page
+**Status**: Deferred after testing with real data (2026-03-30)
+**Reason**: The co-occurrence graph collapses documents into invisible edges, hiding the archival descriptions that give relationships meaning. A bird's-eye blob of 100 entity nodes provides no user value. The feature needs a fundamental redesign as a document-entity bipartite graph, entered from entity/description detail pages rather than the explorer.
+**Redesign**: See `docs/frontend/plans/document-entity-graph.md`
+**Infrastructure retained**: precompute-cooccurrence.js (co-occurrence data), backend entity_links/place_links export
+**Infrastructure to revert**: EntityNetworkGraph class, graph CSS, template CDN scripts, graphology/sigma/force-graph dependencies
 
 ## Progress
 
@@ -129,4 +121,4 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
 | 6. Entity & Place Detail Pages | 2/4 | In Progress|  |
 | 7. Place Explorer | 1/3 | In Progress|  |
 | 8. Entity Explorer — List View | 3/3 | Complete   | 2026-03-28 |
-| 9. Entity Network Graph | 0/3 | Not started | - |
+| 9. Entity Network Graph | — | Deferred | 2026-03-30 |

@@ -45,12 +45,14 @@ Requirements for the Entity & Place Discovery milestone. Each maps to roadmap ph
 - [x] **EEXP-02**: User can filter entities by facets (entity type, primary function, date range)
 - [x] **EEXP-03**: Entity explorer shows a paginated/virtual results list (never renders all 92K to DOM)
 
-### Entity Network Graph
+### Entity Network Graph — DEFERRED
 
-- [x] **GRAPH-01**: Entity explorer includes a network graph showing entity co-occurrence through shared documents
-- [x] **GRAPH-02**: Graph uses pre-computed ForceAtlas2 layout positions (no browser-side force simulation)
-- [x] **GRAPH-03**: User can click a graph node to expand its ego-network (immediate neighbours)
-- [ ] **GRAPH-04**: Graph filters in sync with the entity explorer search/facet state
+GRAPH-01 through GRAPH-04 deferred (2026-03-30). The co-occurrence blob approach was tested with real data and shelved — entities connect through documents, not directly. Redesigned as a document-entity bipartite graph for entity/description detail pages. See `docs/frontend/plans/document-entity-graph.md`.
+
+- [ ] **GRAPH-01**: ~~Entity explorer includes a network graph~~ → Deferred, redesign pending
+- [ ] **GRAPH-02**: ~~Pre-computed ForceAtlas2 layout~~ → Deferred, redesign pending
+- [ ] **GRAPH-03**: ~~Ego-network expansion~~ → Deferred, redesign pending
+- [ ] **GRAPH-04**: ~~Filter sync~~ → Deferred, redesign pending
 
 ### Fixes
 
@@ -138,10 +140,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EEXP-01 | Phase 8 | Complete |
 | EEXP-02 | Phase 8 | Complete |
 | EEXP-03 | Phase 8 | Complete |
-| GRAPH-01 | Phase 9 | Complete |
-| GRAPH-02 | Phase 9 | Complete |
-| GRAPH-03 | Phase 9 | Complete |
-| GRAPH-04 | Phase 9 | Pending |
+| GRAPH-01 | Phase 9 | Deferred |
+| GRAPH-02 | Phase 9 | Deferred |
+| GRAPH-03 | Phase 9 | Deferred |
+| GRAPH-04 | Phase 9 | Deferred |
 | FIX-01 | — | Complete |
 | VIS-01 | Phase 1 | Complete |
 | VIS-02 | Phase 1 | Complete |
