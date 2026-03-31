@@ -234,6 +234,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           type: 'document',
           label: link.title,
           date: link.date_expression || '',
+          role: link.role || '',
           color: '#A09888'
         });
       }
@@ -397,6 +398,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     var html = '';
     if (node.date) {
       html += '<div class="graph-tooltip-date">' + formatDate(node.date) + '</div>';
+    }
+    if (node.role) {
+      html += '<div class="graph-tooltip-role">' + escapeHtml(roleLabels[node.role] || node.role) + '</div>';
     }
     html += '<div class="graph-tooltip-name"><a href="/' + escapeHtml(node.id) + '/">' + escapeHtml(node.label) + '</a></div>';
     html += '<div class="graph-tooltip-ref">' + escapeHtml(node.id) + '</div>';
