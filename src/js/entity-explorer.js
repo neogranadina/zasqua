@@ -66,7 +66,7 @@ class EntityExplorer {
     this.state.q = params.get('q') || '';
     this.state.entity_type = params.getAll('tipo');
     this.state.primary_function = params.getAll('funcion');
-    this.state.sort = params.get('orden') || '';
+    this.state.sort = params.get('orden') || 'count:desc';
     this.state.page = parseInt(params.get('pagina'), 10) || 1;
 
     // Date drill-down: one active at a time
@@ -129,7 +129,7 @@ class EntityExplorer {
       this.state.primary_function.length > 0 ||
       this.state.dateFilter !== null;
 
-    const isPreSearch = !this.state.q && !hasActiveFilters;
+    const isPreSearch = !this.state.q && !hasActiveFilters && !this.state.sort;
 
     this.showLoading();
     // Allow browser to paint spinner before WASM blocks
@@ -212,6 +212,7 @@ class EntityExplorer {
   // --- Rendering ---
 
   renderSearchResults(data) {
+    this._lastRenderData = data;
     this.container.innerHTML = '';
 
     const layout = document.createElement('div');

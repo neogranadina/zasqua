@@ -2017,6 +2017,18 @@
     flex-shrink: 0;
   }
 
+  /* Entity pages: metadata narrow left, timeline wide right */
+  .entity-layout .desc-metadata {
+    flex: none;
+    width: 35%;
+    max-width: none;
+  }
+
+  .entity-layout .desc-aside {
+    flex: none;
+    width: 65%;
+  }
+
   @media (max-width: 768px) {
     .desc-layout {
       flex-direction: column;
@@ -2028,6 +2040,15 @@
 
     .desc-aside {
       width: 100%;
+    }
+
+    .entity-layout {
+      flex-direction: column;
+    }
+
+    .entity-layout .desc-metadata {
+      width: 100%;
+      max-width: none;
     }
   }
 
@@ -2466,19 +2487,130 @@
     font-size: 0.78rem;
   }
 
+  /* Entity intro sentence */
+  .entity-intro {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    @apply text-stone-500;
+    margin: 8px 0;
+  }
+
+  .entity-intro strong {
+    @apply text-stone-700;
+    font-weight: 600;
+  }
+
+  .entity-view-link {
+    color: var(--color-burgundy);
+    text-decoration: underline;
+    text-decoration-color: var(--color-burgundy-light);
+    text-underline-offset: 2px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font: inherit;
+    padding: 0;
+  }
+
+  .entity-view-link:hover {
+    text-decoration-color: var(--color-burgundy);
+  }
+
+  .entity-view-link.active {
+    font-weight: 600;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--color-burgundy);
+  }
+
+  /* Role filter pills */
+  .entity-role-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .entity-role-filters:empty {
+    display: none;
+  }
+
+  .entity-role-btn {
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 400;
+    padding: 4px 12px;
+    border-radius: 50px;
+    border: 1px solid;
+    @apply border-stone-200 text-stone-500 bg-white;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .entity-role-btn:hover {
+    @apply border-stone-300 text-stone-700;
+  }
+
+  .entity-role-btn.active {
+    background: var(--color-burgundy);
+    border-color: var(--color-burgundy);
+    color: #fff;
+  }
+
+  .entity-role-btn.active:hover {
+    background: var(--color-burgundy-deep);
+    border-color: var(--color-burgundy-deep);
+  }
+
+  .entity-timeline-frame {
+    border: 1px solid;
+    @apply border-stone-200 bg-stone-50;
+    border-radius: 4px;
+    padding: 0 16px;
+    margin-top: 8px;
+  }
+
+  .entity-graph-frame {
+    border: 1px solid;
+    @apply border-stone-200 bg-stone-50;
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+
+  .entity-graph-canvas {
+    width: 100%;
+    height: 480px;
+  }
+
   .entity-timeline {
-    max-height: 480px;
+    max-height: 540px;
     overflow-y: auto;
   }
 
   .timeline-entry {
-    padding: 12px 0;
-    border-bottom: 1px solid;
-    @apply border-stone-100;
+    padding: 0 0 8px;
   }
 
-  .timeline-entry:last-child {
-    border-bottom: none;
+  .timeline-entry:first-child {
+    padding-top: 0;
+  }
+
+  /* Connector line between entries */
+  .timeline-connector {
+    width: 1px;
+    height: 16px;
+    margin: 0 auto;
+    @apply bg-stone-300;
+  }
+
+  .timeline-entry:first-child .timeline-connector {
+    display: none;
+  }
+
+  /* Centre block: date + role */
+  .timeline-centre {
+    text-align: center;
+    padding: 4px 0;
   }
 
   .timeline-date {
@@ -2488,27 +2620,49 @@
   }
 
   .timeline-role {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     @apply text-stone-500;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+
+  /* Card: document details */
+  .timeline-card {
+    @apply bg-white border-stone-200;
+    border: 1px solid;
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-top: 6px;
+    position: relative;
+    z-index: 1;
   }
 
   .timeline-title {
     color: var(--color-burgundy);
     font-size: 0.85rem;
     text-decoration: none;
+    line-height: 1.4;
   }
 
   .timeline-title:hover {
     text-decoration: underline;
   }
 
+  .timeline-ref {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    @apply text-stone-400;
+    margin-top: 3px;
+  }
+
   .timeline-no-date {
     font-size: 0.72rem;
     @apply text-stone-400;
     text-transform: uppercase;
-    margin-top: 8px;
+    text-align: center;
+    padding: 8px 0 0;
+    position: relative;
+    z-index: 1;
   }
 
   .place-map {

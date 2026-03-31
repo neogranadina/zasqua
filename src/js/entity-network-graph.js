@@ -1,13 +1,14 @@
 /**
  * Entity-Document Network Graph
  *
- * Bipartite graph: entity nodes and document nodes connected by role edges.
- * Uses force-graph (2D) with live physics — nodes repel, links attract,
- * drag to move, scroll to zoom.
+ * Bipartite graph driven by the entity explorer's current results.
+ * When the explorer renders a page of entities, this class fetches their
+ * link shards, finds documents shared by 2+ visible entities, and renders
+ * entity + document nodes with role edges using force-graph (2D canvas).
  *
  * Entity nodes: coloured by type (person/corporate/family)
- * Document nodes: small, grey — the archival descriptions at the heart of relationships
- * Edges: entity → document, labelled with role
+ * Document nodes: small, muted — the archival descriptions connecting entities
+ * Edges: entity → document, coloured by role
  */
 
 class EntityNetworkGraph {
@@ -21,7 +22,11 @@ class EntityNetworkGraph {
     this.highlightedNodes = new Set();
     this.highlightedLinks = new Set();
 
-    // Entity colours by type — person burgundy, others periwinkle
+    // Shard cache: entity_code → [{ reference_code, title, … }]
+    this._shardCache = new Map();
+    this._currentEntityCodes = [];
+
+    // Entity colours by type
     this.entityColors = {
       person: '#8B2942',
       corporate_body: '#6666BB',
@@ -32,29 +37,14 @@ class EntityNetworkGraph {
       corporate_body: '#4444AA',
       family: '#4444AA'
     };
-    // Document colour — muted but visible
     this.docColor = '#A09888';
     this.docHighlightColor = '#807060';
 
-    // Role labels in Spanish
-    this.roleLabels = {
-      creator: 'productor',
-      contributor: 'colaborador',
-      publisher: 'editor',
-      subject: 'materia',
-      mentioned: 'mencionado',
-      unknown: 'sin rol'
-    };
-
-    this.allRoles = ['creator', 'contributor', 'publisher', 'subject', 'mentioned'];
-    this.hiddenRoles = new Set();
-
-    // Active filters
-    this.activeRepos = null;      // null = all, Set = selected
-    this.activeCenturies = null;  // null = all, Set = selected
-    this.activeEntityTypes = null; // null = all, Set = selected
-
     this._canvasEl = null;
+    this._headerEl = null;
+    this._loadingEl = null;
+    this._built = false;
+
     this.init();
   }
 
@@ -80,66 +70,227 @@ class EntityNetworkGraph {
     this.container.appendChild(toggleBtn);
 
     // Header
-    const header = document.createElement('div');
-    header.className = 'graph-panel-header';
+    this._headerEl = document.createElement('div');
+    this._headerEl.className = 'graph-panel-header';
     const heading = document.createElement('span');
     heading.className = 'graph-panel-heading';
     heading.textContent = 'Red de entidades y documentos';
-    header.appendChild(heading);
+    this._headerEl.appendChild(heading);
     const resetBtn = document.createElement('button');
     resetBtn.className = 'btn-pill';
     resetBtn.type = 'button';
     resetBtn.textContent = 'Restablecer vista';
     resetBtn.addEventListener('click', () => this.resetView());
-    header.appendChild(resetBtn);
-    this.container.appendChild(header);
-
-    // Filters container — populated after data loads, each group is its own row
-    this._filtersEl = document.createElement('div');
-    this.container.appendChild(this._filtersEl);
+    this._headerEl.appendChild(resetBtn);
+    this.container.appendChild(this._headerEl);
 
     // Canvas
     const canvasWrap = document.createElement('div');
     canvasWrap.id = 'graph-canvas';
     canvasWrap.className = 'graph-canvas';
     this._canvasEl = canvasWrap;
-    const loadingEl = document.createElement('div');
-    loadingEl.className = 'graph-loading';
-    loadingEl.textContent = 'Cargando red\u2026';
-    canvasWrap.appendChild(loadingEl);
+    this._loadingEl = document.createElement('div');
+    this._loadingEl.className = 'graph-loading';
+    this._loadingEl.textContent = 'Esperando resultados\u2026';
+    canvasWrap.appendChild(this._loadingEl);
     this.container.appendChild(canvasWrap);
 
     if (window.innerWidth > 768) {
       canvasWrap.classList.add('graph-expanded');
     }
-
-    // Fetch data
-    fetch('/data/entity-doc-graph.json')
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(data => this.buildGraph(data))
-      .catch(err => {
-        console.error('EntityNetworkGraph: failed to load graph data', err);
-        canvasWrap.innerHTML = '';
-        const errEl = document.createElement('div');
-        errEl.className = 'graph-loading';
-        errEl.innerHTML =
-          '<strong>No se pudo cargar la red</strong><br>' +
-          'Comprueba tu conexi\u00f3n e intenta recargar la p\u00e1gina.';
-        canvasWrap.appendChild(errEl);
-      });
   }
 
-  buildGraph(data) {
-    this._canvasEl.innerHTML = '';
-    this._rawData = data;
+  // -------------------------------------------------------------------------
+  // Explorer integration
+  // -------------------------------------------------------------------------
 
-    // Build filter UI from data metadata
-    this._buildFilters(data.filters || {});
+  setExplorer(explorer) {
+    this.explorer = explorer;
+
+    // Patch updateUrl to dispatch filter-change events
+    const origUpdateUrl = explorer.updateUrl.bind(explorer);
+    explorer.updateUrl = () => {
+      origUpdateUrl();
+      document.dispatchEvent(new CustomEvent('entity-explorer:filter-change'));
+    };
+
+    // Listen for results rendering — the explorer calls renderSearchResults
+    // after each search, so we patch it to notify us with the hits
+    const origRender = explorer.renderSearchResults.bind(explorer);
+    explorer.renderSearchResults = (data) => {
+      origRender(data);
+      this._onExplorerResults(data);
+    };
+
+    window.addEventListener('popstate', () => {
+      // Explorer will re-search on popstate, which triggers renderSearchResults
+    });
+
+    // If the explorer already rendered results before we patched, replay them
+    if (explorer._lastRenderData) {
+      this._onExplorerResults(explorer._lastRenderData);
+    }
+  }
+
+  async _onExplorerResults(data) {
+    if (!data.hits || data.hits.length === 0) {
+      this._showEmpty(data.browsePrompt
+        ? 'La red se genera a partir de los resultados de búsqueda'
+        : 'Sin resultados para mostrar en la red');
+      return;
+    }
+
+    // Extract entity codes from hit URLs: /entidad/{code}/
+    const entityCodes = data.hits
+      .map(hit => {
+        const m = (hit.url || '').match(/\/entidad\/([^/]+)\//);
+        return m ? m[1] : null;
+      })
+      .filter(Boolean);
+
+    if (entityCodes.length === 0) {
+      this._showEmpty('Sin entidades para mostrar en la red');
+      return;
+    }
+
+    this._currentEntityCodes = entityCodes;
+    this._showLoading();
+
+    try {
+      await this._fetchAndBuild(entityCodes, data.hits);
+    } catch (err) {
+      console.error('EntityNetworkGraph: failed to build graph', err);
+      this._showEmpty('No se pudo generar la red');
+    }
+  }
+
+  async _fetchAndBuild(entityCodes, hits) {
+    // Fetch shards for all entity codes (use cache)
+    const shardPromises = entityCodes.map(async code => {
+      if (this._shardCache.has(code)) return;
+      try {
+        const resp = await fetch(`/data/entity-links/${code}.json`);
+        if (!resp.ok) {
+          this._shardCache.set(code, []);
+          return;
+        }
+        const links = await resp.json();
+        this._shardCache.set(code, links);
+      } catch {
+        this._shardCache.set(code, []);
+      }
+    });
+    await Promise.all(shardPromises);
+
+    // Build entity metadata from hits
+    const entityMeta = new Map();
+    for (const hit of hits) {
+      const m = (hit.url || '').match(/\/entidad\/([^/]+)\//);
+      if (!m) continue;
+      entityMeta.set(m[1], {
+        label: hit.meta?.title || m[1],
+        entityType: hit.meta?.entity_type || 'unknown',
+        linkedCount: parseInt(hit.meta?.linked_count || '0', 10)
+      });
+    }
+
+    // Find documents shared by 2+ visible entities
+    const docEntities = new Map(); // reference_code → [{ entity, role, title, date, repo }]
+    for (const code of entityCodes) {
+      const links = this._shardCache.get(code) || [];
+      for (const link of links) {
+        if (!docEntities.has(link.reference_code)) docEntities.set(link.reference_code, []);
+        docEntities.get(link.reference_code).push({
+          entity: code,
+          role: link.role || 'unknown',
+          title: link.title || link.reference_code,
+          date: link.date_expression || '',
+          repository: link.repository_code || ''
+        });
+      }
+    }
+
+    // Keep only documents linked to 2+ of the visible entities
+    const sharedDocs = new Map();
+    for (const [refCode, entries] of docEntities) {
+      const uniqueEntities = new Set(entries.map(e => e.entity));
+      if (uniqueEntities.size >= 2) {
+        sharedDocs.set(refCode, entries);
+      }
+    }
+
+    if (sharedDocs.size === 0) {
+      this._showEmpty('Estas entidades no comparten documentos');
+      return;
+    }
+
+    // Build nodes
+    const entityNodes = entityCodes
+      .filter(code => {
+        // Only include entities that appear in shared docs
+        for (const [, entries] of sharedDocs) {
+          if (entries.some(e => e.entity === code)) return true;
+        }
+        return false;
+      })
+      .map(code => {
+        const meta = entityMeta.get(code) || {};
+        let docCount = 0;
+        for (const [, entries] of sharedDocs) {
+          if (entries.some(e => e.entity === code)) docCount++;
+        }
+        return {
+          id: code,
+          type: 'entity',
+          label: meta.label || code,
+          entityType: meta.entityType || 'unknown',
+          docCount,
+          color: this.entityColors[meta.entityType] || '#8888CC'
+        };
+      });
+
+    const docNodes = [];
+    const edges = [];
+    for (const [refCode, entries] of sharedDocs) {
+      const first = entries[0];
+      docNodes.push({
+        id: refCode,
+        type: 'document',
+        label: first.title,
+        date: first.date,
+        repository: first.repository,
+        entityCount: new Set(entries.map(e => e.entity)).size,
+        color: this.docColor
+      });
+
+      // One edge per unique entity per document
+      const seen = new Set();
+      for (const entry of entries) {
+        if (seen.has(entry.entity)) continue;
+        seen.add(entry.entity);
+        edges.push({
+          source: entry.entity,
+          target: refCode,
+          role: entry.role
+        });
+      }
+    }
+
+    const nodes = [...entityNodes, ...docNodes];
+    this._buildGraph(nodes, edges);
+  }
+
+  // -------------------------------------------------------------------------
+  // Graph rendering
+  // -------------------------------------------------------------------------
+
+  _buildGraph(nodes, edges) {
+    this._canvasEl.innerHTML = '';
 
     // Build adjacency for highlight lookups
     this._nodeNeighbours = new Map();
     this._nodeLinks = new Map();
-    for (const link of data.edges) {
+    for (const link of edges) {
       for (const nid of [link.source, link.target]) {
         if (!this._nodeNeighbours.has(nid)) this._nodeNeighbours.set(nid, new Set());
         if (!this._nodeLinks.has(nid)) this._nodeLinks.set(nid, new Set());
@@ -150,46 +301,7 @@ class EntityNetworkGraph {
       this._nodeLinks.get(link.target).add(link);
     }
 
-    // Find largest connected component — discard isolated clusters
-    const allNodeIds = new Set(data.nodes.map(n => n.id));
-    const visited = new Set();
-    let largestComponent = new Set();
-
-    for (const startId of allNodeIds) {
-      if (visited.has(startId)) continue;
-      const component = new Set();
-      const queue = [startId];
-      while (queue.length > 0) {
-        const nid = queue.pop();
-        if (component.has(nid)) continue;
-        component.add(nid);
-        visited.add(nid);
-        const neighbours = this._nodeNeighbours.get(nid);
-        if (neighbours) {
-          for (const nb of neighbours) {
-            if (!component.has(nb)) queue.push(nb);
-          }
-        }
-      }
-      if (component.size > largestComponent.size) largestComponent = component;
-    }
-
-    // Prepare node data — only largest component
-    const nodes = data.nodes
-      .filter(n => largestComponent.has(n.id))
-      .map(n => ({
-        ...n,
-        color: n.type === 'entity'
-          ? (this.entityColors[n.entityType] || '#8888CC')
-          : this.docColor
-      }));
-
-    const nodeIdSet = new Set(nodes.map(n => n.id));
-    const links = data.edges
-      .filter(e => nodeIdSet.has(e.source) && nodeIdSet.has(e.target))
-      .map(e => ({ ...e }));
-
-    this.graphData = { nodes, links };
+    this.graphData = { nodes, links: edges.map(e => ({ ...e })) };
 
     const width = this._canvasEl.clientWidth || 800;
     const height = this._canvasEl.clientHeight || 400;
@@ -200,42 +312,40 @@ class EntityNetworkGraph {
       .graphData(this.graphData)
       .nodeId('id')
       .nodeLabel(node => this._nodeTooltip(node))
-      .nodeVal(node => node.type === 'entity' ? 6 : 1)
-      .nodeRelSize(4)
+      .nodeVal(node => node.type === 'entity' ? 2 : 0.5)
+      .nodeRelSize(3)
       .nodeColor(node => this._getNodeColor(node))
       .nodeCanvasObjectMode(node => {
-        // Draw labels for entities when zoomed or hovered
         if (node.type === 'entity') return 'after';
         return undefined;
       })
       .nodeCanvasObject((node, ctx, globalScale) => {
         if (node.type !== 'entity') return;
-        const show = globalScale > 2.0 ||
+        const show = globalScale > 1.5 ||
           node.id === this.hoveredNode ||
           this.highlightedNodes.has(node.id);
         if (!show) return;
 
-        const fontSize = 11 / globalScale;
+        const fontSize = 10 / globalScale;
         ctx.font = `${fontSize}px DM Sans, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillStyle = this.highlightedNodes.has(node.id) ? '#333' : '#777';
-        const r = Math.sqrt(6) * 4; // entity nodeVal=6
+        const r = Math.sqrt(2) * 3;
         ctx.fillText(node.label, node.x, node.y + r / globalScale + 1);
       })
       .linkColor(link => this._getLinkColor(link))
-      .linkWidth(link => this.highlightedLinks.has(link) ? 1.5 : 0.3)
+      .linkWidth(link => this.highlightedLinks.has(link) ? 1.2 : 0.3)
       .enableNodeDrag(true)
       .enableZoomInteraction(true)
       .enablePanInteraction(true)
-      .cooldownTime(8000)
-      .d3AlphaDecay(0.015)
-      .d3VelocityDecay(0.25)
+      .cooldownTime(5000)
+      .d3AlphaDecay(0.02)
+      .d3VelocityDecay(0.3)
       .onNodeHover(node => {
         this.hoveredNode = node ? node.id : null;
         this._canvasEl.style.cursor = node ? 'grab' : '';
 
-        // Highlight neighbours on hover
         this.highlightedNodes.clear();
         this.highlightedLinks.clear();
         if (node) {
@@ -255,150 +365,64 @@ class EntityNetworkGraph {
         }
       })
       .onNodeDragEnd(node => {
-        // Pin dragged node in place
         node.fx = node.x;
         node.fy = node.y;
       });
 
     // Configure forces
-    this.fg.d3Force('charge').strength(-15);
-    this.fg.d3Force('link').distance(15).strength(0.7);
-    this.fg.d3Force('center').strength(0.4);
+    this.fg.d3Force('charge').strength(-20);
+    this.fg.d3Force('link').distance(20).strength(0.6);
+    this.fg.d3Force('center').strength(0.3);
 
     // Resize handling
+    if (this._resizeObserver) this._resizeObserver.disconnect();
     this._resizeObserver = new ResizeObserver(() => {
       if (this.fg && this._canvasEl.clientWidth > 0 && this._canvasEl.clientHeight > 0) {
         this.fg.width(this._canvasEl.clientWidth).height(this._canvasEl.clientHeight);
       }
     });
     this._resizeObserver.observe(this._canvasEl);
+
+    this._built = true;
   }
 
   // -------------------------------------------------------------------------
-  // Filters
+  // Display helpers
   // -------------------------------------------------------------------------
 
-  _buildFilters(filterMeta) {
-    const el = this._filtersEl;
-    el.innerHTML = '';
-
-    const repoNames = {
-      'co-ahr': 'AHR (Rionegro)',
-      'co-ahrb': 'AHRB (Boyac\u00e1)',
-      'co-ahjci': 'AHJCI (Istmina)',
-      'co-cihjml': 'CIHJML (Popay\u00e1n)',
-      'pe-bn': 'BNP (Per\u00fa)'
-    };
-
-    const centuryNames = {
-      16: 'Siglo XVI', 17: 'Siglo XVII', 18: 'Siglo XVIII',
-      19: 'Siglo XIX', 20: 'Siglo XX'
-    };
-
-    const entityTypeNames = {
-      person: 'Personas',
-      corporate: 'Instituciones',
-      family: 'Familias'
-    };
-
-    // Archive filter
-    if (filterMeta.repositories && filterMeta.repositories.length > 1) {
-      this._addFilterGroup(el, 'Archivo', filterMeta.repositories, repoNames, 'repo');
+  _showLoading() {
+    if (this.fg) {
+      this.fg._destructor && this.fg._destructor();
+      this.fg = null;
     }
-
-    // Century filter
-    if (filterMeta.centuries && filterMeta.centuries.length > 1) {
-      this._addFilterGroup(el, 'Siglo', filterMeta.centuries, centuryNames, 'century');
-    }
-
-    // Entity type filter
-    if (filterMeta.entityTypes && filterMeta.entityTypes.length > 1) {
-      this._addFilterGroup(el, 'Tipo', filterMeta.entityTypes, entityTypeNames, 'entityType');
-    }
+    this._canvasEl.innerHTML = '';
+    const el = document.createElement('div');
+    el.className = 'graph-loading';
+    el.textContent = 'Generando red\u2026';
+    this._canvasEl.appendChild(el);
   }
 
-  _addFilterGroup(container, label, values, nameMap, filterKey) {
-    const row = document.createElement('div');
-    row.className = 'graph-role-filters';
-
-    const groupLabel = document.createElement('span');
-    groupLabel.className = 'filter-label';
-    groupLabel.textContent = label;
-    row.appendChild(groupLabel);
-
-    for (const val of values) {
-      const lbl = document.createElement('label');
-      lbl.className = 'graph-role-filter-label';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = true;
-      cb.dataset.filterKey = filterKey;
-      cb.dataset.filterValue = String(val);
-      cb.addEventListener('change', () => this._applyFilters());
-      lbl.appendChild(cb);
-      lbl.appendChild(document.createTextNode(nameMap[val] || String(val)));
-      row.appendChild(lbl);
+  _showEmpty(message) {
+    if (this.fg) {
+      this.fg._destructor && this.fg._destructor();
+      this.fg = null;
     }
-
-    container.appendChild(row);
-  }
-
-  _applyFilters() {
-    const checkboxes = this._filtersEl.querySelectorAll('input[type="checkbox"]');
-
-    // Group by filter key
-    const groups = {};
-    for (const cb of checkboxes) {
-      const key = cb.dataset.filterKey;
-      if (!groups[key]) groups[key] = { all: [], checked: [] };
-      groups[key].all.push(cb.dataset.filterValue);
-      if (cb.checked) groups[key].checked.push(cb.dataset.filterValue);
-    }
-
-    // Set active filters (null = all selected = no filtering)
-    this.activeRepos = groups.repo
-      ? (groups.repo.checked.length === groups.repo.all.length ? null : new Set(groups.repo.checked))
-      : null;
-    this.activeCenturies = groups.century
-      ? (groups.century.checked.length === groups.century.all.length ? null : new Set(groups.century.checked.map(Number)))
-      : null;
-    this.activeEntityTypes = groups.entityType
-      ? (groups.entityType.checked.length === groups.entityType.all.length ? null : new Set(groups.entityType.checked))
-      : null;
-
-    // Trigger re-render
-    if (this.fg) this.fg.nodeColor(this.fg.nodeColor());
-  }
-
-  _isDocHidden(node) {
-    if (node.type !== 'document') return false;
-    if (this.activeRepos && !this.activeRepos.has(node.repository)) return true;
-    if (this.activeCenturies && !this.activeCenturies.has(node.century)) return true;
-    return false;
-  }
-
-  _isEntityHidden(node) {
-    if (node.type !== 'entity') return false;
-    if (this.activeEntityTypes && !this.activeEntityTypes.has(node.entityType)) return true;
-    return false;
-  }
-
-  _isNodeHidden(node) {
-    return this._isDocHidden(node) || this._isEntityHidden(node);
+    this._canvasEl.innerHTML = '';
+    const el = document.createElement('div');
+    el.className = 'graph-loading';
+    el.textContent = message;
+    this._canvasEl.appendChild(el);
   }
 
   _nodeTooltip(node) {
     if (node.type === 'entity') {
-      return `<strong>${this._escape(node.label)}</strong><br>${node.docCount} documento${node.docCount !== 1 ? 's' : ''} en la red`;
+      return `<strong>${this._escape(node.label)}</strong><br>${node.docCount} documento${node.docCount !== 1 ? 's' : ''} compartido${node.docCount !== 1 ? 's' : ''}`;
     }
     const title = node.label.length > 80 ? node.label.substring(0, 80) + '\u2026' : node.label;
     return `<strong>${this._escape(title)}</strong>${node.date ? '<br>' + node.date : ''}<br>${node.entityCount} entidades vinculadas`;
   }
 
   _getNodeColor(node) {
-    // Hidden by filter — nearly invisible
-    if (this._isNodeHidden(node)) return 'rgba(0,0,0,0.03)';
-    // Faded by highlight
     if (this.highlightedNodes.size > 0 && !this.highlightedNodes.has(node.id)) {
       return node.type === 'entity' ? '#DDD8E0' : '#E8E4E0';
     }
@@ -412,34 +436,14 @@ class EntityNetworkGraph {
   }
 
   _getLinkColor(link) {
-    // Check if either endpoint is filtered out
-    const s = typeof link.source === 'object' ? link.source : null;
-    const t = typeof link.target === 'object' ? link.target : null;
-    if ((s && this._isNodeHidden(s)) || (t && this._isNodeHidden(t))) return 'rgba(0,0,0,0)';
-
-    const role = link.role || 'unknown';
-    if (this.hiddenRoles.has(role)) return 'rgba(0,0,0,0)';
     if (this.highlightedLinks.has(link)) return '#888';
     if (this.highlightedNodes.size > 0) return 'rgba(0,0,0,0.03)';
     return '#E0DDD8';
   }
 
-  updateRoleFilters() {
-    this.hiddenRoles.clear();
-    const checkboxes = this.container.querySelectorAll(
-      '.graph-role-filter-label input[type="checkbox"]'
-    );
-    for (const cb of checkboxes) {
-      if (!cb.checked) this.hiddenRoles.add(cb.value);
-    }
-    // Re-filter: hide document nodes that have no visible edges
-    if (this.fg) this.fg.nodeColor(this.fg.nodeColor());
-  }
-
   resetView() {
     this.highlightedNodes.clear();
     this.highlightedLinks.clear();
-    // Unpin all nodes
     if (this.graphData) {
       for (const node of this.graphData.nodes) {
         node.fx = undefined;
@@ -450,29 +454,6 @@ class EntityNetworkGraph {
       this.fg.d3ReheatSimulation();
       this.fg.zoomToFit(300, 40);
     }
-  }
-
-  // -------------------------------------------------------------------------
-  // Filter sync with EntityExplorer
-  // -------------------------------------------------------------------------
-
-  setExplorer(explorer) {
-    this.explorer = explorer;
-    const origUpdateUrl = explorer.updateUrl.bind(explorer);
-    explorer.updateUrl = () => {
-      origUpdateUrl();
-      document.dispatchEvent(new CustomEvent('entity-explorer:filter-change', {
-        detail: explorer.state
-      }));
-    };
-    document.addEventListener('entity-explorer:filter-change', e => this.syncFilters(e.detail));
-    window.addEventListener('popstate', () => {
-      if (this.explorer) requestAnimationFrame(() => this.syncFilters(this.explorer.state));
-    });
-  }
-
-  syncFilters(state) {
-    // Future: suppress graph nodes based on explorer filter state
   }
 
   _escape(str) {

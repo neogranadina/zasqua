@@ -60,7 +60,7 @@ eleventyComputed:
 {# Two-column layout #}
 <div class="detail-content" data-pagefind-ignore>
   <div class="container">
-    <div class="desc-layout">
+    <div class="desc-layout entity-layout">
 
       {# Left column: metadata #}
       <div class="desc-metadata">
@@ -124,22 +124,41 @@ eleventyComputed:
 
       </div>
 
-      {# Right column: aside with timeline #}
+      {# Right column: aside with timeline/graph #}
       <div class="desc-aside">
         <div class="detail-section">
           <h3 class="font-semibold text-stone-400">{{ ui.entity.timelineHeader }}</h3>
-          <div class="entity-timeline" id="entity-timeline" data-entity-code="{{ ent.entity_code }}">
-            <p class="text-stone-500 text-sm">{{ ui.general.loading }}</p>
+
+          {# Intro sentence with view links + role filters #}
+          <p class="entity-intro" id="entity-intro"
+             data-entity-type="{{ ui.entity.types[ent.entity_type] or ent.entity_type }}"
+             data-entity-code="{{ ent.entity_code }}"
+             data-count="{{ ent._linked_count }}">
+          </p>
+          <div class="entity-role-filters" id="entity-role-filters"></div>
+
+          {# Timeline view #}
+          <div class="entity-timeline-frame" id="entity-timeline-frame">
+            <div class="entity-timeline" id="entity-timeline" data-entity-code="{{ ent.entity_code }}">
+              <p class="text-stone-500 text-sm">{{ ui.general.loading }}</p>
+            </div>
           </div>
-          <a href="/buscar/?entidad={{ ent.entity_code }}" class="linked-desc-link" id="linked-desc-cta" style="margin-top: 12px; display: inline-block">
-            {{ ui.entity.linkedDescriptionsLink | replace("{count}", ent._linked_count) }} &rarr;
-          </a>
+
+          {# Graph view #}
+          <div class="entity-graph-frame" id="entity-graph-frame" style="display: none">
+            <div class="entity-graph-canvas" id="entity-graph-canvas"></div>
+          </div>
+
         </div>
       </div>
 
     </div>
   </div>
 </div>
+
+{% block head %}
+  <script src="https://cdn.jsdelivr.net/npm/force-graph"></script>
+{% endblock %}
 
 {% block scripts %}
   <script src="/js/entity.js"></script>

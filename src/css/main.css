@@ -7,8 +7,8 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-serif: "Crimson Text", ui-serif, Georgia, Cambria, "Times New Roman",
     Times, serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-      "Courier New", monospace;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
     --color-stone-50: oklch(98.5% 0.001 106.423);
     --color-stone-100: oklch(97% 0.001 106.424);
     --color-stone-200: oklch(92.3% 0.003 48.717);
@@ -52,7 +52,7 @@
     line-height: 1.5;
     -webkit-text-size-adjust: 100%;
     tab-size: 4;
-    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji');
     font-feature-settings: var(--default-font-feature-settings, normal);
     font-variation-settings: var(--default-font-variation-settings, normal);
     -webkit-tap-highlight-color: transparent;
@@ -79,7 +79,7 @@
     font-weight: bolder;
   }
   code, kbd, samp, pre {
-    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace);
     font-feature-settings: var(--default-mono-font-feature-settings, normal);
     font-variation-settings: var(--default-mono-font-variation-settings, normal);
     font-size: 1em;
@@ -179,13 +179,13 @@
   :-moz-ui-invalid {
     box-shadow: none;
   }
-  button, input:where([type="button"], [type="reset"], [type="submit"]), ::file-selector-button {
+  button, input:where([type='button'], [type='reset'], [type='submit']), ::file-selector-button {
     appearance: button;
   }
   ::-webkit-inner-spin-button, ::-webkit-outer-spin-button {
     height: auto;
   }
-  [hidden]:where(:not([hidden="until-found"])) {
+  [hidden]:where(:not([hidden='until-found'])) {
     display: none !important;
   }
 }
@@ -213,9 +213,6 @@
   }
   .end {
     inset-inline-end: var(--spacing);
-  }
-  .top-100 {
-    top: calc(var(--spacing) * 100);
   }
   .container {
     width: 100%;
@@ -2011,6 +2008,15 @@
     width: 440px;
     flex-shrink: 0;
   }
+  .entity-layout .desc-metadata {
+    flex: none;
+    width: 35%;
+    max-width: none;
+  }
+  .entity-layout .desc-aside {
+    flex: none;
+    width: 65%;
+  }
   @media (max-width: 768px) {
     .desc-layout {
       flex-direction: column;
@@ -2020,6 +2026,13 @@
     }
     .desc-aside {
       width: 100%;
+    }
+    .entity-layout {
+      flex-direction: column;
+    }
+    .entity-layout .desc-metadata {
+      width: 100%;
+      max-width: none;
     }
   }
   .level-badge {
@@ -2419,17 +2432,112 @@
     padding: 4px 8px;
     font-size: 0.78rem;
   }
+  .entity-intro {
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--color-stone-500);
+    margin: 8px 0;
+  }
+  .entity-intro strong {
+    color: var(--color-stone-700);
+    font-weight: 600;
+  }
+  .entity-view-link {
+    color: var(--color-burgundy);
+    text-decoration: underline;
+    text-decoration-color: var(--color-burgundy-light);
+    text-underline-offset: 2px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font: inherit;
+    padding: 0;
+  }
+  .entity-view-link:hover {
+    text-decoration-color: var(--color-burgundy);
+  }
+  .entity-view-link.active {
+    font-weight: 600;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--color-burgundy);
+  }
+  .entity-role-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .entity-role-filters:empty {
+    display: none;
+  }
+  .entity-role-btn {
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 400;
+    padding: 4px 12px;
+    border-radius: 50px;
+    border: 1px solid;
+    border-color: var(--color-stone-200);
+    background-color: var(--color-white);
+    color: var(--color-stone-500);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .entity-role-btn:hover {
+    border-color: var(--color-stone-300);
+    color: var(--color-stone-700);
+  }
+  .entity-role-btn.active {
+    background: var(--color-burgundy);
+    border-color: var(--color-burgundy);
+    color: #fff;
+  }
+  .entity-role-btn.active:hover {
+    background: var(--color-burgundy-deep);
+    border-color: var(--color-burgundy-deep);
+  }
+  .entity-timeline-frame {
+    border: 1px solid;
+    border-color: var(--color-stone-200);
+    background-color: var(--color-stone-50);
+    border-radius: 4px;
+    padding: 0 16px;
+    margin-top: 8px;
+  }
+  .entity-graph-frame {
+    border: 1px solid;
+    border-color: var(--color-stone-200);
+    background-color: var(--color-stone-50);
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .entity-graph-canvas {
+    width: 100%;
+    height: 480px;
+  }
   .entity-timeline {
-    max-height: 480px;
+    max-height: 540px;
     overflow-y: auto;
   }
   .timeline-entry {
-    padding: 12px 0;
-    border-bottom: 1px solid;
-    border-color: var(--color-stone-100);
+    padding: 0 0 8px;
   }
-  .timeline-entry:last-child {
-    border-bottom: none;
+  .timeline-entry:first-child {
+    padding-top: 0;
+  }
+  .timeline-connector {
+    width: 1px;
+    height: 16px;
+    margin: 0 auto;
+    background-color: var(--color-stone-300);
+  }
+  .timeline-entry:first-child .timeline-connector {
+    display: none;
+  }
+  .timeline-centre {
+    text-align: center;
+    padding: 4px 0;
   }
   .timeline-date {
     font-size: 0.78rem;
@@ -2437,24 +2545,44 @@
     color: var(--color-stone-900);
   }
   .timeline-role {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     color: var(--color-stone-500);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+  }
+  .timeline-card {
+    border-color: var(--color-stone-200);
+    background-color: var(--color-white);
+    border: 1px solid;
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-top: 6px;
+    position: relative;
+    z-index: 1;
   }
   .timeline-title {
     color: var(--color-burgundy);
     font-size: 0.85rem;
     text-decoration: none;
+    line-height: 1.4;
   }
   .timeline-title:hover {
     text-decoration: underline;
+  }
+  .timeline-ref {
+    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    color: var(--color-stone-400);
+    margin-top: 3px;
   }
   .timeline-no-date {
     font-size: 0.72rem;
     color: var(--color-stone-400);
     text-transform: uppercase;
-    margin-top: 8px;
+    text-align: center;
+    padding: 8px 0 0;
+    position: relative;
+    z-index: 1;
   }
   .place-map {
     height: 360px;
