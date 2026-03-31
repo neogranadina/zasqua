@@ -168,12 +168,15 @@ module.exports = {
     // Section headers
     sections: {
       identification: "Identificación",
-      externalIds: "Identificadores externos"
+      externalIds: "Identificadores externos",
+      control: "Control",
+      reuse: "Reutilización"
     },
     // Field labels
     fields: {
       name: "Nombre",
       type: "Tipo",
+      placeCode: "Identificador Neogranadina",
       nameVariants: "Variantes del nombre",
       coordinates: "Coordenadas"
     },

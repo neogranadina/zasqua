@@ -60,8 +60,8 @@ eleventyComputed:
     <h1 class="detail-title font-sans font-semibold text-stone-900">{{ desc.title }}</h1>
     <div class="detail-meta text-sm text-stone-500">
       <span class="level-badge">{{ ui.levels[desc.description_level] or desc.description_level }}</span>
-      {% if desc.date_expression %} &middot; {{ desc.date_expression }}{% endif %}
-      &middot; {{ desc.reference_code }}
+      {% if desc.date_expression %} &middot; {{ desc.date_expression | formatDate }}{% endif %}
+      &middot; <span class="detail-value-mono">{{ desc.reference_code }}</span>
     </div>
   </div>
 </div>
@@ -88,13 +88,13 @@ eleventyComputed:
           {% if desc.date_expression %}
             <div class="detail-field">
               <span class="detail-label">{{ ui.fields.date }}</span>
-              <span class="detail-value">{{ desc.date_expression }}</span>
+              <span class="detail-value">{{ desc.date_expression | formatDate }}</span>
             </div>
           {% endif %}
 
           <div class="detail-field">
             <span class="detail-label">{{ ui.fields.referenceCode }}</span>
-            <span class="detail-value">{{ desc.reference_code }}</span>
+            <span class="detail-value detail-value-mono">{{ desc.reference_code }}</span>
           </div>
 
           {% if desc.scope_content %}

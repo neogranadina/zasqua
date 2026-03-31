@@ -38,10 +38,36 @@ module.exports = function(eleventyConfig) {
     return str.replace(/[?#]/g, "");
   });
 
-  eleventyConfig.addFilter("formatDate", function(dateStr) {
+  function formatDateNarrative(dateStr) {
     if (!dateStr) return "";
+
+    var months = [
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+    ];
+
+    if (dateStr.indexOf(' .. ') !== -1) {
+      var parts = dateStr.split(' .. ');
+      return formatDateNarrative(parts[0]) + ' – ' + formatDateNarrative(parts[1]);
+    }
+
+    var match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (match) {
+      var day = parseInt(match[3], 10);
+      var month = months[parseInt(match[2], 10) - 1];
+      return day + ' de ' + month + ' de ' + match[1];
+    }
+
+    var ymMatch = dateStr.match(/^(\d{4})-(\d{2})$/);
+    if (ymMatch) {
+      var m = months[parseInt(ymMatch[2], 10) - 1];
+      return m + ' de ' + ymMatch[1];
+    }
+
     return dateStr;
-  });
+  }
+
+  eleventyConfig.addFilter("formatDate", formatDateNarrative);
 
   eleventyConfig.addFilter("numberFormat", function(num) {
     if (num === null || num === undefined) return "0";

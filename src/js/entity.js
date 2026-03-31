@@ -400,9 +400,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     html += '<div class="graph-tooltip-name"><a href="/' + escapeHtml(node.id) + '/">' + escapeHtml(node.label) + '</a></div>';
     html += '<div class="graph-tooltip-ref">' + escapeHtml(node.id) + '</div>';
-    html += '<div class="graph-tooltip-actions">';
-    html += '<button type="button" class="graph-tooltip-btn" data-action="expand">Expandir conexiones</button>';
-    html += '</div>';
 
     tooltip.innerHTML = html;
     positionTooltip(tooltip, node);
@@ -411,17 +408,53 @@ document.addEventListener('DOMContentLoaded', async function() {
     activeTooltip = tooltip;
     tooltipNode = node;
 
-    // Wire expand button
-    tooltip.querySelector('[data-action="expand"]').addEventListener('click', async function() {
-      var btn = this;
-      btn.textContent = 'Cargando\u2026';
-      btn.disabled = true;
-      node.fx = node.x;
-      node.fy = node.y;
-      await expandDocument(node.id, canvas);
-      graphInstance.centerAt(node.x, node.y, 400);
-      dismissTooltip();
+    // Check if there are connections to expand, then add the button
+    checkExpandable(node.id).then(function(expandable) {
+      if (!expandable || activeTooltip !== tooltip) return;
+      var actions = document.createElement('div');
+      actions.className = 'graph-tooltip-actions';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'graph-tooltip-btn';
+      btn.textContent = 'Expandir conexiones';
+      btn.addEventListener('click', async function() {
+        btn.textContent = 'Cargando\u2026';
+        btn.disabled = true;
+        node.fx = node.x;
+        node.fy = node.y;
+        await expandDocument(node.id, canvas);
+        graphInstance.centerAt(node.x, node.y, 400);
+        dismissTooltip();
+      });
+      actions.appendChild(btn);
+      tooltip.appendChild(actions);
     });
+  }
+
+  async function checkExpandable(refCode) {
+    // Load Pagefind descriptions index (once)
+    if (!pagefindDesc) {
+      try {
+        pagefindDesc = await import('/pagefind/pagefind.js');
+        await pagefindDesc.options({ bundlePath: '/pagefind/' });
+        await pagefindDesc.init();
+      } catch (e) { return false; }
+    }
+    try {
+      var search = await pagefindDesc.search(refCode);
+      for (var si = 0; si < search.results.length; si++) {
+        var hit = await search.results[si].data();
+        if (hit.meta && hit.meta.reference_code === refCode) {
+          var codes = (hit.filters && hit.filters.entidad) || [];
+          // Has new entities not already in the graph?
+          for (var i = 0; i < codes.length; i++) {
+            if (!graphNodes.has(codes[i])) return true;
+          }
+          return false;
+        }
+      }
+    } catch (e) { /* fall through */ }
+    return false;
   }
 
   function positionTooltip(tooltip, node) {
