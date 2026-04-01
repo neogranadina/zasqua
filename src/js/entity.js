@@ -446,10 +446,36 @@ document.addEventListener('DOMContentLoaded', async function() {
       family: 'Familia'
     };
 
+    // Count shared documents in the graph
+    var neighbours = nodeNeighbours.get(node.id);
+    var sharedDocs = 0;
+    if (neighbours) neighbours.forEach(function(nid) {
+      var n = graphNodes.get(nid);
+      if (n && n.type === 'document') sharedDocs++;
+    });
+
+    // Central entity name
+    var centralNode = graphNodes.get(entityCode);
+    var centralName = centralNode ? centralNode.label : entityCode;
+
     var html = '';
     html += '<div class="graph-tooltip-role">' + escapeHtml(typeLabel[node.entityType] || node.entityType) + '</div>';
     html += '<div class="graph-tooltip-name"><a href="/entidad/' + escapeHtml(node.id) + '/">' + escapeHtml(node.label) + '</a></div>';
     html += '<div class="graph-tooltip-ref">' + escapeHtml(node.id) + '</div>';
+    if (sharedDocs > 0 && node.id !== entityCode) {
+      html += '<div class="graph-tooltip-actions">';
+      html += 'Conectado con ' + escapeHtml(centralName) + ' por ' + sharedDocs + ' documento' + (sharedDocs !== 1 ? 's' : '') + '.';
+      html += '</div>';
+    }
+    var totalLinked = node.linkedCount || 0;
+    var otherDocs = totalLinked - sharedDocs;
+    if (otherDocs > 0 && node.id !== entityCode) {
+      var typeWord = (node.entityType === 'person') ? 'persona' : 'entidad';
+      html += '<div class="graph-tooltip-actions">';
+      html += 'Esta ' + typeWord + ' está conectada a otros ' + otherDocs + ' documento' + (otherDocs !== 1 ? 's' : '') + ' en Zasqua. ';
+      html += '<a href="/entidad/' + escapeHtml(node.id) + '/" class="graph-tooltip-btn">Abrir en el explorador de relaciones</a>';
+      html += '</div>';
+    }
 
     tooltip.innerHTML = html;
     positionTooltip(tooltip, node);
@@ -607,13 +633,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         var html = await resp.text();
         var titleMatch = html.match(/<title>(.*?)\s*\|/);
         var typeMatch = html.match(/data-pagefind-meta="entity_type">([^<]+)/);
+        var countMatch = html.match(/data-pagefind-meta="linked_count">([^<]+)/);
         var label = titleMatch ? titleMatch[1].trim() : code;
         var eType = typeMatch ? typeMatch[1].trim() : 'person';
+        var linkedCount = countMatch ? parseInt(countMatch[1], 10) : 0;
         graphNodes.set(code, {
           id: code,
           type: 'entity',
           label: label,
           entityType: eType,
+          linkedCount: linkedCount,
           color: entityColors[eType] || entityColors.person
         });
         graphEdges.push({ source: code, target: refCode, role: '' });

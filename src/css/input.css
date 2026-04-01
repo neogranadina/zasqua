@@ -2588,6 +2588,29 @@
     overflow: hidden;
   }
 
+  .entity-graph-frame {
+    position: relative;
+  }
+
+  .graph-explore-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+    font-size: 0.72rem;
+    @apply text-stone-500;
+    text-decoration: none;
+    @apply bg-white;
+    border: 1px solid;
+    @apply border-stone-300;
+    border-radius: 4px;
+    padding: 4px 8px;
+  }
+
+  .graph-explore-btn:hover {
+    @apply text-stone-700 border-stone-400;
+  }
+
   .entity-graph-canvas {
     position: relative;
     width: 100%;
