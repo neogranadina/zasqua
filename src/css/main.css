@@ -2526,6 +2526,34 @@
     width: 100%;
     height: 480px;
   }
+  .graph-legend {
+    display: flex;
+    gap: 16px;
+    padding: 8px 12px;
+    font-size: 0.72rem;
+    color: var(--color-stone-500);
+  }
+  .graph-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .graph-legend-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .graph-legend-person {
+    background: #8B2942;
+  }
+  .graph-legend-corporate {
+    background: #6666BB;
+  }
+  .graph-legend-doc {
+    background: #FAFAF9;
+    border: 1.5px solid #A09888;
+  }
   .entity-timeline {
     max-height: 540px;
     overflow-y: auto;
