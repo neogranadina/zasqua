@@ -363,6 +363,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         dismissTooltip();
         if (node.type === 'entity') {
           graphInstance.centerAt(node.x, node.y, 400);
+          showEntityTooltip(node, canvas);
         } else if (node.type === 'document') {
           graphInstance.centerAt(node.x, node.y, 400);
           showDocTooltip(node, canvas);
@@ -425,6 +426,33 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (node.expandable === null) node.expandable = false;
       } catch (e) { node.expandable = false; }
     }
+  }
+
+  // --- Entity tooltip ---
+
+  function showEntityTooltip(node, canvas) {
+    dismissTooltip();
+
+    var tooltip = document.createElement('div');
+    tooltip.className = 'graph-tooltip';
+
+    var typeLabel = {
+      person: 'Persona',
+      corporate_body: 'Entidad corporativa',
+      family: 'Familia'
+    };
+
+    var html = '';
+    html += '<div class="graph-tooltip-role">' + escapeHtml(typeLabel[node.entityType] || node.entityType) + '</div>';
+    html += '<div class="graph-tooltip-name"><a href="/entidad/' + escapeHtml(node.id) + '/">' + escapeHtml(node.label) + '</a></div>';
+    html += '<div class="graph-tooltip-ref">' + escapeHtml(node.id) + '</div>';
+
+    tooltip.innerHTML = html;
+    positionTooltip(tooltip, node);
+
+    canvas.appendChild(tooltip);
+    activeTooltip = tooltip;
+    tooltipNode = node;
   }
 
   // --- Document tooltip ---
@@ -561,29 +589,25 @@ document.addEventListener('DOMContentLoaded', async function() {
       } catch (e) { console.error('[entity] Failed to load Pagefind entities:', e); return; }
     }
 
-    // Search Pagefind for each new entity to get name + type
+    // Fetch entity page to get name + type for each new entity
     for (var i = 0; i < newEntities.length; i++) {
       var code = newEntities[i];
       try {
-        var search = await pagefindEntity.search(code);
-        // Iterate results to find the exact entity match
-        for (var ri = 0; ri < Math.min(search.results.length, 20); ri++) {
-          var hit = await search.results[ri].data();
-          var url = hit.url || '';
-          var m = url.match(/\/entidad\/([^/]+)\//);
-          if (m && m[1] === code) {
-            var eType = hit.meta?.entity_type || 'person';
-            graphNodes.set(code, {
-              id: code,
-              type: 'entity',
-              label: hit.meta?.title || code,
-              entityType: eType,
-              color: entityColors[eType] || entityColors.person
-            });
-            graphEdges.push({ source: code, target: refCode, role: '' });
-            break;
-          }
-        }
+        var resp = await fetch('/entidad/' + code + '/');
+        if (!resp.ok) continue;
+        var html = await resp.text();
+        var titleMatch = html.match(/<title>(.*?)\s*\|/);
+        var typeMatch = html.match(/data-pagefind-meta="entity_type">([^<]+)/);
+        var label = titleMatch ? titleMatch[1].trim() : code;
+        var eType = typeMatch ? typeMatch[1].trim() : 'person';
+        graphNodes.set(code, {
+          id: code,
+          type: 'entity',
+          label: label,
+          entityType: eType,
+          color: entityColors[eType] || entityColors.person
+        });
+        graphEdges.push({ source: code, target: refCode, role: '' });
       } catch (e) { /* skip failed lookups */ }
     }
 
@@ -632,11 +656,26 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
 
       if (newNodes.length > 0 || newLinks.length > 0) {
+        // Position new nodes near the clicked document node
+        var anchor = currentData.nodes.find(function(n) { return n.id === refCode; });
+        if (anchor) {
+          for (var ni = 0; ni < newNodes.length; ni++) {
+            var angle = (2 * Math.PI * ni) / newNodes.length;
+            newNodes[ni].x = anchor.x + 30 * Math.cos(angle);
+            newNodes[ni].y = anchor.y + 30 * Math.sin(angle);
+          }
+        }
+
         graphInstance.graphData({
           nodes: currentData.nodes.concat(newNodes),
           links: currentData.links.concat(newLinks)
         });
         graphInstance.d3ReheatSimulation();
+
+        // Keep centred on the clicked document
+        if (anchor) {
+          graphInstance.centerAt(anchor.x, anchor.y, 400);
+        }
       }
     }
   }
