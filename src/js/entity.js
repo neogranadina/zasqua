@@ -284,7 +284,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (node.type === 'entity') {
           return '<strong>' + escapeHtml(node.label) + '</strong>';
         }
-        return '';
+        var label = '<strong>' + escapeHtml(node.label) + '</strong>';
+        if (node.date) label = formatDate(node.date) + '<br>' + label;
+        return label;
       })
       .nodeVal(function(node) { return node.type === 'entity' ? 2 : 0.3; })
       .nodeRelSize(2.5)
