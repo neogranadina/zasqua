@@ -35,6 +35,7 @@ var roleLabels = {
 var entityColors = {
   person: '#8B2942',
   corporate_body: '#6666BB',
+  corporate: '#6666BB',
   family: '#6666BB'
 };
 
@@ -439,6 +440,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     var typeLabel = {
       person: 'Persona',
       corporate_body: 'Entidad corporativa',
+      corporate: 'Entidad corporativa',
       family: 'Familia'
     };
 
