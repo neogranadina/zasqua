@@ -42,7 +42,7 @@ class EntityExplorer {
 
     try {
       this.pagefind = await import('/pagefind-entities/pagefind.js');
-      await this.pagefind.options({ bundlePath: '/pagefind-entities/' });
+      await this.pagefind.options({ basePath: '/pagefind-entities/' });
       await this.pagefind.init();
       this.globalFilters = await this.pagefind.filters();
     } catch (e) {

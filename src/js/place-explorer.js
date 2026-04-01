@@ -54,7 +54,7 @@ class PlaceExplorer {
       // Load Pagefind and place-index.json in parallel
       const pagefindInit = (async () => {
         this.pagefind = await import('/pagefind-places/pagefind.js');
-        await this.pagefind.options({ bundlePath: '/pagefind-places/' });
+        await this.pagefind.options({ basePath: '/pagefind-places/' });
         await this.pagefind.init();
         this.globalFilters = await this.pagefind.filters();
       })();

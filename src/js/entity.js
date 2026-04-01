@@ -235,6 +235,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           label: link.title,
           date: link.date_expression || '',
           role: link.role || '',
+          expandable: null,  // null = unchecked, true/false after lookup
           color: '#A09888'
         });
       }
@@ -291,14 +292,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         var r = Math.sqrt(node.type === 'entity' ? 2 : 0.3) * 2.5;
 
         if (node.type === 'document') {
-          // Count entity neighbours to decide filled vs empty
+          // Filled = has connections to other entities (pre-checked or already expanded)
           var neighbours = nodeNeighbours.get(node.id);
           var entityNeighbourCount = 0;
           if (neighbours) neighbours.forEach(function(nid) {
             var n = graphNodes.get(nid);
             if (n && n.type === 'entity') entityNeighbourCount++;
           });
-          var filled = entityNeighbourCount > 1;
+          var filled = entityNeighbourCount > 1 || node.expandable === true;
 
           var dimmed = highlightedNodes.size > 0 && !highlightedNodes.has(node.id);
           var hovered = highlightedNodes.has(node.id);
@@ -385,6 +386,45 @@ document.addEventListener('DOMContentLoaded', async function() {
         graphInstance.width(canvas.clientWidth).height(canvas.clientHeight);
       }
     }).observe(canvas);
+
+    // Pre-check which documents have expandable connections
+    preCheckExpandable();
+  }
+
+  async function preCheckExpandable() {
+    var docNodes = [];
+    graphNodes.forEach(function(node) {
+      if (node.type === 'document' && node.expandable === null) docNodes.push(node);
+    });
+    if (docNodes.length === 0) return;
+
+    // Load Pagefind descriptions index (once)
+    if (!pagefindDesc) {
+      try {
+        pagefindDesc = await import('/pagefind/pagefind.js');
+        await pagefindDesc.options({ basePath: '/pagefind/' });
+        await pagefindDesc.init();
+      } catch (e) { return; }
+    }
+
+    for (var i = 0; i < docNodes.length; i++) {
+      var node = docNodes[i];
+      try {
+        var search = await pagefindDesc.search(node.id);
+        for (var si = 0; si < search.results.length; si++) {
+          var hit = await search.results[si].data();
+          if (hit.meta && hit.meta.reference_code === node.id) {
+            var codes = (hit.filters && hit.filters.entidad) || [];
+            node.expandable = false;
+            for (var j = 0; j < codes.length; j++) {
+              if (!graphNodes.has(codes[j])) { node.expandable = true; break; }
+            }
+            break;
+          }
+        }
+        if (node.expandable === null) node.expandable = false;
+      } catch (e) { node.expandable = false; }
+    }
   }
 
   // --- Document tooltip ---
@@ -440,7 +480,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!pagefindDesc) {
       try {
         pagefindDesc = await import('/pagefind/pagefind.js');
-        await pagefindDesc.options({ bundlePath: '/pagefind/' });
+        await pagefindDesc.options({ basePath: '/pagefind/' });
         await pagefindDesc.init();
       } catch (e) { return false; }
     }
@@ -489,7 +529,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!pagefindDesc) {
       try {
         pagefindDesc = await import('/pagefind/pagefind.js');
-        await pagefindDesc.options({ bundlePath: '/pagefind/' });
+        await pagefindDesc.options({ basePath: '/pagefind/' });
         await pagefindDesc.init();
       } catch (e) { console.error('[entity] Failed to load Pagefind descriptions:', e); return; }
     }
@@ -516,7 +556,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!pagefindEntity) {
       try {
         pagefindEntity = await import('/pagefind-entities/pagefind.js');
-        await pagefindEntity.options({ bundlePath: '/pagefind-entities/' });
+        await pagefindEntity.options({ basePath: '/pagefind-entities/' });
         await pagefindEntity.init();
       } catch (e) { console.error('[entity] Failed to load Pagefind entities:', e); return; }
     }
