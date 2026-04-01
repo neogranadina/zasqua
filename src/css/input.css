@@ -2623,6 +2623,10 @@
     background: #6666BB;
   }
 
+  .graph-legend-doc-filled {
+    background: #A09888;
+  }
+
   .graph-legend-doc {
     background: #FAFAF9;
     border: 1.5px solid #A09888;
