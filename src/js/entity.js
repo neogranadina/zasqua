@@ -484,15 +484,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     activeTooltip = tooltip;
     tooltipNode = node;
 
-    // Check if there are connections to expand, then add the button
-    checkExpandable(node.id).then(function(expandable) {
-      if (!expandable || activeTooltip !== tooltip) return;
+    // Check how many connections can be expanded
+    checkExpandable(node.id).then(function(count) {
+      if (!count || activeTooltip !== tooltip) return;
       var actions = document.createElement('div');
       actions.className = 'graph-tooltip-actions';
+      var text = 'Conectado a ' + count + ' entidad' + (count !== 1 ? 'es' : '') + ' más en Zasqua. ';
+      var span = document.createElement('span');
+      span.textContent = text;
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'graph-tooltip-btn';
-      btn.textContent = 'Expandir conexiones';
+      btn.textContent = 'Desplegar';
       btn.addEventListener('click', async function() {
         btn.textContent = 'Cargando\u2026';
         btn.disabled = true;
@@ -502,11 +505,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         graphInstance.centerAt(node.x, node.y, 400);
         dismissTooltip();
       });
+      actions.appendChild(span);
       actions.appendChild(btn);
       tooltip.appendChild(actions);
     });
   }
 
+  // Returns the count of new entity connections (0 = nothing to expand)
   async function checkExpandable(refCode) {
     // Load Pagefind descriptions index (once)
     if (!pagefindDesc) {
@@ -514,7 +519,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         pagefindDesc = await import('/pagefind/pagefind.js');
         await pagefindDesc.options({ basePath: '/pagefind/' });
         await pagefindDesc.init();
-      } catch (e) { return false; }
+      } catch (e) { return 0; }
     }
     try {
       var search = await pagefindDesc.search(refCode);
@@ -522,15 +527,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         var hit = await search.results[si].data();
         if (hit.meta && hit.meta.reference_code === refCode) {
           var codes = (hit.filters && hit.filters.entidad) || [];
-          // Has new entities not already in the graph?
+          var count = 0;
           for (var i = 0; i < codes.length; i++) {
-            if (!graphNodes.has(codes[i])) return true;
+            if (!graphNodes.has(codes[i])) count++;
           }
-          return false;
+          return count;
         }
       }
     } catch (e) { /* fall through */ }
-    return false;
+    return 0;
   }
 
   function positionTooltip(tooltip, node) {
