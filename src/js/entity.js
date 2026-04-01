@@ -566,11 +566,11 @@ document.addEventListener('DOMContentLoaded', async function() {
       var code = newEntities[i];
       try {
         var search = await pagefindEntity.search(code);
-        if (search.results.length > 0) {
-          var hit = await search.results[0].data();
+        // Iterate results to find the exact entity match
+        for (var ri = 0; ri < Math.min(search.results.length, 20); ri++) {
+          var hit = await search.results[ri].data();
           var url = hit.url || '';
           var m = url.match(/\/entidad\/([^/]+)\//);
-          // Verify we got the right entity
           if (m && m[1] === code) {
             var eType = hit.meta?.entity_type || 'person';
             graphNodes.set(code, {
@@ -581,6 +581,7 @@ document.addEventListener('DOMContentLoaded', async function() {
               color: entityColors[eType] || entityColors.person
             });
             graphEdges.push({ source: code, target: refCode, role: '' });
+            break;
           }
         }
       } catch (e) { /* skip failed lookups */ }
