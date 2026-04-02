@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       var typeWord = (node.entityType === 'person') ? 'persona' : 'entidad';
       html += '<div class="graph-tooltip-actions">';
       html += 'Esta ' + typeWord + ' está conectada a otros ' + otherDocs + ' documento' + (otherDocs !== 1 ? 's' : '') + ' en Zasqua. ';
-      html += '<a href="/entidad/' + escapeHtml(node.id) + '/" class="graph-tooltip-btn">Abrir en el explorador de relaciones</a>';
+      html += '<a href="/explorar/entidades/?q=' + encodeURIComponent(node.label) + '" class="graph-tooltip-btn">Abrir en el explorador de entidades</a>';
       html += '</div>';
     }
 
