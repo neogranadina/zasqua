@@ -2814,6 +2814,9 @@
     margin-top: 6px;
     padding-top: 6px;
     border-top: 1px solid oklch(86.9% 0.005 106.589);
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--color-stone-500);
   }
   .graph-tooltip-btn {
     font-size: 0.72rem;

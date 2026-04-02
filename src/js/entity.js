@@ -190,6 +190,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Graph state persists across re-renders
   var graphNodes = new Map();  // id → node object
   var graphEdges = [];         // { source, target, role }
+  var nodeNeighbours = new Map();  // id → Set of neighbour ids
+  var nodeLinks = new Map();       // id → Set of link objects
   var pagefindDesc = null;     // Pagefind descriptions instance (loaded once)
   var pagefindEntity = null;   // Pagefind entities instance (loaded once)
   var shardCache = new Map();  // entity_code → links array
@@ -246,15 +248,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     rebuildForceGraph(canvas);
   }
 
-  function rebuildForceGraph(canvas) {
-    canvas.innerHTML = '';
-
-    var nodes = Array.from(graphNodes.values());
-    var edges = graphEdges.map(function(e) { return Object.assign({}, e); });
-
-    // Build adjacency
-    var nodeNeighbours = new Map();
-    var nodeLinks = new Map();
+  function rebuildAdjacency() {
+    nodeNeighbours.clear();
+    nodeLinks.clear();
     for (var i = 0; i < graphEdges.length; i++) {
       var edge = graphEdges[i];
       for (var nid of [edge.source, edge.target]) {
@@ -266,6 +262,15 @@ document.addEventListener('DOMContentLoaded', async function() {
       nodeLinks.get(edge.source).add(edge);
       nodeLinks.get(edge.target).add(edge);
     }
+  }
+
+  function rebuildForceGraph(canvas) {
+    canvas.innerHTML = '';
+
+    var nodes = Array.from(graphNodes.values());
+    var edges = graphEdges.map(function(e) { return Object.assign({}, e); });
+
+    rebuildAdjacency();
 
     var highlightedNodes = new Set();
     var highlightedLinks = new Set();
@@ -704,6 +709,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           }
         }
 
+        rebuildAdjacency();
         graphInstance.graphData({
           nodes: currentData.nodes.concat(newNodes),
           links: currentData.links.concat(newLinks)

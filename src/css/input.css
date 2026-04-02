@@ -2938,6 +2938,9 @@
     margin-top: 6px;
     padding-top: 6px;
     border-top: 1px solid oklch(86.9% 0.005 106.589); /* --color-stone-300 */
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: oklch(55.3% 0.013 58.071); /* --color-stone-500 */
   }
 
   .graph-tooltip-btn {
