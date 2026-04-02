@@ -2514,15 +2514,12 @@
     margin-top: 8px;
   }
   .entity-graph-frame {
+    position: relative;
     border: 1px solid;
     border-color: var(--color-stone-200);
     background-color: var(--color-stone-50);
     border-radius: 4px;
     margin-top: 8px;
-    overflow: hidden;
-  }
-  .entity-graph-frame {
-    position: relative;
   }
   .graph-explore-btn {
     position: absolute;

@@ -2581,15 +2581,11 @@
   }
 
   .entity-graph-frame {
+    position: relative;
     border: 1px solid;
     @apply border-stone-200 bg-stone-50;
     border-radius: 4px;
     margin-top: 8px;
-    overflow: hidden;
-  }
-
-  .entity-graph-frame {
-    position: relative;
   }
 
   .graph-explore-btn {
