@@ -2796,19 +2796,16 @@
     padding: 8px 0 0 36px;
   }
 
-  .place-map {
-    height: 360px;
-    border-radius: 4px;
-    overflow: hidden;
+  .place-map-frame {
     border: 1px solid;
     @apply border-stone-200;
+    border-radius: 6px;
+    margin-top: 8px;
+    overflow: hidden;
   }
 
-  .place-map-coords {
-    font-size: 0.72rem;
-    @apply text-stone-500;
-    margin-top: 4px;
-    text-align: right;
+  .place-map {
+    height: 400px;
   }
 
   .authority-links {
