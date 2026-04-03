@@ -164,7 +164,7 @@ eleventyComputed:
 
           {# Graph view #}
           <div class="entity-graph-frame" id="entity-graph-frame" style="display: none">
-            <a href="/explorar/entidades/?q={{ ent.entity_code }}" class="graph-explore-btn">Abrir en explorador de entidades</a>
+            <a href="/explorar/entidades/?q={{ ent.display_name | urlencode }}" class="graph-explore-btn">Abrir en explorador de entidades</a>
             <div class="entity-graph-canvas" id="entity-graph-canvas"></div>
             <div class="graph-legend">
               <span class="graph-legend-item"><span class="graph-legend-dot graph-legend-person"></span> Persona</span>
