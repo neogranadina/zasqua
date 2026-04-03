@@ -1,41 +1,17 @@
 // Role labels in Spanish (place roles)
 var placeRoleLabels = {
   subject: 'Lugar mencionado',
+  mentioned: 'Lugar mencionado',
   production: 'Lugar de producción',
   origin: 'Origen',
   destination: 'Destino',
   jurisdiction: 'Jurisdicción',
+  venue: 'Lugar de producción',
   unknown: 'Sin rol'
 };
 
-document.addEventListener('DOMContentLoaded', async function() {
-  // --- Map initialisation ---
-
-  var mapEl = document.getElementById('place-map');
-  if (mapEl) {
-    var lat = parseFloat(mapEl.dataset.lat);
-    var lon = parseFloat(mapEl.dataset.lon);
-    if (!isNaN(lat) && !isNaN(lon) && typeof maplibregl !== 'undefined') {
-      var map = new maplibregl.Map({
-        container: 'place-map',
-        style: 'https://cdn.protomaps.com/basemaps/v4/en.json',
-        center: [lon, lat],
-        zoom: 7
-      });
-
-      var markerEl = document.createElement('div');
-      markerEl.style.width = '12px';
-      markerEl.style.height = '12px';
-      markerEl.style.borderRadius = '50%';
-      markerEl.style.backgroundColor = '#8B2942';
-      markerEl.style.border = '2px solid #FFFFFF';
-
-      new maplibregl.Marker({ element: markerEl })
-        .setLngLat([lon, lat])
-        .addTo(map);
-    }
-  }
-
+// Main page logic — shard loading, intro, role filters, timeline, toggle
+(async function() {
   // --- Timeline / shard loading ---
 
   var timelineEl = document.getElementById('place-timeline');
@@ -209,9 +185,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       renderTimeline(timelineEl, links, activeRoles);
     }
   }
-});
 
-// --- Timeline rendering (mirrors entity.js) ---
+  // --- Timeline rendering ---
 
 function renderTimeline(container, links, activeRoles) {
   var filtered = activeRoles && activeRoles.size > 0
@@ -312,3 +287,36 @@ function escapeHtml(str) {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
 }
+
+})();
+
+// Map initialisation — separate, runs after main logic
+(function() {
+  var mapEl = document.getElementById('place-map');
+  if (!mapEl || typeof maplibregl === 'undefined') return;
+  try {
+    var lat = parseFloat(mapEl.dataset.lat);
+    var lon = parseFloat(mapEl.dataset.lon);
+    if (isNaN(lat) || isNaN(lon)) return;
+
+    var map = new maplibregl.Map({
+      container: 'place-map',
+      style: 'https://cdn.protomaps.com/basemaps/v4/en.json',
+      center: [lon, lat],
+      zoom: 7
+    });
+
+    var markerEl = document.createElement('div');
+    markerEl.style.width = '12px';
+    markerEl.style.height = '12px';
+    markerEl.style.borderRadius = '50%';
+    markerEl.style.backgroundColor = '#8B2942';
+    markerEl.style.border = '2px solid #FFFFFF';
+
+    new maplibregl.Marker({ element: markerEl })
+      .setLngLat([lon, lat])
+      .addTo(map);
+  } catch (e) {
+    console.error('[place] Map init failed:', e);
+  }
+})();
