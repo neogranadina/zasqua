@@ -111,15 +111,19 @@ eleventyComputed:
 
 
         {# Section: Control #}
-        {% if place.place_code %}
-          <div class="detail-section">
-            <h3 class="font-semibold text-stone-400">{{ ui.place.sections.control }}</h3>
-            <div class="detail-field">
-              <span class="detail-label">{{ ui.place.fields.placeCode }}</span>
-              <span class="detail-value detail-value-mono">{{ place.place_code }}</span>
-            </div>
+        <div class="detail-section">
+          <h3 class="font-semibold text-stone-400">{{ ui.place.sections.control }}</h3>
+          <div class="detail-field">
+            <span class="detail-label">{{ ui.place.fields.placeCode }}</span>
+            <span class="detail-value detail-value-mono">{{ place.place_code or place.id }}</span>
           </div>
-        {% endif %}
+          {% if place.latitude and place.longitude %}
+            <div class="detail-field">
+              <span class="detail-label">{{ ui.place.fields.coordinates }}</span>
+              <span class="detail-value">{{ place.latitude }}, {{ place.longitude }}</span>
+            </div>
+          {% endif %}
+        </div>
 
         {# Section: Reutilizacion #}
         <div class="detail-section">
@@ -140,7 +144,6 @@ eleventyComputed:
 
         {% if place.latitude and place.longitude %}
           <div class="place-map" id="place-map" data-lat="{{ place.latitude }}" data-lon="{{ place.longitude }}"></div>
-          <p class="place-map-coords">{{ place.latitude }}, {{ place.longitude }}</p>
         {% else %}
           <div class="desc-notice">
             <span class="material-symbols-outlined desc-notice-icon">location_off</span>
