@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   renderTimeline(timelineEl, links, activeRoles);
   buildIntro(links);
   buildRoleFilters(links);
+  wireToggleButtons();
 
   // Auto-switch to graph if ?vista=red
   if (new URLSearchParams(window.location.search).get('vista') === 'red') {
@@ -119,14 +120,33 @@ document.addEventListener('DOMContentLoaded', async function() {
     introEl.appendChild(document.createTextNode(' de Zasqua.'));
   }
 
+  // --- Segmented control ---
+
+  function wireToggleButtons() {
+    var toggleEl = document.getElementById('entity-view-toggle');
+    if (!toggleEl) return;
+    var btns = toggleEl.querySelectorAll('.entity-toggle-btn');
+    btns.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        switchView(btn.dataset.view);
+      });
+    });
+  }
+
   function switchView(view) {
     if (view === currentView) return;
     currentView = view;
 
-    // Update link styles
+    // Update prose link styles
     var viewLinks = document.querySelectorAll('.entity-view-link[data-view]');
     viewLinks.forEach(function(link) {
       link.classList.toggle('active', link.dataset.view === view);
+    });
+
+    // Update segmented control styles
+    var toggleBtns = document.querySelectorAll('.entity-toggle-btn[data-view]');
+    toggleBtns.forEach(function(btn) {
+      btn.classList.toggle('active', btn.dataset.view === view);
     });
 
     var timelineFrame = document.getElementById('entity-timeline-frame');
@@ -179,6 +199,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         applyFilters();
       });
       filtersEl.appendChild(btn);
+    }
+
+    // Explorer link inline with pills
+    var introEl = document.getElementById('entity-intro');
+    var code = introEl ? introEl.dataset.entityCode : '';
+    if (code) {
+      var exploreLink = document.createElement('a');
+      exploreLink.className = 'entity-explore-link';
+      exploreLink.href = '/explorar/entidades/?q=' + encodeURIComponent(code);
+      exploreLink.textContent = 'Abrir en explorador de entidades';
+      filtersEl.appendChild(exploreLink);
     }
   }
 
@@ -767,40 +798,39 @@ function renderTimeline(container, links, activeRoles) {
     return a.date_expression.localeCompare(b.date_expression);
   });
 
+  var all = dated.concat(undated.length > 0 ? [null] : [], undated);
   var html = '';
-  for (var j = 0; j < dated.length; j++) {
-    html += renderTimelineEntry(dated[j]);
-  }
-
-  if (undated.length > 0) {
-    html += '<div class="timeline-no-date">Sin fecha</div>';
-    for (var k = 0; k < undated.length; k++) {
-      html += renderTimelineEntry(undated[k]);
+  for (var j = 0; j < all.length; j++) {
+    if (all[j] === null) {
+      html += '<div class="timeline-no-date">Sin fecha</div>';
+      continue;
     }
+    var isLast = (j === all.length - 1);
+    html += renderTimelineEntry(all[j], isLast);
   }
 
   container.innerHTML = html;
 }
 
-function renderTimelineEntry(link) {
+function renderTimelineEntry(link, isLast) {
   var slug = link.reference_code.replace(/[?#]/g, '');
-  var html = '<div class="timeline-entry">';
+  var html = '<div class="timeline-entry' + (isLast ? ' timeline-entry-last' : '') + '">';
 
-  html += '<div class="timeline-connector"></div>';
+  // Left dot + vertical line
+  html += '<div class="timeline-track">';
+  html += '<div class="timeline-dot"><div class="timeline-dot-inner"></div></div>';
+  if (!isLast) html += '<div class="timeline-line"></div>';
+  html += '</div>';
 
-  if (link.date_expression || link.role) {
-    html += '<div class="timeline-centre">';
-    if (link.date_expression) {
-      html += '<div class="timeline-date">' + escapeHtml(formatDate(link.date_expression)) + '</div>';
-    }
-    if (link.role) {
-      var roleLabel = roleLabels[link.role] || link.role;
-      html += '<div class="timeline-role">' + escapeHtml(roleLabel) + '</div>';
-    }
-    html += '</div>';
-  }
-
+  // Card with date, role badge, title, ref
   html += '<div class="timeline-card">';
+  if (link.date_expression) {
+    html += '<div class="timeline-date">' + escapeHtml(formatDate(link.date_expression)) + '</div>';
+  }
+  if (link.role) {
+    var roleLabel = roleLabels[link.role] || link.role;
+    html += '<span class="timeline-role-badge">' + escapeHtml(roleLabel) + '</span>';
+  }
   html += '<a href="/' + slug + '/" class="timeline-title">' + escapeHtml(link.title) + '</a>';
   html += '<div class="timeline-ref">' + escapeHtml(link.reference_code) + '</div>';
   html += '</div>';
