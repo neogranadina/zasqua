@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-03-31T19:04:05.357Z",
+  "timestamp": "2026-04-02T12:00:00.000Z",
   "phase": "09",
   "phase_name": "entity-network-graph",
   "phase_dir": "09-entity-network-graph",
@@ -9,37 +9,48 @@
   "total_tasks": null,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Entity detail timeline redesign", "status": "done", "commit": "0acfb01"},
-    {"id": 2, "name": "Spanish role labels (28 roles)", "status": "done", "commit": "0acfb01"},
-    {"id": 3, "name": "Timeline cards with connectors, Spanish dates, reference codes", "status": "done", "commit": "0acfb01"},
-    {"id": 4, "name": "35/65 entity page layout (metadata/timeline)", "status": "done", "commit": "0acfb01"},
-    {"id": 5, "name": "Role filter pills on entity detail", "status": "done", "commit": "0acfb01"},
-    {"id": 6, "name": "View toggle as prose sentence (timeline/graph/search)", "status": "done", "commit": "0acfb01"},
-    {"id": 7, "name": "Entity detail ego-network graph (force-graph)", "status": "done", "commit": "0acfb01"},
-    {"id": 8, "name": "Click-to-expand on document nodes", "status": "in_progress", "progress": "Code written, incremental node addition, Pagefind lookup — untested"},
-    {"id": 9, "name": "Entity explorer graph (shard-based)", "status": "in_progress", "progress": "Integration works but 20 entities per page too sparse — paused"}
+    {"id": 1, "name": "Entity detail timeline redesign", "status": "done"},
+    {"id": 2, "name": "Spanish role labels (28 roles)", "status": "done"},
+    {"id": 3, "name": "Timeline cards with connectors, Spanish dates, reference codes", "status": "done"},
+    {"id": 4, "name": "35/65 entity page layout (metadata/timeline)", "status": "done"},
+    {"id": 5, "name": "Role filter pills on entity detail", "status": "done"},
+    {"id": 6, "name": "View toggle as prose sentence (timeline/graph/search)", "status": "done"},
+    {"id": 7, "name": "Entity detail ego-network graph (force-graph)", "status": "done"},
+    {"id": 8, "name": "Click-to-expand via Pagefind + entity page fetch", "status": "done"},
+    {"id": 9, "name": "Document click tooltip with date, role, title, ref, conditional expand", "status": "done"},
+    {"id": 10, "name": "Entity click tooltip with type, name, shared docs, linked count, explorer link", "status": "done"},
+    {"id": 11, "name": "Pre-check expandable nodes (filled/empty circles)", "status": "done"},
+    {"id": 12, "name": "Graph legend (person, institution, desc with/without connections)", "status": "done"},
+    {"id": 13, "name": "Hover tooltips restored for document nodes", "status": "done"},
+    {"id": 14, "name": "Corporate entity colour fix (corporate vs corporate_body)", "status": "done"},
+    {"id": 15, "name": "Pagefind bundlePath to basePath fix across all JS files", "status": "done"},
+    {"id": 16, "name": "ISAAR Control section with entity code PID", "status": "done"},
+    {"id": 17, "name": "Reutilizacion section with EAC-CPF placeholder", "status": "done"},
+    {"id": 18, "name": "Narrative date filter (formatDate) in eleventy.config.js", "status": "done"},
+    {"id": 19, "name": "Monospace reference codes on description and entity templates", "status": "done"},
+    {"id": 20, "name": "Name variants as plain text (removed tag pills)", "status": "done"},
+    {"id": 21, "name": "Place template: 35/65 layout, plain variants, Control/Reutilizacion sections", "status": "done"},
+    {"id": 22, "name": "?vista=red deep-link to auto-switch to graph view", "status": "done"},
+    {"id": 23, "name": "Top-right Abrir en explorador de entidades button on graph frame", "status": "done"}
   ],
   "remaining_tasks": [
-    {"id": 10, "name": "Test click-to-expand on entity detail graph", "status": "not_started"},
-    {"id": 11, "name": "Decide on explorer graph approach (more entities? collapse panel?)", "status": "not_started"},
-    {"id": 12, "name": "Clean up unused files (precompute-bipartite-graph.js, entity-doc-graph.json, Sigma/graphology refs)", "status": "not_started"},
-    {"id": 13, "name": "Full site rebuild to apply template changes", "status": "not_started"},
-    {"id": 14, "name": "Close out v0.5.0 (version bump, deploy, changelog, release)", "status": "not_started"}
+    {"id": 24, "name": "Entity explorer deep-link: ?entidad=ne-XXXXX opens ego-network graph in explorer", "status": "not_started", "priority": "next"},
+    {"id": 25, "name": "Update places.json with rebuilt place data from zasqua-entities pipeline", "status": "not_started"},
+    {"id": 26, "name": "Clean up unused files (precompute-bipartite-graph.js, entity-doc-graph.json, Sigma/graphology refs from entidades.njk)", "status": "not_started"},
+    {"id": 27, "name": "Full site rebuild + deploy", "status": "not_started"},
+    {"id": 28, "name": "Close out v0.5.0 (version bump, deploy, changelog, release)", "status": "not_started"}
   ],
-  "blockers": [
-    {"description": "Explorer graph too sparse with 20 entities per page — entities don't share documents", "type": "technical", "workaround": "Fetch more entities, or defer explorer graph"},
-    {"description": "Click-to-expand uses Pagefind search by entity code — may return wrong results if code is substring of another", "type": "technical", "workaround": "Verify search result URL matches expected entity code"}
-  ],
+  "blockers": [],
   "human_actions_pending": [],
   "decisions": [
     {"decision": "Scrapped co-occurrence graph, replaced with bipartite document-entity graph", "rationale": "Co-occurrence blob hides documents — the archival descriptions are the point", "phase": "09"},
     {"decision": "Entity detail page is primary home for graph, not explorer", "rationale": "Ego-network from one entity is legible; explorer's 20 random entities are not", "phase": "09"},
     {"decision": "Graph builds from entity-link shards on demand, not pre-computed JSON", "rationale": "90K shards already exist, no new pre-compute step needed", "phase": "09"},
-    {"decision": "Timeline/graph toggle embedded in prose sentence, not tabs", "rationale": "User requested natural language UI over widget-style controls", "phase": "09"},
-    {"decision": "Entity detail layout 35/65 (metadata left, timeline right)", "rationale": "Timeline is the primary content, metadata is reference sidebar", "phase": "09"},
-    {"decision": "Default entity explorer sort: count:desc", "rationale": "Most-connected entities first makes the explorer more useful on first load", "phase": "09"}
+    {"decision": "Click-to-expand fetches entity page HTML for name/type instead of Pagefind", "rationale": "Pagefind search by entity code returns wrong results — codes too short. Entity code added to Pagefind body in template for future rebuild.", "phase": "09"},
+    {"decision": "Entity tooltip links to /entidad/{code}/?vista=red as interim", "rationale": "Entity explorer deep-link not yet built — next task", "phase": "09"},
+    {"decision": "Adjacency maps moved to outer scope with rebuildAdjacency()", "rationale": "Were local to rebuildForceGraph and not updated on expand", "phase": "09"}
   ],
   "uncommitted_files": [],
-  "next_action": "Test click-to-expand: navigate to /entidad/ne-00001/, switch to graph, click a document node, verify new entity nodes appear incrementally",
-  "context_notes": "Phase 9 is no longer following the original GSD plans (09-01 through 09-03). We're iterating directly on code with the user, testing in the browser. The _site/ directory has manually patched HTML for ne-00001 — a full rebuild will overwrite it but the source templates are correct. The entity explorer graph (entity-network-graph.js) was rewritten to work from search results but is paused because 20 results per page rarely share documents."
+  "next_action": "Build entity explorer deep-link feature: ?entidad=ne-XXXXX in /explorar/entidades/ opens ego-network graph centred on that entity. Then update places.json, do cleanup, rebuild, and close v0.5.0.",
+  "context_notes": "18 commits this session. Full local build completed (206K pages, 3 Pagefind indices). Entity detail graph fully working — tooltips, expand, legend, colours, deep-link. Entity explorer deep-link is the main remaining feature. Also: places.json updated from zasqua-entities pipeline (7,068 places with TGN links, country codes, audited authorities) — needs committing, rebuild, and spot-checking. Place template ready for place_code field (conditional, pending backend). Entity code added to Pagefind body in entidad.njk but not yet rebuilt."
 }
