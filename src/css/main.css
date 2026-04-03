@@ -2730,6 +2730,55 @@
     background-color: var(--color-stone-100);
     color: var(--color-burgundy-deep);
   }
+  .authority-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .authority-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1px solid;
+    border-color: var(--color-stone-200);
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--color-stone-500);
+    transition: all 0.15s;
+  }
+  .authority-row:hover {
+    border-color: var(--color-stone-300);
+    background: var(--color-periwinkle);
+    color: var(--color-stone-900);
+  }
+  .authority-row:hover .authority-row-icon {
+    color: var(--color-burgundy);
+  }
+  .authority-row-static {
+    cursor: default;
+  }
+  .authority-row-static:hover {
+    background: none;
+    border-color: var(--color-stone-200);
+    color: var(--color-stone-500);
+  }
+  .authority-row-icon {
+    font-size: 18px;
+    color: var(--color-stone-400);
+    flex-shrink: 0;
+  }
+  .authority-row-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-stone-700);
+  }
+  .authority-row-code {
+    font-size: 0.78rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: var(--color-stone-400);
+    margin-left: auto;
+  }
   .linked-desc-link {
     font-size: 0.9rem;
     color: var(--color-burgundy);

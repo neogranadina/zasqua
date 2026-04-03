@@ -84,26 +84,33 @@ eleventyComputed:
         {% if place.wikidata_id or place.whg_id or place.tgn_id or place.hgis_id %}
           <div class="detail-section">
             <h3 class="font-semibold text-stone-400">{{ ui.place.sections.externalIds }}</h3>
-            <div class="authority-links">
+            <div class="authority-rows">
               {% if place.wikidata_id %}
-                <a href="https://www.wikidata.org/wiki/{{ place.wikidata_id }}" target="_blank" rel="noopener" class="authority-pill">
-                  Wikidata <span class="material-symbols-outlined" style="font-size: 14px">open_in_new</span>
+                <a href="https://www.wikidata.org/wiki/{{ place.wikidata_id }}" target="_blank" rel="noopener" class="authority-row">
+                  <span class="material-symbols-outlined authority-row-icon">open_in_new</span>
+                  <span class="authority-row-label">Wikidata</span>
+                  <span class="authority-row-code">{{ place.wikidata_id }}</span>
                 </a>
               {% endif %}
               {% if place.tgn_id %}
-                <a href="https://vocab.getty.edu/page/tgn/{{ place.tgn_id }}" target="_blank" rel="noopener" class="authority-pill">
-                  TGN <span class="material-symbols-outlined" style="font-size: 14px">open_in_new</span>
+                <a href="https://vocab.getty.edu/page/tgn/{{ place.tgn_id }}" target="_blank" rel="noopener" class="authority-row">
+                  <span class="material-symbols-outlined authority-row-icon">open_in_new</span>
+                  <span class="authority-row-label">TGN</span>
+                  <span class="authority-row-code">{{ place.tgn_id }}</span>
                 </a>
               {% endif %}
               {% if place.whg_id %}
-                <a href="https://whgazetteer.org/places/{{ place.whg_id }}/portal" target="_blank" rel="noopener" class="authority-pill">
-                  WHG <span class="material-symbols-outlined" style="font-size: 14px">open_in_new</span>
+                <a href="https://whgazetteer.org/places/{{ place.whg_id }}/portal" target="_blank" rel="noopener" class="authority-row">
+                  <span class="material-symbols-outlined authority-row-icon">open_in_new</span>
+                  <span class="authority-row-label">WHG</span>
+                  <span class="authority-row-code">{{ place.whg_id }}</span>
                 </a>
               {% endif %}
               {% if place.hgis_id %}
-                <span class="authority-pill" title="{{ place.hgis_id }}">
-                  HGIS
-                </span>
+                <div class="authority-row authority-row-static">
+                  <span class="authority-row-label">HGIS</span>
+                  <span class="authority-row-code">{{ place.hgis_id }}</span>
+                </div>
               {% endif %}
             </div>
           </div>
