@@ -178,7 +178,8 @@ module.exports = {
       type: "Tipo",
       placeCode: "Identificador Neogranadina",
       nameVariants: "Variantes del nombre",
-      coordinates: "Coordenadas"
+      coordinates: "Coordenadas",
+      countryCode: "País"
     },
     // Page copy
     breadcrumbParent: "Lugares",

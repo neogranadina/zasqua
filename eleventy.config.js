@@ -127,6 +127,12 @@ module.exports = function(eleventyConfig) {
   });
 
   // Truncate text with ellipsis
+  var countryNames = new Intl.DisplayNames(['es'], { type: 'region' });
+  eleventyConfig.addFilter("countryName", function(code) {
+    if (!code) return "";
+    try { return countryNames.of(code); } catch (e) { return code; }
+  });
+
   eleventyConfig.addFilter("truncate", function(str, length) {
     if (!str) return "";
     if (str.length <= length) return str;

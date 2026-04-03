@@ -13,7 +13,7 @@ eleventyComputed:
 <div style="display:none">
   <span data-pagefind-filter="place_type">{{ place.place_type }}</span>
   <span data-pagefind-filter="has_coordinates">{% if place.latitude and place.longitude %}true{% else %}false{% endif %}</span>
-  <span data-pagefind-filter="has_authority">{% if place.wikidata_id or place.whg_id or place.hgis_id %}true{% else %}false{% endif %}</span>
+  <span data-pagefind-filter="has_authority">{% if place.wikidata_id or place.whg_id or place.tgn_id or place.hgis_id %}true{% else %}false{% endif %}</span>
   <span data-pagefind-sort="name">{{ place.display_name }}</span>
   <span data-pagefind-meta="place_type">{{ place.place_type }}</span>
   <span data-pagefind-meta="has_coordinates">{% if place.latitude and place.longitude %}true{% else %}false{% endif %}</span>
@@ -65,21 +65,23 @@ eleventyComputed:
             <span class="detail-value">{{ place.display_name }}</span>
           </div>
 
-          <div class="detail-field">
-            <span class="detail-label">{{ ui.place.fields.type }}</span>
-            <span class="detail-value">{{ ui.place.types[place.place_type] or place.place_type }}</span>
-          </div>
-
           {% if place.name_variants and place.name_variants.length %}
             <div class="detail-field">
               <span class="detail-label">{{ ui.place.fields.nameVariants }}</span>
               <span class="detail-value">{{ place.name_variants | join(', ') }}</span>
             </div>
           {% endif %}
+
+          {% if place.country_code %}
+            <div class="detail-field">
+              <span class="detail-label">{{ ui.place.fields.countryCode }}</span>
+              <span class="detail-value">{{ place.country_code | countryName }}</span>
+            </div>
+          {% endif %}
         </div>
 
         {# Section: Identificadores externos (only if at least one authority ID present) #}
-        {% if place.wikidata_id or place.whg_id or place.hgis_id %}
+        {% if place.wikidata_id or place.whg_id or place.tgn_id or place.hgis_id %}
           <div class="detail-section">
             <h3 class="font-semibold text-stone-400">{{ ui.place.sections.externalIds }}</h3>
             <div class="authority-links">
@@ -88,20 +90,25 @@ eleventyComputed:
                   Wikidata <span class="material-symbols-outlined" style="font-size: 14px">open_in_new</span>
                 </a>
               {% endif %}
+              {% if place.tgn_id %}
+                <a href="https://vocab.getty.edu/page/tgn/{{ place.tgn_id }}" target="_blank" rel="noopener" class="authority-pill">
+                  TGN <span class="material-symbols-outlined" style="font-size: 14px">open_in_new</span>
+                </a>
+              {% endif %}
               {% if place.whg_id %}
                 <a href="https://whgazetteer.org/places/{{ place.whg_id }}/portal" target="_blank" rel="noopener" class="authority-pill">
                   WHG <span class="material-symbols-outlined" style="font-size: 14px">open_in_new</span>
                 </a>
               {% endif %}
+              {% if place.hgis_id %}
+                <span class="authority-pill" title="{{ place.hgis_id }}">
+                  HGIS
+                </span>
+              {% endif %}
             </div>
-            {% if place.hgis_id %}
-              <div class="detail-field" style="margin-top: 8px">
-                <span class="detail-label">HGIS</span>
-                <span class="detail-value text-stone-700">{{ place.hgis_id }}</span>
-              </div>
-            {% endif %}
           </div>
         {% endif %}
+
 
         {# Section: Control #}
         {% if place.place_code %}

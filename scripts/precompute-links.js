@@ -154,7 +154,7 @@ async function main() {
     has_wikidata: !!p.wikidata_id,
     has_whg: !!p.whg_id,
     has_hgis: !!p.hgis_id,
-    linked_description_count: (byPlace.get(p.id) || []).length,
+    linked_description_count: (byPlace.get(String(p.id)) || []).length,
   }));
 
   const placeIndexPath = path.join(DATA_DIR, 'place-index.json');
