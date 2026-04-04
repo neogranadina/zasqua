@@ -110,7 +110,7 @@ Plans:
   - Entity detail page: 35/65 layout, timeline view with cards/connectors/Spanish dates/reference codes/28 role labels, role filter pills, view toggle (timeline/graph/search) in prose sentence
   - Entity detail page: ego-network graph (force-graph) with click-to-expand via Pagefind + desc-entity-lookup.json
   - Place detail page: 35/65 layout, timeline view with segmented toggle (map/timeline), role filter pills, full-width authority rows with codes and external links
-  - Place detail page: Control section (Neogranadina ID), Reutilización section, TGN authority pill, country name via Intl.DisplayNames, coordinates as metadata
+  - Place detail page: Control section (Neogranadina ID), Reutilizacion section, TGN authority pill, country name via Intl.DisplayNames, coordinates as metadata
   - Place data updated: 7,068 places (from 8,177), TGN links, country codes, audited authorities — all three data files (places.json, place_links.json, place-index.json) uploaded to B2
   - place.js: IIFE pattern, isolated map init, role labels
   - formatDate Eleventy filter for Spanish narrative dates
@@ -122,6 +122,7 @@ Plans:
 ### Phase 10: Explorer UX Redesign
 **Goal**: Both entity and place explorer interfaces are redesigned with proper UX research, Figma design, and implementation — usable, performant, and coherent with the detail page designs
 **Depends on**: Phase 9 (detail pages must be stable to link to)
+**Requirements**: EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, EXP-06, EXP-07, EXP-08, EXP-09, EXP-10
 **Success Criteria** (what must be TRUE):
   1. Entity explorer loads without crashing the browser at 83K+ entities
   2. Both explorers have a coherent design informed by research into comparable archive discovery interfaces
@@ -129,7 +130,12 @@ Plans:
   4. Entity explorer graph panel either works well as a discovery tool or is removed — no broken/half-built panel
   5. Place explorer reflects updated place data (7,068 places, not 8,177) and renders maps correctly
   6. Both explorers have mobile-friendly layouts
-**Plans**: TBD (requires discuss-phase → research → Figma → plan → execute)
+**Plans**: 4 plans
+Plans:
+- [ ] 10-01-PLAN.md — Figma design review and approval checkpoint
+- [ ] 10-02-PLAN.md — Build pipeline: curated graph precompute, map fix, dynamic counts
+- [ ] 10-03-PLAN.md — Entity explorer: CuratedEntityGraph class, template updates, deep-linking
+- [ ] 10-04-PLAN.md — Cleanup dead code and visual verification
 **UI hint**: yes
 
 ### Phase 11: Description Linking
@@ -156,5 +162,5 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
 | 7. Place Explorer | 3/3 | Complete | 2026-03-28 |
 | 8. Entity Explorer — List View | 3/3 | Complete | 2026-03-28 |
 | 9. Entity & Place Page Redesign | — | Complete | 2026-04-03 |
-| 10. Explorer UX Redesign | — | Not started | |
+| 10. Explorer UX Redesign | 0/4 | In progress | |
 | 11. Description Linking | — | Not started | |

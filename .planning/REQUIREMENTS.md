@@ -45,18 +45,31 @@ Requirements for the Entity & Place Discovery milestone. Each maps to roadmap ph
 - [x] **EEXP-02**: User can filter entities by facets (entity type, primary function, date range)
 - [x] **EEXP-03**: Entity explorer shows a paginated/virtual results list (never renders all 92K to DOM)
 
-### Entity Network Graph — DEFERRED
+### Explorer UX Redesign (Phase 10)
 
-GRAPH-01 through GRAPH-04 deferred (2026-03-30). The co-occurrence blob approach was tested with real data and shelved — entities connect through documents, not directly. Redesigned as a document-entity bipartite graph for entity/description detail pages. See `docs/frontend/plans/document-entity-graph.md`.
+- [ ] **EXP-01**: Entity explorer loads without crashing the browser at 83K+ entities — curated starter graph replaces full bipartite graph
+- [ ] **EXP-02**: Curated starter graph of top 100 most-connected entities loads instantly from a single pre-computed JSON file with baked-in ForceAtlas2 positions
+- [ ] **EXP-03**: Ego-network expansion on click — clicking a graph node reveals its 1-hop neighbours from entity-link shards
+- [ ] **EXP-04**: Deep-linking from entity detail pages — `/explorar/entidades/?nodo=entity_code` opens graph centred on that entity
+- [ ] **EXP-05**: Explorer intro text counts are dynamic from build-time data (entities.json length, places.json length) — no hardcoded numbers
+- [ ] **EXP-06**: Place explorer reflects updated 7,068 places (from 8,177) with correct data and dynamic count
+- [ ] **EXP-07**: Protomaps CDN basemap fixed on place detail pages — OpenFreeMap liberty style replaces stale cdn.protomaps.com URL
+- [ ] **EXP-08**: Phase 9 graph dead code cleaned up — precompute-bipartite-graph.js, entity-doc-graph.json, co-occurrence artefacts removed
+- [ ] **EXP-09**: Figma designs exist for both explorer pages and are approved before implementation begins
+- [ ] **EXP-10**: Both explorers have visual coherence with Phase 9 detail page designs (typography, spacing, colour tokens)
 
-- [ ] **GRAPH-01**: ~~Entity explorer includes a network graph~~ → Deferred, redesign pending
-- [ ] **GRAPH-02**: ~~Pre-computed ForceAtlas2 layout~~ → Deferred, redesign pending
-- [ ] **GRAPH-03**: ~~Ego-network expansion~~ → Deferred, redesign pending
-- [ ] **GRAPH-04**: ~~Filter sync~~ → Deferred, redesign pending
+### Entity Network Graph — SUPERSEDED
+
+GRAPH-01 through GRAPH-04 deferred (2026-03-30), then superseded by EXP-01 through EXP-04 in Phase 10. The co-occurrence blob approach was tested with real data and shelved — entities connect through documents, not directly. Redesigned as a curated starter graph with ego-network expansion for the explorer page.
+
+- [x] **GRAPH-01**: ~~Entity explorer includes a network graph~~ → Superseded by EXP-01, EXP-02
+- [x] **GRAPH-02**: ~~Pre-computed ForceAtlas2 layout~~ → Superseded by EXP-02
+- [x] **GRAPH-03**: ~~Ego-network expansion~~ → Superseded by EXP-03
+- [x] **GRAPH-04**: ~~Filter sync~~ → Deferred (two-way graph-list binding out of scope for Phase 10)
 
 ### Fixes
 
-- [x] **FIX-01**: Public repo ui.js includes Acerca and Catalogación nav link labels
+- [x] **FIX-01**: Public repo ui.js includes Acerca and Catalogacion nav link labels
 
 ## v0.4.0 Requirements (Complete)
 
@@ -110,6 +123,10 @@ GRAPH-01 through GRAPH-04 deferred (2026-03-30). The co-occurrence blob approach
 | Full 92K-node graph rendered at once | Unusable hairball — always scope to threshold/ego-network |
 | Force-directed layout in browser | Blocks main thread above ~500 nodes — pre-compute at build time |
 | Runtime API dependency | All data pre-built at build time |
+| Two-way graph-list binding | Deferred from Phase 9 and Phase 10 — not needed for discovery |
+| Graph search (type-to-find-node) | Deferred from Phase 9 |
+| Community detection / cluster colouring | Deferred from Phase 9 |
+| Mobile-responsive redesign | Separate future milestone |
 
 ## Traceability
 
@@ -140,10 +157,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EEXP-01 | Phase 8 | Complete |
 | EEXP-02 | Phase 8 | Complete |
 | EEXP-03 | Phase 8 | Complete |
-| GRAPH-01 | Phase 9 | Deferred |
-| GRAPH-02 | Phase 9 | Deferred |
-| GRAPH-03 | Phase 9 | Deferred |
-| GRAPH-04 | Phase 9 | Deferred |
+| EXP-01 | Phase 10 | Pending |
+| EXP-02 | Phase 10 | Pending |
+| EXP-03 | Phase 10 | Pending |
+| EXP-04 | Phase 10 | Pending |
+| EXP-05 | Phase 10 | Pending |
+| EXP-06 | Phase 10 | Pending |
+| EXP-07 | Phase 10 | Pending |
+| EXP-08 | Phase 10 | Pending |
+| EXP-09 | Phase 10 | Pending |
+| EXP-10 | Phase 10 | Pending |
+| GRAPH-01 | Phase 10 | Superseded by EXP-01/02 |
+| GRAPH-02 | Phase 10 | Superseded by EXP-02 |
+| GRAPH-03 | Phase 10 | Superseded by EXP-03 |
+| GRAPH-04 | — | Deferred |
 | FIX-01 | — | Complete |
 | VIS-01 | Phase 1 | Complete |
 | VIS-02 | Phase 1 | Complete |
@@ -164,10 +191,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AHRB-03 | Phase 3 | Complete |
 
 **Coverage:**
-- v0.5.0 requirements: 28 total (1 complete, 27 pending)
-- Mapped to phases: 27/27 pending ✓
+- v0.5.0 requirements: 38 total (18 complete, 10 pending Phase 10, 10 pending other)
+- Mapped to phases: all mapped
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-24*
-*Last updated: 2026-03-26 — traceability filled in after roadmap creation*
+*Last updated: 2026-04-04 — Phase 10 requirements added (EXP-01 through EXP-10)*
