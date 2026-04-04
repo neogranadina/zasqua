@@ -2,7 +2,7 @@
 
 ## Overview
 
-Six phases deliver the v0.5.0 milestone. The dependency chain is non-negotiable: the build pipeline and data pre-compute must be confirmed working before any templates are written; PMTiles infrastructure must be deployed and verified before any map code is touched; detail pages must exist before explorers can link to them; the place explorer (simpler) comes before the entity explorer (more complex); and the network graph ships after the entity explorer list view is validated against real co-occurrence data.
+Phases 4–9 built the entity and place discovery infrastructure: build pipeline, PMTiles, detail pages, explorers, and entity/place page redesign. Phases 10–11 complete the milestone with explorer UX redesign and description linking.
 
 Phase numbering continues from v0.4.0 (which completed at Phase 3).
 
@@ -16,10 +16,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 4: Build Pipeline & Data Pre-compute** - Separate Eleventy builds, pre-computed JSON shards, CI within timeout (completed 2026-03-26)
 - [x] **Phase 5: PMTiles Infrastructure** - Tippecanoe tile generation, dedicated Cloudflare Worker, range request verification (completed 2026-03-26)
-- [ ] **Phase 6: Entity & Place Detail Pages** - ~100K entity and place pages with embedded maps and linked description shards
-- [ ] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map
+- [x] **Phase 6: Entity & Place Detail Pages** - ~100K entity and place pages with embedded maps and linked description shards (completed 2026-03-28)
+- [x] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map (completed 2026-03-28)
 - [x] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list (completed 2026-03-28)
-- [ ] **Phase 9: Entity Network Graph** - DEFERRED — co-occurrence blob replaced by document-entity relationship graph (see docs/frontend/plans/document-entity-graph.md)
+- [x] **Phase 9: Entity & Place Page Redesign** - Figma-driven detail page redesign, bipartite entity graph, place data integration (completed 2026-04-03)
+- [ ] **Phase 10: Explorer UX Redesign** - Research, scoping, Figma design, and implementation of entity and place explorer interfaces
+- [ ] **Phase 11: Description Linking** - Link descriptions to entity and place detail pages and explorers
 
 ## Phase Details
 
@@ -101,32 +103,58 @@ Plans:
 - [x] 08-03-PLAN.md — Place explorer migration from in-memory JSON to Pagefind
 **UI hint**: yes
 
-### Phase 9: Entity Network Graph — REDESIGNED
+### Phase 9: Entity & Place Page Redesign
 **Original goal**: Co-occurrence network graph on the entity explorer page
-**Status**: Redesigned as bipartite document-entity graph (2026-03-31). Implementation in progress — working prototype on entity detail pages, explorer graph paused.
-**Reason**: Co-occurrence graph collapsed documents into invisible edges. Redesigned as bipartite graph showing entities connected through shared archival descriptions, entered from entity detail pages rather than the explorer.
-**What shipped so far**:
-  - Entity detail page: timeline view with cards, connectors, Spanish dates, reference codes, 28 Spanish role labels
-  - Entity detail page: role filter pills, view toggle (timeline/graph/search link) integrated into prose sentence
+**Actual scope**: Expanded to Figma-driven redesign of entity and place detail pages, bipartite entity graph on detail pages, place data integration from zasqua-entities v1.4 audit, and place template parity with entity pages
+**What shipped**:
+  - Entity detail page: 35/65 layout, timeline view with cards/connectors/Spanish dates/reference codes/28 role labels, role filter pills, view toggle (timeline/graph/search) in prose sentence
   - Entity detail page: ego-network graph (force-graph) with click-to-expand via Pagefind + desc-entity-lookup.json
-  - Entity explorer: default count:desc sort, explorer-driven graph prototype (paused — 20 entities per page too sparse for shared documents)
-  - 35/65 layout on entity pages (metadata left, timeline/graph right)
-**Still to do**:
-  - Test and polish click-to-expand on entity detail graph (Pagefind entity lookup + incremental node addition)
-  - Entity explorer graph: fetch more than 20 entities, or collapse graph when empty
-  - Clean up unused precompute-bipartite-graph.js and entity-doc-graph.json
-  - Full site rebuild to apply template changes to all 92K entity pages
+  - Place detail page: 35/65 layout, timeline view with segmented toggle (map/timeline), role filter pills, full-width authority rows with codes and external links
+  - Place detail page: Control section (Neogranadina ID), Reutilización section, TGN authority pill, country name via Intl.DisplayNames, coordinates as metadata
+  - Place data updated: 7,068 places (from 8,177), TGN links, country codes, audited authorities — all three data files (places.json, place_links.json, place-index.json) uploaded to B2
+  - place.js: IIFE pattern, isolated map init, role labels
+  - formatDate Eleventy filter for Spanish narrative dates
+  - Entity explorer: default count:desc sort
+**Deferred to Phase 10**: Explorer UX overhaul for both entity and place explorers
+**Deferred to Phase 11**: Description-to-entity/place linking on description pages
+**Status**: Complete
+
+### Phase 10: Explorer UX Redesign
+**Goal**: Both entity and place explorer interfaces are redesigned with proper UX research, Figma design, and implementation — usable, performant, and coherent with the detail page designs
+**Depends on**: Phase 9 (detail pages must be stable to link to)
+**Success Criteria** (what must be TRUE):
+  1. Entity explorer loads without crashing the browser at 83K+ entities
+  2. Both explorers have a coherent design informed by research into comparable archive discovery interfaces
+  3. Figma designs exist for both explorer pages before implementation begins
+  4. Entity explorer graph panel either works well as a discovery tool or is removed — no broken/half-built panel
+  5. Place explorer reflects updated place data (7,068 places, not 8,177) and renders maps correctly
+  6. Both explorers have mobile-friendly layouts
+**Plans**: TBD (requires discuss-phase → research → Figma → plan → execute)
+**UI hint**: yes
+
+### Phase 11: Description Linking
+**Goal**: Description pages link to their associated entity and place detail pages, and to the relevant explorer views
+**Depends on**: Phase 10 (explorer URLs must be stable), upstream entity data stabilisation (zasqua-entities phases 10.1–10.2)
+**Success Criteria** (what must be TRUE):
+  1. Description pages show clickable links to entity detail pages for associated entities (creators, contributors, etc.)
+  2. Description pages show clickable links to place detail pages for associated places
+  3. Links are generated at build time from desc-entity-lookup.json and desc-place-lookup.json enriched with display names
+  4. Entity and place names render correctly in context (not just codes)
+**Plans**: TBD
+**UI hint**: yes
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9
+Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 4. Build Pipeline & Data Pre-compute | 2/2 | Complete   | 2026-03-26 |
-| 5. PMTiles Infrastructure | 2/2 | Complete   | 2026-03-26 |
-| 6. Entity & Place Detail Pages | 4/4 | Complete   | 2026-03-28 |
-| 7. Place Explorer | 3/3 | Complete   | 2026-03-28 |
-| 8. Entity Explorer — List View | 3/3 | Complete   | 2026-03-28 |
-| 9. Entity Network Graph | — | In Progress | |
+| 4. Build Pipeline & Data Pre-compute | 2/2 | Complete | 2026-03-26 |
+| 5. PMTiles Infrastructure | 2/2 | Complete | 2026-03-26 |
+| 6. Entity & Place Detail Pages | 4/4 | Complete | 2026-03-28 |
+| 7. Place Explorer | 3/3 | Complete | 2026-03-28 |
+| 8. Entity Explorer — List View | 3/3 | Complete | 2026-03-28 |
+| 9. Entity & Place Page Redesign | — | Complete | 2026-04-03 |
+| 10. Explorer UX Redesign | — | Not started | |
+| 11. Description Linking | — | Not started | |

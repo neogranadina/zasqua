@@ -30,16 +30,17 @@ Open-access discovery interface for digitised historical archives — fast, cach
 - Place detail pages (`/lugar/{name}/`) with authority links, coordinates, embedded map, linked descriptions
 - Entity detail pages (`/entidad/{code}/`) with structured name, dates, function, linked descriptions
 - Place explorer (`/explorar/lugares/`) with search, faceted filtering, heatmap map
-- Entity explorer (`/explorar/entidades/`) with search, faceted filtering, network graphs
+- Entity explorer (`/explorar/entidades/`) with search, faceted filtering — currently crashes browsers, needs UX redesign (Phase 10)
 - Pre-built description aggregates for entities and places (build-time, no runtime API)
 - PMTiles on R2 for serverless maps (MapLibre GL JS)
 - Fix missing nav keys in public repo ui.js (Acerca, Catalogación)
 - Build pipeline OOM verification — single vs parallel Eleventy build decision (deferred from Phase 4 to Phase 6, when entity/place templates exist to profile)
+- Description-to-entity/place linking on description pages (Phase 11 — deferred until entity data stabilises)
 
 ### Recently Validated
 
-- Entity explorer (`/explorar/entidades/`) with Pagefind-powered search, entity type/function/date facets, pagination, URL state — v0.5.0 Phase 8
-- Place explorer migrated from in-memory JSON filtering to Pagefind place index — v0.5.0 Phase 8
+- Entity explorer (`/explorar/entidades/`) with Pagefind-powered search, entity type/function/date facets, pagination, URL state — v0.5.0 Phase 8 (needs UX redesign in Phase 10)
+- Place explorer migrated from in-memory JSON filtering to Pagefind place index — v0.5.0 Phase 8 (needs UX redesign in Phase 10)
 - Three separate Pagefind indices (descriptions, entities, places) built in CI — v0.5.0 Phase 8
 - Pre-compute scripts for entity/place link shards, index files (D-06/D-07), and co-occurrence graph — v0.5.0 Phase 4
 - Build pipeline wiring (B2 downloads, pre-compute steps, passthrough copies) — v0.5.0 Phase 4
@@ -59,11 +60,11 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 - **Codebase:** Eleventy 3, Nunjucks, Tailwind CSS v4 (standalone CLI), Pagefind, TIFY, vanilla JS
 - **Shipped:** v0.4.0 (2026-03-25) — visual identity + AHRB volumes, 106K pages live
-- **Data:** 106K description pages, 8,177 places (5,574 with coordinates), 92,042 entities, 308K entity-description links, 85K place-description links
+- **Data:** 106K description pages, 7,068 places (2,237 with coordinates), 83,412 entities (pending further cleanup in zasqua-entities phases 10.1–10.2), 292K entity-description links, 194K place-description links
 - **Infrastructure:** Cloudflare R2 (`zasqua-site` bucket), Cloudflare Worker, GitHub Actions CI/CD
 - **Data source:** JSON exports from Django backend, downloaded from Backblaze B2 at build time
-- **Entity data:** entities.json (29.9 MB) — entity_code, display_name, sort_name, entity_type, given_name, surname, honorific, date_earliest, date_latest, name_variants, primary_function, dates_of_existence, history
-- **Place data:** places.json (3.1 MB) — place_code, display_name, place_type, fclass, lat/lon, name_variants, wikidata_id, whg_id, tgn_id, hgis_id, admin levels, colonial divisions
+- **Entity data:** entities.json (31 MB, 92K records — not yet updated to 83K canonical from zasqua-entities Phase 10) — entity_code, display_name, sort_name, entity_type, given_name, surname, honorific, date_earliest, date_latest, name_variants, primary_function, dates_of_existence, history
+- **Place data:** places.json (updated 2026-04-03, 7,068 places) — id, display_name, place_type, lat/lon, name_variants, whg_id, tgn_id, hgis_id, country_code. Wikidata stripped (56% wrong QIDs), country codes stripped (derived from bad Wikidata)
 
 ## Constraints
 
@@ -92,7 +93,9 @@ Open-access discovery interface for digitised historical archives — fast, cach
 - Place detail pages (`/lugar/{name}/`) — authority links, coordinates with embedded PMTiles/MapLibre map, linked descriptions
 - Entity detail pages (`/entidad/{code}/`) — structured name, dates, function, linked descriptions
 - Place explorer (`/explorar/lugares/`) — search, faceted filtering, heatmap map
-- Entity explorer (`/explorar/entidades/`) — search, faceted filtering, network graphs via shared documents
+- Entity explorer (`/explorar/entidades/`) — search, faceted filtering, UX redesign (Phase 10)
+- Place explorer (`/explorar/lugares/`) — search, faceted filtering, map, UX redesign (Phase 10)
+- Description-to-entity/place linking on description pages (Phase 11)
 - Pre-built description aggregates (build-time, no runtime API)
 - PMTiles hosted on R2 for serverless maps
 - Build architecture exploration — independent builds, incremental builds, or integrated
@@ -120,4 +123,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 — Phase 8 complete, entity explorer + Pagefind migration*
+*Last updated: 2026-04-03 — Phase 9 complete, Phases 10–11 added (explorer redesign + description linking)*
