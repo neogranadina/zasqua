@@ -133,6 +133,40 @@ async function main() {
   console.log(`[precompute-curated-graph] ForceAtlas2 layout: 500 iterations`);
 
   // -------------------------------------------------------------------------
+  // 6.5. Normalise positions to fit within a 600×600 box centred at origin
+  // -------------------------------------------------------------------------
+
+  const TARGET_SIZE = 600;
+  const rawPositions = nodeList.map(code => layoutGraph.getNodeAttributes(code));
+  const rawXs = rawPositions.map(a => a.x).sort((a, b) => a - b);
+  const rawYs = rawPositions.map(a => a.y).sort((a, b) => a - b);
+  const n = rawXs.length;
+
+  // Use 5th/95th percentile bounds so outliers don't stretch the box
+  const p5 = Math.max(0, Math.floor(n * 0.05));
+  const p95 = Math.min(n - 1, Math.ceil(n * 0.95));
+  const pMinX = rawXs[p5], pMaxX = rawXs[p95];
+  const pMinY = rawYs[p5], pMaxY = rawYs[p95];
+  const centreX = (pMinX + pMaxX) / 2;
+  const centreY = (pMinY + pMaxY) / 2;
+  const spanX = (pMaxX - pMinX) || 1;
+  const spanY = (pMaxY - pMinY) || 1;
+  const scale = TARGET_SIZE / Math.max(spanX, spanY);
+
+  for (const code of nodeList) {
+    const attrs = layoutGraph.getNodeAttributes(code);
+    let nx = (attrs.x - centreX) * scale;
+    let ny = (attrs.y - centreY) * scale;
+    // Clamp outliers to the target box edge
+    nx = Math.max(-TARGET_SIZE / 2, Math.min(TARGET_SIZE / 2, nx));
+    ny = Math.max(-TARGET_SIZE / 2, Math.min(TARGET_SIZE / 2, ny));
+    layoutGraph.setNodeAttribute(code, 'x', nx);
+    layoutGraph.setNodeAttribute(code, 'y', ny);
+  }
+
+  console.log(`[precompute-curated-graph] Normalised positions to ${TARGET_SIZE}×${TARGET_SIZE} (scale=${scale.toFixed(4)}, percentile-based)`);
+
+  // -------------------------------------------------------------------------
   // 7. Build output nodes with positions baked in as fx/fy (pinned)
   // -------------------------------------------------------------------------
 

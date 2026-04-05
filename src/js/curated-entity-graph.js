@@ -9,12 +9,19 @@
  * Features:
  *  - Single JSON fetch on init — no per-entity shard fetches on page load
  *  - ?nodo= URL parameter: centres the graph on a specific entity
- *  - Ego-network expansion on first click (fetches entity-link shard)
- *  - Navigate to entity detail page on second click (double-tap same node)
+ *  - Hover: highlights node + neighbours, dims everything else
+ *  - Click: shows tooltip with entity type, name, connection count, detail link
  *  - Fallback message when ?nodo= entity is not in the curated set
  *
  * Replaces EntityNetworkGraph (bipartite, shard-on-load — caused browser crash).
  */
+
+var curatedTypeLabels = {
+  person: 'Persona',
+  corporate_body: 'Entidad corporativa',
+  corporate: 'Entidad corporativa',
+  family: 'Familia'
+};
 
 class CuratedEntityGraph {
   constructor(container) {
@@ -22,10 +29,11 @@ class CuratedEntityGraph {
     this.fg = null;
     this.graphData = null;          // { nodes: [], links: [] } from JSON
     this.highlightedNodes = new Set();
-    this.expandedNodes = new Set(); // node ids that have been ego-expanded
     this._canvasEl = null;
     this._legendEl = null;
     this._messageEl = null;
+    this._activeTooltip = null;
+    this._tooltipNode = null;
   }
 
   // ---------------------------------------------------------------------------
@@ -120,25 +128,57 @@ class CuratedEntityGraph {
     var links = this.graphData.links || this.graphData.edges || [];
     var self = this;
 
+    // Build neighbour map for hover highlighting
+    this._nodeNeighbours = new Map();
+    this._nodeLinks = new Map();
+    for (var i = 0; i < links.length; i++) {
+      var l = links[i];
+      var s = typeof l.source === 'object' ? l.source.id : l.source;
+      var t = typeof l.target === 'object' ? l.target.id : l.target;
+      if (!this._nodeNeighbours.has(s)) this._nodeNeighbours.set(s, new Set());
+      if (!this._nodeNeighbours.has(t)) this._nodeNeighbours.set(t, new Set());
+      this._nodeNeighbours.get(s).add(t);
+      this._nodeNeighbours.get(t).add(s);
+    }
+    this._highlightedLinks = new Set();
+
     this.fg = new ForceGraph(this._canvasEl)
       .graphData({ nodes: nodes, links: links })
-      .cooldownTicks(1)
-      .d3AlphaDecay(1)
+      .cooldownTime(500)
+      .d3AlphaDecay(0.5)
       .nodeId('id')
-      .nodeLabel(function(n) {
-        return n.label + ' (' + n.degree + ' conexiones)';
+      .nodeLabel('')
+      .nodeCanvasObjectMode(function() { return 'replace'; })
+      .nodeCanvasObject(function(node, ctx, globalScale) {
+        var r = Math.max(2, Math.log10((node.degree || 1) + 1) * 2.5);
+        var dimmed = self.highlightedNodes.size > 0 && !self.highlightedNodes.has(node.id);
+        var hovered = self.highlightedNodes.has(node.id);
+        var color = self._nodeColor(node);
+
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+        ctx.fillStyle = dimmed ? '#E8E4E0' : color;
+        ctx.fill();
+
+        // Show label when zoomed in or when hovered
+        var show = globalScale > 1.5 || hovered;
+        if (show) {
+          var fontSize = Math.max(8, 10 / globalScale);
+          ctx.font = 'bold ' + fontSize + 'px DM Sans, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillStyle = hovered ? '#333' : '#777';
+          ctx.fillText(node.label, node.x, node.y + r + 1);
+        }
       })
-      .nodeColor(function(n) {
-        return self._nodeColor(n);
-      })
-      .nodeVal(function(n) {
-        return Math.max(3, Math.sqrt(n.degree) * 0.5);
-      })
-      .linkWidth(function(l) {
-        return Math.max(0.5, Math.sqrt(l.weight) * 0.3);
-      })
-      .linkColor(function() {
+      .linkColor(function(link) {
+        if (self._highlightedLinks.has(link)) return '#888';
+        if (self.highlightedNodes.size > 0) return 'rgba(0,0,0,0.03)';
         return 'rgba(160, 152, 136, 0.3)';
+      })
+      .linkWidth(function(link) {
+        if (self._highlightedLinks.has(link)) return 2;
+        return Math.max(0.5, Math.sqrt(link.weight) * 0.3);
       })
       .onNodeClick(function(node) {
         self._onNodeClick(node);
@@ -146,13 +186,18 @@ class CuratedEntityGraph {
       .onNodeHover(function(node) {
         self._onNodeHover(node);
       })
+      .onBackgroundClick(function() {
+        self._dismissTooltip();
+      })
+      .onZoom(function() {
+        self._updateTooltipPosition();
+      })
+      .enableNodeDrag(false)
       .width(this._canvasEl.clientWidth)
-      .height(this._canvasEl.clientHeight || 300);
-
-    // Zoom to fit after render — same pattern as entity detail page (entity.js)
-    setTimeout(function() {
-      if (self.fg) self.fg.zoomToFit(0, 30);
-    }, 300);
+      .height(this._canvasEl.clientHeight || 300)
+      .onEngineStop(function() {
+        self.fg.zoomToFit(0, 30);
+      });
 
     // Resize observer — keep canvas filling its container
     if (window.ResizeObserver) {
@@ -221,87 +266,92 @@ class CuratedEntityGraph {
 
   _onNodeClick(node) {
     if (!node) return;
-
-    if (this.expandedNodes.has(node.id)) {
-      // Second click on already-expanded node → navigate to detail page
-      window.location.href = '/entidad/' + node.id + '/';
-      return;
-    }
-
-    // First click → ego-network expansion
-    this.expandedNodes.add(node.id);
-    this._expandEgoNetwork(node);
-  }
-
-  async _expandEgoNetwork(node) {
-    var self = this;
-    var shard;
-    try {
-      var resp = await fetch('/data/entity-links/' + node.id + '.json');
-      if (!resp.ok) {
-        // Shard not found — treat as already-expanded, navigate on next click
-        return;
-      }
-      shard = await resp.json();
-    } catch (err) {
-      console.error('CuratedEntityGraph: failed to fetch shard for', node.id, err);
-      return;
-    }
-
-    // Build a set of entity codes already in the graph
-    var existingIds = new Set(
-      this.graphData.nodes.map(function(n) { return n.id; })
-    );
-
-    // Collect unique new entity codes from the shard
-    // Shard format: [{ reference_code, entity_code, role, title, ... }]
-    var newEntityCodes = new Set();
-    for (var i = 0; i < shard.length; i++) {
-      var entry = shard[i];
-      // Each shard entry represents a description linked to this entity;
-      // we want co-entities from the same description — not in this shard.
-      // The shard contains only this entity's own links (not co-entity codes).
-      // Use the reference_code as a link label and skip if no peer info.
-      // Since shards only carry this entity's own descriptions, ego expansion
-      // shows the descriptions that link to this entity.
-    }
-    // Shard entries are description links, not entity-to-entity.
-    // We create lightweight "description" nodes to represent 1-hop context.
-    var newNodes = [];
-    var newLinks = [];
-    var count = 0;
-
-    for (var j = 0; j < shard.length && count < 20; j++) {
-      var link = shard[j];
-      var refCode = link.reference_code;
-      if (!refCode || existingIds.has(refCode)) continue;
-
-      existingIds.add(refCode);
-      newNodes.push({
-        id: refCode,
-        label: link.title || refCode,
-        type: 'document',
-        degree: 0,
-        x: node.x + (Math.random() - 0.5) * 50,
-        y: node.y + (Math.random() - 0.5) * 50
-      });
-      newLinks.push({ source: node.id, target: refCode, weight: 1 });
-      count++;
-    }
-
-    if (newNodes.length === 0) return;
-
-    var allNodes = this.graphData.nodes.concat(newNodes);
-    var allLinks = (this.graphData.links || []).concat(newLinks);
-    this.graphData = { nodes: allNodes, links: allLinks };
-
-    // Let new nodes settle briefly then freeze
-    this.fg.cooldownTicks(50);
-    this.fg.graphData(this.graphData);
+    this._dismissTooltip();
+    this.fg.centerAt(node.x, node.y, 400);
+    this._showTooltip(node);
   }
 
   _onNodeHover(node) {
     this.container.style.cursor = node ? 'pointer' : 'default';
+    this.highlightedNodes.clear();
+    this._highlightedLinks.clear();
+    if (node) {
+      this.highlightedNodes.add(node.id);
+      var neighbours = this._nodeNeighbours.get(node.id);
+      if (neighbours) neighbours.forEach(function(n) { this.highlightedNodes.add(n); }.bind(this));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tooltip (same UX as entity detail page graph)
+  // ---------------------------------------------------------------------------
+
+  _showTooltip(node) {
+    this._dismissTooltip();
+
+    var tooltip = document.createElement('div');
+    tooltip.className = 'graph-tooltip';
+
+    var typeLabel = curatedTypeLabels[node.type] || node.type || '';
+
+    // Count graph neighbours (co-occurrence connections in curated set)
+    var neighbours = this._nodeNeighbours.get(node.id);
+    var connectionCount = neighbours ? neighbours.size : 0;
+
+    var html = '';
+    html += '<div class="graph-tooltip-role">' + this._escapeHtml(typeLabel) + '</div>';
+    html += '<div class="graph-tooltip-name"><a href="/entidad/' + this._escapeHtml(node.id) + '/">' + this._escapeHtml(node.label) + '</a></div>';
+    html += '<div class="graph-tooltip-ref">' + this._escapeHtml(node.id) + '</div>';
+    html += '<div class="graph-tooltip-actions">';
+    html += connectionCount + ' conexi\xf3n' + (connectionCount !== 1 ? 'es' : '') + ' en esta red';
+    if (node.degree) {
+      html += ' \xb7 ' + node.degree.toLocaleString() + ' v\xednculos totales en Zasqua';
+    }
+    html += '</div>';
+    html += '<div class="graph-tooltip-actions">';
+    html += '<a href="/entidad/' + this._escapeHtml(node.id) + '/" class="graph-tooltip-btn">Ver ficha completa</a>';
+    html += ' \xb7 ';
+    html += '<a href="/entidad/' + this._escapeHtml(node.id) + '/?vista=red" class="graph-tooltip-btn">Explorar relaciones</a>';
+    html += '</div>';
+
+    tooltip.innerHTML = html;
+    this._positionTooltip(tooltip, node);
+
+    this.container.appendChild(tooltip);
+    this._activeTooltip = tooltip;
+    this._tooltipNode = node;
+  }
+
+  _positionTooltip(tooltip, node) {
+    var coords = this.fg.graph2ScreenCoords(node.x, node.y);
+    // Offset by canvas position within parent container
+    var canvasRect = this._canvasEl.getBoundingClientRect();
+    var containerRect = this.container.getBoundingClientRect();
+    var offsetX = canvasRect.left - containerRect.left;
+    var offsetY = canvasRect.top - containerRect.top;
+    tooltip.style.left = (coords.x + offsetX) + 'px';
+    tooltip.style.top = (coords.y + offsetY - 8) + 'px';
+    tooltip.style.transform = 'translate(-50%, -100%)';
+  }
+
+  _updateTooltipPosition() {
+    if (this._activeTooltip && this._tooltipNode && this.fg) {
+      this._positionTooltip(this._activeTooltip, this._tooltipNode);
+    }
+  }
+
+  _dismissTooltip() {
+    if (this._activeTooltip) {
+      this._activeTooltip.remove();
+      this._activeTooltip = null;
+      this._tooltipNode = null;
+    }
+  }
+
+  _escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   // ---------------------------------------------------------------------------
