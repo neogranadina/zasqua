@@ -134,7 +134,7 @@ Plans:
 Plans:
 - [x] 10-01-PLAN.md — Figma design review and approval checkpoint
 - [x] 10-02-PLAN.md — Build pipeline: curated graph precompute, map fix, dynamic counts
-- [ ] 10-03-PLAN.md — Entity explorer: CuratedEntityGraph class, template updates, deep-linking
+- [x] 10-03-PLAN.md — Entity explorer: CuratedEntityGraph class, template updates, deep-linking
 - [ ] 10-04-PLAN.md — Cleanup dead code and visual verification
 **UI hint**: yes
 
@@ -162,5 +162,5 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
 | 7. Place Explorer | 3/3 | Complete | 2026-03-28 |
 | 8. Entity Explorer — List View | 3/3 | Complete | 2026-03-28 |
 | 9. Entity & Place Page Redesign | — | Complete | 2026-04-03 |
-| 10. Explorer UX Redesign | 2/4 | In Progress|  |
+| 10. Explorer UX Redesign | 3/4 | In Progress|  |
 | 11. Description Linking | — | Not started | |
