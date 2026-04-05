@@ -21,6 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list (completed 2026-03-28)
 - [x] **Phase 9: Entity & Place Page Redesign** - Figma-driven detail page redesign, bipartite entity graph, place data integration (completed 2026-04-03)
 - [ ] **Phase 10: Explorer UX Redesign** - Research, scoping, Figma design, and implementation of entity and place explorer interfaces
+- [ ] **Phase 10.1: Infinite Bipartite Graph Explorer** — INSERTED — Replace entity explorer's curated graph with infinite entity→document→entity navigation, graph-dominant layout
 - [ ] **Phase 11: Description Linking** - Link descriptions to entity and place detail pages and explorers
 
 ## Phase Details
@@ -137,6 +138,21 @@ Plans:
 - [x] 10-03-PLAN.md — Entity explorer: CuratedEntityGraph class, template updates, deep-linking
 - [ ] 10-04-PLAN.md — Cleanup dead code and visual verification
 **UI hint**: yes
+
+### Phase 10.1: Infinite Bipartite Graph Explorer (INSERTED)
+**Goal**: Replace the entity explorer's curated 100-node graph with an infinite bipartite graph explorer enabling entity→document→entity chain navigation, with graph-dominant layout
+**Depends on**: Phase 10 (entity explorer template and curated graph exist), Phase 9 (entity.js bipartite graph is the proven pattern)
+**Success Criteria** (what must be TRUE):
+  1. Entity explorer page shows a graph-dominant layout with the graph viewer taking most of the viewport
+  2. On load, one entity and its linked documents appear as bipartite nodes in the graph
+  3. Users can navigate entity→document→entity chains indefinitely by clicking and expanding nodes
+  4. The graph simulation runs smoothly without freezing, jarring jumps, or sudden zooming
+  5. Role filter pills control graph edge visibility (matching entity.js role filter pattern)
+  6. Entity index sidebar allows search/browse of entities with Pagefind facets
+  7. Clicking an entity in the graph updates the sidebar to show that entity in the index
+**Plans**: TBD
+**UI hint**: yes
+**Canonical refs**: `src/js/entity.js` (bipartite graph pattern), `src/js/entity-explorer.js` (Pagefind entity search)
 
 ### Phase 11: Description Linking
 **Goal**: Description pages link to their associated entity and place detail pages, and to the relevant explorer views
