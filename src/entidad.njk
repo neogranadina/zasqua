@@ -126,6 +126,14 @@ eleventyComputed:
             <span class="detail-label">{{ ui.entity.fields.entityCode }}</span>
             <span class="detail-value detail-value-mono">{{ ent.entity_code }}</span>
           </div>
+          <div class="detail-field">
+            <span class="detail-label">Red de entidades</span>
+            <span class="detail-value">
+              <a href="/explorar/entidades/?nodo={{ ent.entity_code }}" class="text-[#8B2942] hover:underline">
+                Explorar en la red de entidades &rarr;
+              </a>
+            </span>
+          </div>
         </div>
 
         {# Section: Reutilizacion #}

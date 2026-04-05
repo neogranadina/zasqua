@@ -32,13 +32,14 @@ permalink: /explorar/entidades/
 </div>
 
 {% block scripts %}
-  <script src="/js/entity-network-graph.js"></script>
+  <script src="/js/curated-entity-graph.js"></script>
   <script src="/js/entity-explorer.js"></script>
   <script>
-    const graphPanel = document.getElementById('entity-graph-panel');
-    const explorerContainer = document.getElementById('entity-explorer');
-    window._entityGraph = new EntityNetworkGraph(graphPanel);
-    window._entityExplorer = new EntityExplorer(explorerContainer);
-    window._entityGraph.setExplorer(window._entityExplorer);
+    var graphPanel = document.getElementById('entity-graph-panel');
+    var explorerContainer = document.getElementById('entity-explorer');
+    var entityGraph = new CuratedEntityGraph(graphPanel);
+    var entityExplorer = new EntityExplorer(explorerContainer);
+    entityGraph.setExplorer(entityExplorer);
+    entityGraph.init();
   </script>
 {% endblock %}
