@@ -16,7 +16,7 @@ permalink: /explorar/lugares/
 <div class="container font-sans" data-pagefind-ignore>
   {# Page title + intro (D-04) #}
   <h1 class="font-display text-[1.75rem]" style="margin-bottom: 0.5rem">Explorar lugares</h1>
-  <p class="text-stone-600 text-base" style="margin-bottom: 1.5rem">Explora los 8.177 lugares vinculados a las descripciones de Zasqua. Busca por nombre, filtra por tipo de lugar o por la presencia de coordenadas geográficas y vínculos de autoridad.</p>
+  <p class="text-stone-600 text-base" style="margin-bottom: 1.5rem">Explora los {{ places | length | numberFormat }} lugares vinculados a las descripciones de Zasqua. Busca por nombre, filtra por tipo de lugar o por la presencia de coordenadas geográficas y vínculos de autoridad.</p>
 
   {# Explorer container — JS renders all dynamic content here #}
   <div id="place-explorer"

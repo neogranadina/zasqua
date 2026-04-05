@@ -246,8 +246,12 @@ class EntityExplorer {
       countText.className = 'browse-prompt-count';
       const countStr = data.totalEntityCount > 0
         ? data.totalEntityCount.toLocaleString('es-CO')
-        : '92.042';
-      countText.innerHTML = `<strong>${countStr}</strong> entidades en el archivo`;
+        : '';
+      if (countStr) {
+        countText.innerHTML = `<strong>${countStr}</strong> entidades en el archivo`;
+      } else {
+        countText.innerHTML = '';
+      }
       prompt.appendChild(countText);
 
       const hint = document.createElement('p');

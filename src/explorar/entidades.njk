@@ -20,7 +20,7 @@ permalink: /explorar/entidades/
 <div class="container font-sans" data-pagefind-ignore>
   {# Page title + intro #}
   <h1 class="font-display text-[1.75rem]" style="margin-bottom: 0.5rem">Explorar entidades</h1>
-  <p class="text-stone-600 text-base" style="margin-bottom: 1.5rem">Explora las 92.042 entidades vinculadas a las descripciones de Zasqua. Busca por nombre, filtra por tipo de entidad o por rango de fechas.</p>
+  <p class="text-stone-600 text-base" style="margin-bottom: 1.5rem">Explora las {{ entities | length | numberFormat }} entidades vinculadas a las descripciones de Zasqua. Busca por nombre, filtra por tipo de entidad o por rango de fechas.</p>
 
   {# Network graph panel — above explorer, never inside #entity-explorer (D-01, D-19) #}
   <div id="entity-graph-panel" class="graph-panel"></div>

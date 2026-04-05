@@ -301,7 +301,7 @@ function escapeHtml(str) {
 
     var map = new maplibregl.Map({
       container: 'place-map',
-      style: 'https://cdn.protomaps.com/basemaps/v4/en.json',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
       center: [lon, lat],
       zoom: 7
     });
