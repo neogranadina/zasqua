@@ -19,6 +19,9 @@ module.exports = function(eleventyConfig) {
   // Entity-document bipartite graph (loaded by network graph)
   eleventyConfig.addPassthroughCopy({ "data/entity-doc-graph.json": "data/entity-doc-graph.json" });
 
+  // Curated entity graph (loaded by entity explorer graph panel)
+  eleventyConfig.addPassthroughCopy({ "data/curated-entity-graph.json": "data/curated-entity-graph.json" });
+
   // Watch for changes in CSS/JS during dev
   eleventyConfig.addWatchTarget("src/css/");
   eleventyConfig.addWatchTarget("src/js/");

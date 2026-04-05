@@ -58,6 +58,11 @@ jobs:
           node scripts/precompute-cooccurrence.js
           ls -lh data/entity-cooccurrence.json
 
+      - name: Pre-compute curated entity graph
+        run: |
+          node scripts/precompute-curated-graph.js
+          ls -lh data/curated-entity-graph.json
+
       - name: Install Tippecanoe
         run: pip install tippecanoe==2.72.0
 
