@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-05T02:48:59.029Z",
+  "phase": "10",
+  "phase_name": "explorer-ux-redesign",
+  "phase_dir": ".planning/phases/10-explorer-ux-redesign",
+  "plan": 4,
+  "task": 2,
+  "total_tasks": 2,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "Remove Phase 9 graph dead code and CI references", "status": "done", "commit": "30cf68d"},
+    {"id": 2, "name": "Visual verification of both explorers", "status": "in_progress", "progress": "Graph renders but zoomToFit not centering nodes properly; nav dropdown and URL changes committed; dead code removed"}
+  ],
+  "remaining_tasks": [
+    {"id": 2, "name": "Visual verification of both explorers — graph centering fix, then full E2E check", "status": "in_progress"}
+  ],
+  "blockers": [
+    {"description": "force-graph zoomToFit does not work properly with cooldownTicks(0) on pre-computed layouts — nodes render but are not centred/fitted in the panel", "type": "technical", "workaround": "Use entity.js rebuildForceGraph pattern as reference; may need cooldownTicks(1) + onEngineStop callback, or coordinate normalisation in precompute script"}
+  ],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "Graph panel placement: full width above results", "rationale": "Figma design approved by user — Prompt 1 layout chosen over Prompt 2 (beside sidebar)", "phase": "10"},
+    {"decision": "Explorer URLs moved from /explorar/entidades/ to /entidades/ and /explorar/lugares/ to /lugares/", "rationale": "User requested top-level paths", "phase": "10"},
+    {"decision": "Nav Buscar link replaced with Explorar dropdown (Documentos, Entidades, Lugares)", "rationale": "User requested dropdown menu structure", "phase": "10"},
+    {"decision": "Deep-link ?nodo= affects graph only, not Pagefind search state", "rationale": "Graph and results are independent panels per research finding #4", "phase": "10"}
+  ],
+  "uncommitted_files": [".planning/STATE.md"],
+  "next_action": "Fix curated-entity-graph.js to properly centre and fit all 100 nodes in the graph panel. Use entity.js rebuildForceGraph (lines 319-426) as the proven reference pattern. Then run full E2E verification.",
+  "context_notes": "Plans 10-01 (Figma approval), 10-02 (pipeline fixes), 10-03 (CuratedEntityGraph class) are complete. Plan 10-04 task 1 (dead code removal) is committed. Task 2 (visual verification) is blocked on graph centering. The curated graph JSON has 100 nodes, 1428 edges with ForceAtlas2 positions spanning thousands of coordinate units. The core issue: force-graph's zoomToFit doesn't work with cooldownTicks(0) because no simulation tick processes the node positions. Two extra changes were made outside the phase plan: nav dropdown and URL restructuring."
+}
