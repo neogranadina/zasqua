@@ -62,21 +62,18 @@ v0.5.0 decisions:
 
 ### Blockers/Concerns
 
-- Entity explorer crashes browsers — must be fixed in Phase 10
 - Entity data in data/ is stale (92K, should be 83K) — depends on zasqua-entities
 - Protomaps CDN basemap failing on place detail pages (place explorer uses OpenFreeMap which works)
+- Live site: pagefind-entities and pagefind-places both 404 — will appear after next deploy
 
 ## Session Continuity
 
-Last session: 2026-04-04T23:29:56.243Z
-Stopped at: Phase 10 context gathered
+Last session: 2026-04-05T20:32:39.936Z
+Stopped at: Plan 10-04 verification complete; UX pivot to three-column layout with ego-subset graph decided but not yet implemented
 
 ### To resume
 
 1. `/clear` and start fresh context
-2. `/gsd:discuss-phase 10` — gather context for explorer UX redesign
-3. Research comparable archive discovery interfaces
-4. Figma design for both explorers
-5. Plan and implement
+2. `/gsd-resume-work`
 
-Resume file: .planning/phases/10-explorer-ux-redesign/10-CONTEXT.md
+Resume file: .planning/phases/10-explorer-ux-redesign/.continue-here.md

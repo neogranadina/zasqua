@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "timestamp": "2026-04-05T02:48:59.029Z",
+  "timestamp": "2026-04-05T20:32:39.936Z",
   "phase": "10",
   "phase_name": "explorer-ux-redesign",
   "phase_dir": ".planning/phases/10-explorer-ux-redesign",
@@ -10,22 +10,25 @@
   "status": "paused",
   "completed_tasks": [
     {"id": 1, "name": "Remove Phase 9 graph dead code and CI references", "status": "done", "commit": "30cf68d"},
-    {"id": 2, "name": "Visual verification of both explorers", "status": "in_progress", "progress": "Graph renders but zoomToFit not centering nodes properly; nav dropdown and URL changes committed; dead code removed"}
+    {"id": 2, "name": "Visual verification — graph rendering, tooltips, Pagefind build fixed", "status": "done", "commit": "3b83d5e"}
   ],
   "remaining_tasks": [
-    {"id": 2, "name": "Visual verification of both explorers — graph centering fix, then full E2E check", "status": "in_progress"}
+    {"id": "NEW-1", "name": "Implement three-column layout (alt Figma design) with ego-subset graph in sticky right panel", "status": "not_started"},
+    {"id": "NEW-2", "name": "Implement expand/collapse toggle between compact right panel and full-width graph", "status": "not_started"},
+    {"id": "NEW-3", "name": "Implement infinite ego-network exploration — click node to refocus, graph drives results list and filter pills", "status": "not_started"},
+    {"id": "NEW-4", "name": "Full build + E2E verification with Pagefind entity index", "status": "not_started"}
   ],
-  "blockers": [
-    {"description": "force-graph zoomToFit does not work properly with cooldownTicks(0) on pre-computed layouts — nodes render but are not centred/fitted in the panel", "type": "technical", "workaround": "Use entity.js rebuildForceGraph pattern as reference; may need cooldownTicks(1) + onEngineStop callback, or coordinate normalisation in precompute script"}
-  ],
+  "blockers": [],
   "human_actions_pending": [],
   "decisions": [
-    {"decision": "Graph panel placement: full width above results", "rationale": "Figma design approved by user — Prompt 1 layout chosen over Prompt 2 (beside sidebar)", "phase": "10"},
-    {"decision": "Explorer URLs moved from /explorar/entidades/ to /entidades/ and /explorar/lugares/ to /lugares/", "rationale": "User requested top-level paths", "phase": "10"},
-    {"decision": "Nav Buscar link replaced with Explorar dropdown (Documentos, Entidades, Lugares)", "rationale": "User requested dropdown menu structure", "phase": "10"},
-    {"decision": "Deep-link ?nodo= affects graph only, not Pagefind search state", "rationale": "Graph and results are independent panels per research finding #4", "phase": "10"}
+    {"decision": "Graph panel: percentile-based coordinate normalisation in precompute script", "rationale": "ForceAtlas2 outliers stretched bounding box, 97% of nodes clustered in one quadrant", "phase": "10"},
+    {"decision": "nodeCanvasObject rendering with hover highlighting and click tooltips", "rationale": "Match entity detail page UX — labels on zoom/hover, positioned tooltip on click", "phase": "10"},
+    {"decision": "Tooltip appended to .graph-panel container (not .graph-canvas) to avoid overflow:hidden clipping", "rationale": "graph-canvas has overflow:hidden which clips absolutely-positioned tooltips", "phase": "10"},
+    {"decision": "npm build scripts produce all three Pagefind indices (descriptions, entities, places)", "rationale": "Previously only CI built separate indices; local builds produced a single default index", "phase": "10"},
+    {"decision": "MAJOR UX PIVOT — switch from full-width graph above results to three-column layout per Figma alt design", "rationale": "100 nodes with 1428 edges is a hairball. Alt design: filters|results|graph as sticky right panel showing ego-subset of ~15-25 nodes focused on one entity. Enables infinite exploration.", "phase": "10"},
+    {"decision": "Graph and results list become interconnected — graph drives results, filter pills reflect graph state, Pagefind search works alongside", "rationale": "User wants the explorer graph to be an open-ended discovery tool unlike the entity detail page graph which is a dead end", "phase": "10"}
   ],
-  "uncommitted_files": [".planning/STATE.md"],
-  "next_action": "Fix curated-entity-graph.js to properly centre and fit all 100 nodes in the graph panel. Use entity.js rebuildForceGraph (lines 319-426) as the proven reference pattern. Then run full E2E verification.",
-  "context_notes": "Plans 10-01 (Figma approval), 10-02 (pipeline fixes), 10-03 (CuratedEntityGraph class) are complete. Plan 10-04 task 1 (dead code removal) is committed. Task 2 (visual verification) is blocked on graph centering. The curated graph JSON has 100 nodes, 1428 edges with ForceAtlas2 positions spanning thousands of coordinate units. The core issue: force-graph's zoomToFit doesn't work with cooldownTicks(0) because no simulation tick processes the node positions. Two extra changes were made outside the phase plan: nav dropdown and URL restructuring."
+  "uncommitted_files": [],
+  "next_action": "Restructure entidades.njk template from full-width-graph-above-results to three-column layout (sidebar filters | results | sticky graph panel). Then rewrite CuratedEntityGraph to show ego-subset (~15-25 nodes around one focal entity) instead of all 100 nodes, with click-to-refocus and results list sync.",
+  "context_notes": "Plan 10-04 tasks are effectively complete (graph rendering and verification fixed in 3b83d5e). The NEW tasks represent a UX pivot based on the Figma EntityExplorerAltPage design (file LBeOKVLOkLXsJRe6zYdLyt, read via get_design_context + ReadMcpResourceTool). The user wants: (a) default = alt layout with graph as 400px sticky right panel showing ego-network of one entity, (b) option to expand to full-width view, (c) infinite exploration where clicking nodes refocuses the graph and updates results/filters — the key difference from entity detail page graphs which are dead ends. The curated graph JSON (100 nodes, 1428 edges) stays as the data source — filtered client-side to show ego-subsets. The graph-tooltip CSS was restored in main.css (had been stripped with a comment saying curated graph uses nodeLabel). Pagefind entity and place indices both 404 on live site — next deploy will fix (CI workflow already has three-index build)."
 }
