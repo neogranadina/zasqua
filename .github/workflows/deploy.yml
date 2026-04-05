@@ -53,11 +53,6 @@ jobs:
           echo "Place shards: $(ls data/place-links/ | wc -l)"
           ls -lh data/entity-index.json data/place-index.json
 
-      - name: Pre-compute co-occurrence graph
-        run: |
-          node scripts/precompute-cooccurrence.js
-          ls -lh data/entity-cooccurrence.json
-
       - name: Pre-compute curated entity graph
         run: |
           node scripts/precompute-curated-graph.js

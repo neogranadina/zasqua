@@ -16,9 +16,6 @@ module.exports = function(eleventyConfig) {
   // entity index removed: entity pages now indexed via Pagefind (D-15)
   eleventyConfig.addPassthroughCopy({ "data/place-index.json": "data/place-index.json" });
 
-  // Entity-document bipartite graph (loaded by network graph)
-  eleventyConfig.addPassthroughCopy({ "data/entity-doc-graph.json": "data/entity-doc-graph.json" });
-
   // Curated entity graph (loaded by entity explorer graph panel)
   eleventyConfig.addPassthroughCopy({ "data/curated-entity-graph.json": "data/curated-entity-graph.json" });
 
