@@ -175,7 +175,7 @@ var placeRoleLabels = {
     // Explorer link inline with pills
     var exploreLink = document.createElement('a');
     exploreLink.className = 'entity-explore-link';
-    exploreLink.href = '/explorar/lugares/?q=' + encodeURIComponent(placeId);
+    exploreLink.href = '/lugares/?q=' + encodeURIComponent(placeId);
     exploreLink.textContent = 'Abrir en explorador de lugares';
     filtersEl.appendChild(exploreLink);
   }

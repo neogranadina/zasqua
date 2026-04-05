@@ -339,7 +339,7 @@ class PlaceExplorer {
     if (this.state.page > 1) params.set('page', String(this.state.page));
     if (this.state.mapBound) params.set('map_bound', '1');
     const qs = params.toString();
-    const url = qs ? `/explorar/lugares/?${qs}` : '/explorar/lugares/';
+    const url = qs ? `/lugares/?${qs}` : '/lugares/';
     history.pushState(null, '', url);
   }
 

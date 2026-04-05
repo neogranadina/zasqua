@@ -36,3 +36,22 @@
     }
   });
 })();
+
+// Nav dropdown toggle (mobile tap, desktop uses CSS :hover)
+(function () {
+  var dropdown = document.querySelector('.nav-dropdown');
+  var trigger = document.querySelector('.nav-dropdown-trigger');
+  if (!dropdown || !trigger) return;
+
+  trigger.addEventListener('click', function (e) {
+    e.preventDefault();
+    dropdown.classList.toggle('dropdown-open');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.nav-dropdown')) {
+      dropdown.classList.remove('dropdown-open');
+    }
+  });
+})();

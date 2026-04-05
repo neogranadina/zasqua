@@ -116,7 +116,7 @@ class EntityExplorer {
     }
 
     const qs = params.toString();
-    const url = qs ? `/explorar/entidades/?${qs}` : '/explorar/entidades/';
+    const url = qs ? `/entidades/?${qs}` : '/entidades/';
     history.pushState(null, '', url);
   }
 

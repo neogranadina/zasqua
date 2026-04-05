@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (code) {
       var exploreLink = document.createElement('a');
       exploreLink.className = 'entity-explore-link';
-      exploreLink.href = '/explorar/entidades/?q=' + encodeURIComponent(code);
+      exploreLink.href = '/entidades/?q=' + encodeURIComponent(code);
       exploreLink.textContent = 'Abrir en explorador de entidades';
       filtersEl.appendChild(exploreLink);
     }

@@ -482,6 +482,65 @@
     border-bottom: 2px solid var(--color-periwinkle);
     padding-bottom: calc(0.5rem - 2px);
   }
+  .nav-dropdown {
+    position: relative;
+  }
+  .nav-dropdown-trigger {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-stone-900);
+    padding: 0.5rem 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .nav-dropdown-arrow {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+  }
+  .nav-dropdown:hover .nav-dropdown-arrow {
+    transform: rotate(180deg);
+  }
+  .nav-dropdown-trigger:hover {
+    border-bottom: 2px solid var(--color-periwinkle);
+    padding-bottom: calc(0.5rem - 2px);
+  }
+  .nav-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 180px;
+    background: white;
+    border: 1px solid var(--color-stone-200);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 4px 0;
+    z-index: 200;
+  }
+  .nav-dropdown:hover .nav-dropdown-menu {
+    display: block;
+  }
+  .nav-dropdown-menu a {
+    display: block;
+    padding: 8px 16px;
+    font-size: 14px;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--color-stone-700);
+    border-bottom: none;
+  }
+  .nav-dropdown-menu a:hover {
+    background: var(--color-periwinkle);
+    color: var(--color-stone-900);
+    border-bottom: none;
+    padding-bottom: 8px;
+  }
   .header-search {
     display: flex;
     border: 1px solid var(--color-stone-300);
@@ -551,6 +610,41 @@
       text-align: center;
       border-bottom: 1px solid var(--color-stone-100);
       width: 100%;
+    }
+    .nav-dropdown {
+      width: 100%;
+      text-align: center;
+      border-bottom: 1px solid var(--color-stone-100);
+    }
+    .nav-dropdown-trigger {
+      width: 100%;
+      justify-content: center;
+      padding: 0.75rem 0;
+    }
+    .nav-dropdown-trigger:hover {
+      border-bottom: none;
+      padding-bottom: 0.75rem;
+    }
+    .nav-dropdown-menu {
+      position: static;
+      display: none;
+      box-shadow: none;
+      border: none;
+      border-radius: 0;
+      min-width: 0;
+      background: var(--color-stone-50);
+      padding: 0;
+    }
+    .nav-dropdown.dropdown-open .nav-dropdown-menu {
+      display: block;
+    }
+    .nav-dropdown-menu a {
+      text-align: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--color-stone-100);
+    }
+    .nav-dropdown-menu a:hover {
+      padding-bottom: 0.6rem;
     }
     .site-nav .header-search {
       margin-top: 0.5rem;
