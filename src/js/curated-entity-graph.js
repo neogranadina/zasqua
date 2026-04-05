@@ -122,7 +122,7 @@ class CuratedEntityGraph {
 
     this.fg = new ForceGraph(this._canvasEl)
       .graphData({ nodes: nodes, links: links })
-      .cooldownTicks(0)
+      .cooldownTicks(1)
       .d3AlphaDecay(1)
       .nodeId('id')
       .nodeLabel(function(n) {
@@ -147,13 +147,19 @@ class CuratedEntityGraph {
         self._onNodeHover(node);
       })
       .width(this._canvasEl.clientWidth)
-      .height(300);
+      .height(this._canvasEl.clientHeight || 300);
 
-    // Resize observer — keep canvas filling its container width
+    // Zoom to fit after render — same pattern as entity detail page (entity.js)
+    setTimeout(function() {
+      if (self.fg) self.fg.zoomToFit(0, 30);
+    }, 300);
+
+    // Resize observer — keep canvas filling its container
     if (window.ResizeObserver) {
       var ro = new ResizeObserver(function() {
         if (self.fg && self._canvasEl.clientWidth > 0) {
           self.fg.width(self._canvasEl.clientWidth);
+          self.fg.height(self._canvasEl.clientHeight || 300);
         }
       });
       ro.observe(this._canvasEl);
