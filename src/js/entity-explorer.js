@@ -3,11 +3,54 @@
  *
  * Pagefind-powered search and faceted filtering over the entity index
  * (/pagefind-entities/). Provides full-text search, entity type / primary
- * function / date-range facets, sort controls, paginated results, URL state
- * sync, mobile filter toggle, and a rich result row per UI-SPEC D-27.
+ * function / date-range facets, role filter pills, sort controls, paginated
+ * results, URL state sync, mobile filter toggle, and a rich result row per
+ * UI-SPEC D-27.
  *
  * Satisfies EEXP-01 (search), EEXP-02 (facet filtering), EEXP-03 (list view).
+ * Adapted for sidebar integration with bidirectional graph sync (D-07–D-19).
  */
+
+// Role labels shared with entity.js and infinite-bipartite-explorer.js
+var roleLabels = {
+  creator: 'Productor',
+  contributor: 'Colaborador',
+  publisher: 'Editor',
+  subject: 'Materia',
+  mentioned: 'Mencionado',
+  sender: 'Remitente',
+  recipient: 'Destinatario',
+  plaintiff: 'Demandante',
+  defendant: 'Demandado',
+  author: 'Autor',
+  scribe: 'Escribano',
+  notary: 'Notario',
+  witness: 'Testigo',
+  petitioner: 'Peticionario',
+  judge: 'Juez',
+  appellant: 'Apelante',
+  victim: 'Víctima',
+  creditor: 'Acreedor',
+  seller: 'Vendedor',
+  debtor: 'Deudor',
+  buyer: 'Comprador',
+  albacea: 'Albacea',
+  mortgagee: 'Acreedor hipotecario',
+  official: 'Funcionario',
+  heir: 'Heredero',
+  spouse: 'Cónyuge',
+  grantor: 'Otorgante',
+  donor: 'Donante',
+  mortgagor: 'Deudor hipotecario'
+};
+
+// Entity colours shared with entity.js and infinite-bipartite-explorer.js
+var entityColors = {
+  person: '#8B2942',
+  corporate_body: '#6666BB',
+  corporate: '#6666BB',
+  family: '#6666BB'
+};
 
 class EntityExplorer {
   constructor(container) {
@@ -29,12 +72,19 @@ class EntityExplorer {
       primary_function: [],
       dateFilter: null,  // { level: 'century'|'decade'|'year', label, years: string[] }
       sort: '',
-      page: 1
+      page: 1,
+      role: []           // active role filters (array of role strings) — D-07, D-09
     };
 
-    this.facetGroupState = { entity_type: true, primary_function: true, date: true };
+    this.activeRoles = new Set(); // role filter state for pills
 
-    this.init();
+    // Callback hooks — set by wiring script in entidades.njk
+    this.onEntitySelected = null;  // (entityCode) — fired when user clicks entity in results
+    this.onFilterChanged = null;   // (filters) — fired when any filter/search changes
+
+    this.facetGroupState = { entity_type: true, primary_function: true, date: true };
+    // Note: init() is called explicitly by the wiring script (entidades.njk) to control
+    // initialization order. Do not call this.init() here.
   }
 
   async init() {
@@ -50,6 +100,10 @@ class EntityExplorer {
       this.showError();
       return;
     }
+
+    // Render role pills and sidebar facets into their dedicated containers (D-07)
+    this.renderRoleFilters(document.getElementById('role-filters'));
+    this.renderSidebarFacets(document.getElementById('sidebar-facets'));
 
     window.addEventListener('popstate', () => {
       this.parseUrlParams();
@@ -68,6 +122,9 @@ class EntityExplorer {
     this.state.primary_function = params.getAll('funcion');
     this.state.sort = params.get('orden') || 'count:desc';
     this.state.page = parseInt(params.get('pagina'), 10) || 1;
+    this.state.role = params.getAll('rol');
+    // Sync activeRoles Set with URL state
+    this.activeRoles = new Set(this.state.role);
 
     // Date drill-down: one active at a time
     this.state.dateFilter = null;
@@ -96,6 +153,7 @@ class EntityExplorer {
     if (this.state.q) params.set('q', this.state.q);
     for (const t of this.state.entity_type) params.append('tipo', t);
     for (const f of this.state.primary_function) params.append('funcion', f);
+    for (const r of this.state.role) params.append('rol', r);
     if (this.state.sort) params.set('orden', this.state.sort);
     if (this.state.page > 1) params.set('pagina', this.state.page);
 
@@ -165,6 +223,7 @@ class EntityExplorer {
       if (this.state.dateFilter && this.state.dateFilter.years.length) {
         pfFilters.year = { any: this.state.dateFilter.years };
       }
+      if (this.state.role.length) pfFilters.role = this.state.role;
 
       // Build Pagefind sort
       const pfSort = {};
@@ -194,6 +253,16 @@ class EntityExplorer {
         total_pages: totalPages,
         query: this.state.q
       });
+
+      // D-08, D-09, D-15: fire filter callback so graph stays in sync
+      if (this.onFilterChanged) {
+        this.onFilterChanged({
+          roles: new Set(this.state.role),
+          entityTypes: new Set(this.state.entity_type),
+          functions: new Set(this.state.primary_function),
+          searchQuery: this.state.q
+        });
+      }
     } catch (error) {
       console.error('EntityExplorer: search error:', error);
       this.showError();
@@ -371,6 +440,17 @@ class EntityExplorer {
     const item = document.createElement('div');
     item.className = 'search-result-item';
 
+    // D-14: clicking an entity in the index loads it in the graph
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', (e) => {
+      // Extract entity code from the result URL (pattern: /entidad/{code}/)
+      const match = (hit.url || '').match(/\/entidad\/([^/]+)\//);
+      if (match && match[1] && this.onEntitySelected) {
+        e.preventDefault();
+        this.onEntitySelected(match[1]);
+      }
+    });
+
     // Row 1: title + type badge + date range
     const row1 = document.createElement('div');
     row1.style.cssText = 'display:flex; flex-wrap:wrap; align-items:baseline; gap:0.5rem;';
@@ -381,6 +461,10 @@ class EntityExplorer {
     const link = document.createElement('a');
     link.href = hit.url;
     link.textContent = hit.meta.title || '';
+    // Allow normal link navigation when onEntitySelected is not wired
+    link.addEventListener('click', (e) => {
+      if (this.onEntitySelected) e.stopPropagation();
+    });
     title.appendChild(link);
     row1.appendChild(title);
 
@@ -520,6 +604,172 @@ class EntityExplorer {
 
     info.appendChild(sortWrap);
     return info;
+  }
+
+  // --- Role filter pills (D-07, D-09) ---
+
+  renderRoleFilters(containerEl) {
+    if (!containerEl || !this.globalFilters) return;
+
+    const roleData = this.globalFilters.role || {};
+    const roles = Object.keys(roleData).filter(r => roleData[r] > 0);
+    if (roles.length === 0) return;
+
+    // Sort by count descending
+    roles.sort((a, b) => roleData[b] - roleData[a]);
+
+    containerEl.innerHTML = '';
+    for (const role of roles) {
+      const count = roleData[role];
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'entity-role-btn';
+      btn.dataset.role = role;
+      if (this.activeRoles.has(role)) btn.classList.add('active');
+
+      const labelSpan = document.createElement('span');
+      labelSpan.textContent = roleLabels[role] || role;
+      btn.appendChild(labelSpan);
+
+      const countSpan = document.createElement('span');
+      countSpan.className = 'entity-role-count';
+      countSpan.textContent = ` (${count})`;
+      btn.appendChild(countSpan);
+
+      btn.addEventListener('click', () => {
+        if (this.activeRoles.has(role)) {
+          this.activeRoles.delete(role);
+          btn.classList.remove('active');
+        } else {
+          this.activeRoles.add(role);
+          btn.classList.add('active');
+        }
+        this.state.role = Array.from(this.activeRoles);
+        this.state.page = 1;
+        this.updateUrl();
+        this.search();
+      });
+
+      containerEl.appendChild(btn);
+    }
+  }
+
+  // --- Sidebar facets (entity type, function, date) — D-08 ---
+
+  renderSidebarFacets(containerEl) {
+    if (!containerEl || !this.globalFilters) return;
+
+    containerEl.innerHTML = '';
+
+    const filters = this.globalFilters;
+
+    if (filters.entity_type) {
+      containerEl.appendChild(this.renderFacetGroup(
+        'Tipo de entidad',
+        'entity_type',
+        filters.entity_type,
+        this.state.entity_type,
+        (value) => this.entityTypeLabels[value] || value
+      ));
+    }
+
+    if (filters.primary_function) {
+      containerEl.appendChild(this.renderFacetGroup(
+        'Función principal',
+        'primary_function',
+        filters.primary_function,
+        this.state.primary_function,
+        (value) => value
+      ));
+    }
+
+    if (filters.year && Object.values(filters.year).some(c => c > 0)) {
+      containerEl.appendChild(this.renderDateTree(filters.year));
+    }
+  }
+
+  // --- Focal entity card (D-13) ---
+
+  highlightEntity(entityCode, entityMeta) {
+    // 1. Render focal entity card
+    const cardEl = document.getElementById('focal-entity-card');
+    if (cardEl) {
+      const typeLabel = entityMeta.entity_type === 'person' ? 'Persona'
+        : entityMeta.entity_type === 'corporate_body' || entityMeta.entity_type === 'corporate' ? 'Institución'
+        : entityMeta.entity_type === 'family' ? 'Familia'
+        : (entityMeta.entity_type || '');
+
+      const color = entityColors[entityMeta.entity_type] || '#8B2942';
+
+      const dateRange = entityMeta.date_range || entityMeta.dates_of_existence || '';
+
+      const card = document.createElement('div');
+      card.className = 'focal-entity-card';
+
+      const labelEl = document.createElement('div');
+      labelEl.className = 'focal-entity-card-label';
+      labelEl.textContent = 'Entidad seleccionada';
+      card.appendChild(labelEl);
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'focal-entity-card-name';
+      nameEl.textContent = entityMeta.label || entityCode;
+      card.appendChild(nameEl);
+
+      const badge = document.createElement('span');
+      badge.className = 'entity-type-badge';
+      badge.style.background = color;
+      badge.style.color = '#fff';
+      badge.textContent = typeLabel;
+      card.appendChild(badge);
+
+      if (dateRange) {
+        const meta = document.createElement('div');
+        meta.className = 'focal-entity-card-meta';
+        meta.textContent = dateRange;
+        card.appendChild(meta);
+      }
+
+      const docCount = document.createElement('div');
+      docCount.className = 'focal-entity-card-doccount';
+      const count = entityMeta.linked_count || 0;
+      docCount.textContent = `${count} documentos vinculados`;
+      card.appendChild(docCount);
+
+      cardEl.innerHTML = '';
+      cardEl.appendChild(card);
+    }
+
+    // 2. Try to find the entity in the current result list and highlight it
+    const existingItem = this.container.querySelector(
+      `.search-result-item a[href*="/entidad/${entityCode}/"]`
+    );
+    if (existingItem) {
+      // Remove any previous highlight
+      this.container.querySelectorAll('.search-result-item.graph-focused')
+        .forEach(el => el.classList.remove('graph-focused'));
+      const itemEl = existingItem.closest('.search-result-item');
+      if (itemEl) {
+        itemEl.classList.add('graph-focused');
+        itemEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    } else {
+      // Entity not in current results — search for it to bring it into view
+      this.state.q = entityCode;
+      this.state.entity_type = [];
+      this.state.primary_function = [];
+      this.state.role = [];
+      this.activeRoles.clear();
+      this.state.dateFilter = null;
+      this.state.page = 1;
+      this.updateUrl();
+      this.search();
+    }
+  }
+
+  clearFocalCard() {
+    const cardEl = document.getElementById('focal-entity-card');
+    if (cardEl) cardEl.innerHTML = '';
   }
 
   renderFacets(data) {
@@ -1186,7 +1436,5 @@ class EntityExplorer {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const el = document.getElementById('entity-explorer');
-  if (el) new EntityExplorer(el);
-});
+// EntityExplorer is instantiated and initialised by the wiring script in
+// entidades.njk, which controls initialization order relative to the graph.
