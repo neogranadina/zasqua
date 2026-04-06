@@ -56,8 +56,33 @@ permalink: /entidades/
   <script src="/js/infinite-bipartite-explorer.js"></script>
   <script src="/js/entity-explorer.js"></script>
   <script>
-    // Wiring between graph and sidebar happens in Plan 03.
-    var graphContainer = document.getElementById('graph-container');
-    var sidebarContainer = document.getElementById('entity-explorer');
+    (function() {
+      'use strict';
+
+      var graphContainer = document.getElementById('graph-container');
+      var sidebarContainer = document.getElementById('entity-explorer');
+
+      var graph = new InfiniteBipartiteExplorer(graphContainer);
+      var sidebar = new EntityExplorer(sidebarContainer);
+
+      // D-13: Graph -> Sidebar: when graph refocuses on entity, update sidebar
+      graph.onEntityFocused = function(entityCode, entityMeta) {
+        sidebar.highlightEntity(entityCode, entityMeta);
+      };
+
+      // D-14: Sidebar -> Graph: when user clicks entity in sidebar, load in graph
+      sidebar.onEntitySelected = function(entityCode) {
+        graph.refocusOn(entityCode);
+      };
+
+      // D-08, D-09, D-15: Sidebar -> Graph: when filters/search change, filter graph
+      sidebar.onFilterChanged = function(filters) {
+        graph.applyFilters(filters);
+      };
+
+      // Initialise both — graph first (renders immediately), sidebar async (Pagefind WASM)
+      graph.init();
+      sidebar.init();
+    })();
   </script>
 {% endblock %}
