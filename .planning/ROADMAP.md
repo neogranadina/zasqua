@@ -150,7 +150,12 @@ Plans:
   5. Role filter pills control graph edge visibility (matching entity.js role filter pattern)
   6. Entity index sidebar allows search/browse of entities with Pagefind facets
   7. Clicking an entity in the graph updates the sidebar to show that entity in the index
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 10.1-01-PLAN.md — Data pipeline alignment, dead code cleanup, viewport-filling template/CSS shell
+- [ ] 10.1-02-PLAN.md — InfiniteBipartiteExplorer core graph class (rendering, tooltips, expand, refocus, pruning)
+- [ ] 10.1-03-PLAN.md — Sidebar integration: EntityExplorer adaptation and bidirectional graph-sidebar sync
+- [ ] 10.1-04-PLAN.md — Build, visual and functional verification checkpoint
 **UI hint**: yes
 **Canonical refs**: `src/js/entity.js` (bipartite graph pattern), `src/js/entity-explorer.js` (Pagefind entity search)
 
@@ -168,7 +173,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
+Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1 → 11
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -178,5 +183,6 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
 | 7. Place Explorer | 3/3 | Complete | 2026-03-28 |
 | 8. Entity Explorer — List View | 3/3 | Complete | 2026-03-28 |
 | 9. Entity & Place Page Redesign | — | Complete | 2026-04-03 |
-| 10. Explorer UX Redesign | 3/4 | In Progress|  |
+| 10. Explorer UX Redesign | 3/4 | In Progress | |
+| 10.1. Infinite Bipartite Graph Explorer | 0/4 | Planning | |
 | 11. Description Linking | — | Not started | |
