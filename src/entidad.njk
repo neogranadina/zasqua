@@ -18,6 +18,11 @@ eleventyComputed:
   {% for y in ent.date_earliest | yearRange(ent.date_latest) %}
     <span data-pagefind-filter="year">{{ y }}</span>
   {% endfor %}
+  {% if ent.roles and ent.roles.length %}
+    {% for r in ent.roles %}
+      <span data-pagefind-filter="role">{{ r }}</span>
+    {% endfor %}
+  {% endif %}
   <span data-pagefind-sort="name">{{ ent.sort_name or ent.display_name }}</span>
   <span data-pagefind-sort="date">{{ ent.date_earliest or '' }}</span>
   <span data-pagefind-sort="count">{{ ent._linked_count }}</span>
@@ -129,7 +134,7 @@ eleventyComputed:
           <div class="detail-field">
             <span class="detail-label">Red de entidades</span>
             <span class="detail-value">
-              <a href="/entidades/?nodo={{ ent.entity_code }}" class="text-[#8B2942] hover:underline">
+              <a href="/entidades/?entidad={{ ent.entity_code }}" class="text-[#8B2942] hover:underline">
                 Explorar en la red de entidades &rarr;
               </a>
             </span>

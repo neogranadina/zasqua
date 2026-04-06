@@ -45,10 +45,6 @@ echo "Entity shards: $(ls data/entity-links/ | wc -l)"
 echo "Place shards: $(ls data/place-links/ | wc -l)"
 ls -lh data/entity-index.json data/place-index.json
 
-echo "=== Pre-computing entity co-occurrence graph ==="
-node scripts/precompute-cooccurrence.js
-ls -lh data/entity-cooccurrence.json
-
 echo "=== Generating PMTiles ==="
 node scripts/places-to-geojson.js
 if command -v tippecanoe &> /dev/null; then
@@ -82,8 +78,18 @@ fi
 echo "=== Building site ==="
 npx eleventy
 
-echo "=== Indexing with Pagefind ==="
-npx pagefind --site _site
+echo "=== Indexing with Pagefind (three indices) ==="
+# Run 1: Description search index
+npx pagefind --site _site --output-subdir pagefind \
+  --exclude-selectors "[data-pagefind-entity-page],[data-pagefind-place-page]"
+
+# Run 2: Entity explorer index
+npx pagefind --site _site --output-subdir pagefind-entities \
+  --glob "entidad/**/*.html"
+
+# Run 3: Place explorer index
+npx pagefind --site _site --output-subdir pagefind-places \
+  --glob "lugar/**/*.html"
 
 echo "=== Build complete ==="
 echo "Pages: $(find _site -name 'index.html' | wc -l)"

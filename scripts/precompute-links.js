@@ -61,6 +61,19 @@ async function main() {
   // 2. Build entity-index.json (D-06 fields)
   // -------------------------------------------------------------------------
 
+  // Compute per-entity roles from entity-link shards
+  const entityRoles = new Map();
+  for (const link of entityLinks) {
+    const code = link.entity_code;
+    if (!entityRoles.has(code)) {
+      entityRoles.set(code, new Set());
+    }
+    if (link.role) {
+      entityRoles.get(code).add(link.role);
+    }
+  }
+  console.log(`[precompute-links] Computed roles for ${entityRoles.size} entities`);
+
   const entitiesPath = path.join(DATA_DIR, 'entities.json');
   console.log(`[precompute-links] Reading ${entitiesPath}`);
   const entitiesRaw = fs.readFileSync(entitiesPath, 'utf8');
@@ -76,6 +89,7 @@ async function main() {
     date_latest: e.date_latest,
     primary_function: e.primary_function,
     linked_description_count: (byEntity.get(e.entity_code) || []).length,
+    roles: Array.from(entityRoles.get(e.entity_code) || []),
   }));
 
   const entityIndexPath = path.join(DATA_DIR, 'entity-index.json');
