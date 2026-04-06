@@ -651,27 +651,392 @@
   }
 
   // -----------------------------------------------------------------------
-  // Stub methods (Task 2 implements these)
+  // Expand document — load entity connections (D-26, D-27, D-34)
   // -----------------------------------------------------------------------
 
-  InfiniteBipartiteExplorer.prototype.expandDocument = function (node) {
-    console.warn('InfiniteBipartiteExplorer: expandDocument not yet implemented');
+  InfiniteBipartiteExplorer.prototype.expandDocument = async function (node) {
+    this.dismissTooltip();
+
+    var entityCodes = this.descLookup.get(node.reference_code) || [];
+    // Filter out entities already in the graph
+    var newCodes = entityCodes.filter(function (c) { return !this.graphNodes.has(c); }, this);
+
+    if (newCodes.length === 0) {
+      // Mark as expanded even if no new entities — all connections already loaded
+      node.expanded = true;
+      if (this.graphInstance) this.graphInstance.refresh();
+      return;
+    }
+
+    // Cap at MAX_EXPAND_ENTITIES (D-34)
+    if (newCodes.length > MAX_EXPAND_ENTITIES) {
+      node.hiddenEntityCount = newCodes.length - MAX_EXPAND_ENTITIES;
+      newCodes = newCodes.slice(0, MAX_EXPAND_ENTITIES);
+    }
+
+    // Batch-fetch entity metadata via Promise.all (pattern from entity.js lines 669-684)
+    var self = this;
+    var metaResults = await Promise.all(newCodes.map(function (code) {
+      return self.fetchEntityMeta(code);
+    }));
+
+    var newEntityNodes = newCodes.map(function (code, i) {
+      var meta = metaResults[i];
+      return {
+        id: code,
+        type: 'entity',
+        label: meta.label,
+        entity_type: meta.entity_type,
+        linked_count: meta.linked_count
+      };
+    });
+
+    var newEdges = newCodes.map(function (code) {
+      return { source: node.reference_code, target: code, role: '' };
+    });
+
+    // Mark document as expanded (D-33)
+    node.expanded = true;
+
+    this.addNodesToGraph(newEntityNodes, newEdges, node.id);
+    this.computeHopDistances();
+
+    if (this.onEntityFocused) {
+      this.onEntityFocused(this.focalEntityCode, this.entityMeta.get(this.focalEntityCode) || null);
+    }
   };
 
-  InfiniteBipartiteExplorer.prototype.refocusOn = function (entityCode) {
-    console.warn('InfiniteBipartiteExplorer: refocusOn not yet implemented');
+  // -----------------------------------------------------------------------
+  // Refocus on a new entity (D-28, D-37, D-38)
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype.refocusOn = async function (entityCode) {
+    this.dismissTooltip();
+    this.focalEntityCode = entityCode;
+
+    // Prune distant nodes first (D-36)
+    this.pruneDistantNodes(entityCode);
+
+    // Fetch shard (cache-first)
+    if (!this.shardCache.has(entityCode)) {
+      try {
+        var res = await fetch('/data/entity-links/' + entityCode + '.json');
+        if (res.ok) {
+          this.shardCache.set(entityCode, await res.json());
+        } else {
+          this.shardCache.set(entityCode, []);
+        }
+      } catch (e) {
+        this.shardCache.set(entityCode, []);
+      }
+    }
+
+    var shard = this.shardCache.get(entityCode) || [];
+    var sorted = shard.slice().sort(function (a, b) {
+      var da = a.date_expression || '';
+      var db = b.date_expression || '';
+      return db.localeCompare(da);
+    });
+    var capped = sorted.slice(0, MAX_INITIAL_DOCS);
+
+    // Ensure entity node exists (may not if it was pruned as too distant)
+    if (!this.graphNodes.has(entityCode)) {
+      var meta = await this.fetchEntityMeta(entityCode);
+      var entityNodeForRefocus = {
+        id: entityCode,
+        type: 'entity',
+        label: meta.label,
+        entity_type: meta.entity_type,
+        linked_count: shard.length
+      };
+      this.addNodesToGraph([entityNodeForRefocus], [], entityCode);
+    } else {
+      // Update linked_count on existing node
+      var existingNode = this.graphNodes.get(entityCode);
+      existingNode.linked_count = shard.length;
+    }
+
+    var self = this;
+    var docNodes = capped.map(function (entry) {
+      var codes = self.descLookup.get(entry.reference_code) || [];
+      var expandable = codes.some(function (c) { return c !== entityCode; });
+      return {
+        id: entry.reference_code,
+        type: 'document',
+        title: entry.title,
+        date_expression: entry.date_expression,
+        role: entry.role,
+        reference_code: entry.reference_code,
+        repository_code: entry.repository_code,
+        expandable: expandable,
+        expanded: false
+      };
+    });
+
+    var docEdges = capped.map(function (entry) {
+      return { source: entityCode, target: entry.reference_code, role: entry.role };
+    });
+
+    // Handle overflow (D-35)
+    if (shard.length > MAX_INITIAL_DOCS) {
+      var hiddenCount = shard.length - MAX_INITIAL_DOCS;
+      var overflowId = '__overflow__' + entityCode;
+      if (!this.graphNodes.has(overflowId)) {
+        var overflowNode = {
+          id: overflowId,
+          type: 'overflow',
+          hiddenCount: hiddenCount,
+          nextBatchOffset: MAX_INITIAL_DOCS,
+          parentEntityCode: entityCode,
+          label: '+' + hiddenCount + ' documentos'
+        };
+        docNodes.push(overflowNode);
+        docEdges.push({ source: entityCode, target: overflowId, role: '' });
+      }
+    }
+
+    this.addNodesToGraph(docNodes, docEdges, entityCode);
+    this.computeHopDistances();
+
+    // Update URL (D-18)
+    history.pushState({ entidad: entityCode }, '', '?entidad=' + entityCode);
+
+    // Pan to entity node (D-28)
+    var node = this.graphNodes.get(entityCode);
+    if (node && node.x !== undefined && this.graphInstance) {
+      this.graphInstance.centerAt(node.x, node.y, 400);
+    }
+
+    // Fire callback for sidebar sync (D-13)
+    if (this.onEntityFocused) {
+      var entityMeta = this.entityMeta.get(entityCode) || { label: entityCode, entity_type: 'person', linked_count: shard.length };
+      this.onEntityFocused(entityCode, entityMeta);
+    }
   };
 
-  InfiniteBipartiteExplorer.prototype.loadMoreDocs = function (overflowNode) {
-    console.warn('InfiniteBipartiteExplorer: loadMoreDocs not yet implemented');
-  };
+  // -----------------------------------------------------------------------
+  // Prune nodes > MAX_HOPS from new focal (D-36)
+  // -----------------------------------------------------------------------
 
   InfiniteBipartiteExplorer.prototype.pruneDistantNodes = function (focalId) {
-    console.warn('InfiniteBipartiteExplorer: pruneDistantNodes not yet implemented');
+    this.computeHopDistances(focalId);
+
+    var self = this;
+    var toRemove = new Set();
+
+    this.graphNodes.forEach(function (node, id) {
+      var hop = self.hopDistance.get(id);
+      if (hop === undefined || hop > MAX_HOPS) {
+        toRemove.add(id);
+      }
+    });
+
+    // Also remove overflow nodes whose parent entity is pruned
+    this.graphNodes.forEach(function (node, id) {
+      if (node.type === 'overflow' && toRemove.has(node.parentEntityCode)) {
+        toRemove.add(id);
+      }
+    });
+
+    if (toRemove.size === 0) return;
+
+    // Remove from internal maps
+    toRemove.forEach(function (id) { self.graphNodes.delete(id); });
+    this.graphEdges = this.graphEdges.filter(function (e) {
+      return !toRemove.has(e.source) && !toRemove.has(e.target);
+    });
+
+    // Remove from graphInstance (D-36)
+    var current = this.graphInstance.graphData();
+    this.graphInstance.graphData({
+      nodes: current.nodes.filter(function (n) { return !toRemove.has(n.id); }),
+      links: current.links.filter(function (l) {
+        var s = typeof l.source === 'object' ? l.source.id : l.source;
+        var t = typeof l.target === 'object' ? l.target.id : l.target;
+        return !toRemove.has(s) && !toRemove.has(t);
+      })
+    });
+
+    this.graphInstance.d3ReheatSimulation();
+    this.rebuildAdjacency();
   };
 
+  // -----------------------------------------------------------------------
+  // BFS hop-distance computation (D-36)
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype.computeHopDistances = function (focalId) {
+    var startId = focalId || this.focalEntityCode;
+    if (!startId) return;
+
+    var hopMap = new Map();
+    hopMap.set(startId, 0);
+    var queue = [startId];
+
+    while (queue.length) {
+      var curr = queue.shift();
+      var currHop = hopMap.get(curr);
+      var neighbours = this.nodeNeighbours.get(curr) || new Set();
+      neighbours.forEach(function (nb) {
+        if (!hopMap.has(nb)) {
+          hopMap.set(nb, currHop + 1);
+          queue.push(nb);
+        }
+      });
+    }
+
+    this.hopDistance = hopMap;
+  };
+
+  // -----------------------------------------------------------------------
+  // Load more docs from overflow (D-35)
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype.loadMoreDocs = function (overflowNode) {
+    var shard = this.shardCache.get(overflowNode.parentEntityCode) || [];
+    var sorted = shard.slice().sort(function (a, b) {
+      var da = a.date_expression || '';
+      var db = b.date_expression || '';
+      return db.localeCompare(da);
+    });
+
+    var batch = sorted.slice(overflowNode.nextBatchOffset, overflowNode.nextBatchOffset + MAX_INITIAL_DOCS);
+    if (batch.length === 0) return;
+
+    var self = this;
+    var entityCode = overflowNode.parentEntityCode;
+
+    var newDocNodes = batch.map(function (entry) {
+      var codes = self.descLookup.get(entry.reference_code) || [];
+      var expandable = codes.some(function (c) { return c !== entityCode; });
+      return {
+        id: entry.reference_code,
+        type: 'document',
+        title: entry.title,
+        date_expression: entry.date_expression,
+        role: entry.role,
+        reference_code: entry.reference_code,
+        repository_code: entry.repository_code,
+        expandable: expandable,
+        expanded: false
+      };
+    });
+
+    var newDocEdges = batch.map(function (entry) {
+      return { source: entityCode, target: entry.reference_code, role: entry.role };
+    });
+
+    // Update overflow node state
+    overflowNode.nextBatchOffset += batch.length;
+    overflowNode.hiddenCount -= batch.length;
+
+    if (overflowNode.hiddenCount <= 0) {
+      // Remove the overflow node from the graph
+      this.graphNodes.delete(overflowNode.id);
+      this.graphEdges = this.graphEdges.filter(function (e) {
+        return e.source !== overflowNode.id && e.target !== overflowNode.id;
+      });
+      var current = this.graphInstance.graphData();
+      this.graphInstance.graphData({
+        nodes: current.nodes.filter(function (n) { return n.id !== overflowNode.id; }),
+        links: current.links.filter(function (l) {
+          var s = typeof l.source === 'object' ? l.source.id : l.source;
+          var t = typeof l.target === 'object' ? l.target.id : l.target;
+          return s !== overflowNode.id && t !== overflowNode.id;
+        })
+      });
+    } else {
+      overflowNode.label = '+' + overflowNode.hiddenCount + ' documentos';
+      if (this.graphInstance) this.graphInstance.refresh();
+    }
+
+    this.addNodesToGraph(newDocNodes, newDocEdges, entityCode);
+    this.computeHopDistances();
+  };
+
+  // -----------------------------------------------------------------------
+  // Filter application (D-10, D-15, D-17)
+  // -----------------------------------------------------------------------
+
   InfiniteBipartiteExplorer.prototype.applyFilters = function (filters) {
-    console.warn('InfiniteBipartiteExplorer: applyFilters not yet implemented');
+    // filters: {roles: Set, entityTypes: Set, functions: Set, searchQuery: string}
+    var hasRoles = filters.roles && filters.roles.size > 0;
+    var hasTypes = filters.entityTypes && filters.entityTypes.size > 0;
+    var hasQuery = filters.searchQuery && filters.searchQuery.trim().length > 0;
+    var query = hasQuery ? filters.searchQuery.trim().toLowerCase() : '';
+
+    var self = this;
+
+    // First pass: determine visibility of entity nodes
+    this.graphNodes.forEach(function (node) {
+      if (node.type === 'overflow') {
+        node._visible = true;
+        return;
+      }
+      if (node.type === 'entity') {
+        var visible = true;
+
+        // Entity type filter
+        if (hasTypes && !filters.entityTypes.has(node.entity_type)) {
+          visible = false;
+        }
+
+        // Search query filter
+        if (visible && hasQuery) {
+          var label = (node.label || '').toLowerCase();
+          if (label.indexOf(query) === -1 && node.id.indexOf(query) === -1) {
+            visible = false;
+          }
+        }
+
+        // Role filter — entity is visible if it has at least one edge with a matching role
+        if (visible && hasRoles) {
+          var entityHasRole = false;
+          var data = self.graphInstance.graphData();
+          data.links.forEach(function (l) {
+            var s = typeof l.source === 'object' ? l.source.id : l.source;
+            var t = typeof l.target === 'object' ? l.target.id : l.target;
+            if ((s === node.id || t === node.id) && filters.roles.has(l.role)) {
+              entityHasRole = true;
+            }
+          });
+          if (!entityHasRole) visible = false;
+        }
+
+        node._visible = visible;
+      }
+    });
+
+    // Second pass: document nodes — visible if any connected entity is visible
+    this.graphNodes.forEach(function (node) {
+      if (node.type !== 'document') return;
+      var neighbours = self.nodeNeighbours.get(node.id) || new Set();
+      var anyVisible = false;
+      neighbours.forEach(function (nid) {
+        var n = self.graphNodes.get(nid);
+        if (n && n.type === 'entity' && n._visible !== false) anyVisible = true;
+      });
+      node._visible = anyVisible;
+    });
+
+    if (this.graphInstance) {
+      this.graphInstance.refresh();
+      this.graphInstance.d3ReheatSimulation();
+    }
+  };
+
+  // -----------------------------------------------------------------------
+  // Clear all filters (D-17)
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype.clearFilters = function () {
+    this.graphNodes.forEach(function (node) {
+      node._visible = true;
+    });
+    if (this.graphInstance) {
+      this.graphInstance.refresh();
+      this.graphInstance.d3ReheatSimulation();
+    }
   };
 
   // -----------------------------------------------------------------------
