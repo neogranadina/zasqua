@@ -17,29 +17,47 @@ permalink: /entidades/
   </div>
 </nav>
 
-<div class="container font-sans" data-pagefind-ignore>
-  {# Page title + intro #}
-  <h1 class="font-display text-[1.75rem]" style="margin-bottom: 0.5rem">Explorar entidades</h1>
-  <p class="text-stone-600 text-base" style="margin-bottom: 1.5rem">Explora las {{ entities | length | numberFormat }} entidades vinculadas a las descripciones de Zasqua. Busca por nombre, filtra por tipo de entidad o por rango de fechas.</p>
+{# Viewport-filling app layout (D-01, D-05, D-06) #}
+<div class="explorer-app" data-pagefind-ignore>
 
-  {# Network graph panel — above explorer, never inside #entity-explorer (D-01, D-19) #}
-  <div id="entity-graph-panel" class="graph-panel"></div>
+  {# Sidebar: filter section + entity index (D-02, D-03) #}
+  <div class="explorer-sidebar">
 
-  {# Explorer container — JS renders all dynamic content here #}
-  <div id="entity-explorer"
-       data-entity-types='{{ ui.entity.types | dump | safe }}'>
+    {# Filter section at top of sidebar (D-07) #}
+    <div class="explorer-sidebar-filters">
+      <h2 class="explorer-sidebar-heading">Explorar entidades</h2>
+      {# Role filter pills — filled by JS (Plan 02) #}
+      <div id="role-filters" class="entity-role-filters"></div>
+      {# Facets (entity type, function, date) — filled by JS (Plan 03) #}
+      <div id="sidebar-facets"></div>
+    </div>
+
+    {# Entity index fills the rest of the sidebar (D-11) #}
+    <div class="explorer-sidebar-index">
+      {# Focal entity card — shown when an entity is focused in the graph (D-13) #}
+      <div id="focal-entity-card"></div>
+      {# Entity search + results — Pagefind-powered via entity-explorer.js (D-11) #}
+      <div id="entity-explorer"
+           data-entity-types='{{ ui.entity.types | dump | safe }}'></div>
+    </div>
+
   </div>
+
+  {# Graph panel fills the remaining viewport width (D-01, D-47) #}
+  <div class="explorer-graph entity-graph-frame">
+    <div id="graph-container" style="width:100%;height:100%"></div>
+    <div id="graph-legend" class="graph-legend"></div>
+    <div id="graph-tooltip" class="graph-tooltip" style="display:none"></div>
+  </div>
+
 </div>
 
 {% block scripts %}
-  <script src="/js/curated-entity-graph.js"></script>
+  <script src="/js/infinite-bipartite-explorer.js"></script>
   <script src="/js/entity-explorer.js"></script>
   <script>
-    var graphPanel = document.getElementById('entity-graph-panel');
-    var explorerContainer = document.getElementById('entity-explorer');
-    var entityGraph = new CuratedEntityGraph(graphPanel);
-    var entityExplorer = new EntityExplorer(explorerContainer);
-    entityGraph.setExplorer(entityExplorer);
-    entityGraph.init();
+    // Wiring between graph and sidebar happens in Plan 03.
+    var graphContainer = document.getElementById('graph-container');
+    var sidebarContainer = document.getElementById('entity-explorer');
   </script>
 {% endblock %}
