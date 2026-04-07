@@ -865,16 +865,13 @@
       legendItem('#8B2942', 'filled', 'Persona'),
       legendItem('#6666BB', 'filled', 'Corporaci\u00f3n / Familia'),
       legendItem(DOC_COLOR, 'filled', 'Documento (expandible)'),
-      legendItem(DOC_COLOR, 'hollow', 'Documento'),
-      legendItem(DOC_COLOR, 'large', 'Explorado')
+      legendItem(DOC_COLOR, 'hollow', 'Documento')
     ].join('');
 
     function legendItem(color, style, label) {
       var dotStyle;
       if (style === 'hollow') {
         dotStyle = 'background:transparent;border:1.5px solid ' + color + ';';
-      } else if (style === 'large') {
-        dotStyle = 'background:' + color + ';width:10px;height:10px;border-radius:50%;';
       } else {
         dotStyle = 'background:' + color + ';';
       }
