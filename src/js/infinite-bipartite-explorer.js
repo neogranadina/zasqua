@@ -345,6 +345,82 @@
     this.hoveredNode = node || null;
     this.container.style.cursor = node ? 'pointer' : '';
     this._redraw();
+
+    // Show a hover tooltip in addition to the dimming. The click tooltip
+    // (selectedNode) takes priority — never overwrite it from a hover.
+    if (this.selectedNode) return;
+    if (!node) {
+      this.dismissHoverTooltip();
+      return;
+    }
+    if (node.type === 'entity') {
+      this.showEntityHoverTooltip(node);
+    } else if (node.type === 'document') {
+      this.showDocumentHoverTooltip(node);
+    } else {
+      this.dismissHoverTooltip();
+    }
+  };
+
+  // -----------------------------------------------------------------------
+  // Hover tooltip — uses the same #graph-tooltip element as the click
+  // tooltip, but is dismissed automatically on mouseout. The click tooltip
+  // sets selectedNode and takes priority; while a click tooltip is open the
+  // hover handler bails out early.
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype.showEntityHoverTooltip = function (node) {
+    var tooltip = this.tooltipEl;
+    if (!tooltip) return;
+
+    var typeName = {
+      person: 'Persona',
+      corporate_body: 'Entidad corporativa',
+      corporate: 'Entidad corporativa',
+      family: 'Familia'
+    };
+    var color = entityColors[node.entity_type] || '#8B2942';
+
+    var html = '';
+    html += '<div class="graph-tooltip-header">';
+    html += '<span class="entity-type-badge" style="background:' + color + ';color:#fff">';
+    html += escapeHtml(typeName[node.entity_type] || node.entity_type || 'Entidad');
+    html += '</span></div>';
+    html += '<div class="graph-tooltip-name">' + escapeHtml(node.label || node.id) + '</div>';
+    html += '<div class="graph-tooltip-meta">' + (node.linked_count || '?') + ' documentos vinculados</div>';
+
+    tooltip.innerHTML = html;
+    tooltip.classList.add('is-hover');
+    this.positionTooltip(node);
+    tooltip.style.display = 'block';
+  };
+
+  InfiniteBipartiteExplorer.prototype.showDocumentHoverTooltip = function (node) {
+    var tooltip = this.tooltipEl;
+    if (!tooltip) return;
+
+    var html = '';
+    if (node.date_expression) {
+      html += '<div class="graph-tooltip-date">' + escapeHtml(formatDate(node.date_expression)) + '</div>';
+    }
+    if (node.role) {
+      html += '<div class="graph-tooltip-role">' + escapeHtml(roleLabels[node.role] || node.role) + '</div>';
+    }
+    html += '<div class="graph-tooltip-name">' + escapeHtml(node.title || node.reference_code) + '</div>';
+    html += '<div class="graph-tooltip-ref">' + escapeHtml(node.reference_code) + '</div>';
+
+    tooltip.innerHTML = html;
+    tooltip.classList.add('is-hover');
+    this.positionTooltip(node);
+    tooltip.style.display = 'block';
+  };
+
+  InfiniteBipartiteExplorer.prototype.dismissHoverTooltip = function () {
+    if (this.selectedNode) return; // click tooltip is open, leave it alone
+    if (!this.tooltipEl) return;
+    this.tooltipEl.classList.remove('is-hover');
+    this.tooltipEl.style.display = 'none';
+    this.tooltipEl.innerHTML = '';
   };
 
   // -----------------------------------------------------------------------
@@ -509,6 +585,7 @@
   InfiniteBipartiteExplorer.prototype.dismissTooltip = function () {
     if (this.tooltipEl) {
       this.tooltipEl.style.display = 'none';
+      this.tooltipEl.classList.remove('is-hover');
       this.tooltipEl.innerHTML = '';
     }
     this.selectedNode = null;

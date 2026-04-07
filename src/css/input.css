@@ -3298,6 +3298,29 @@
     max-width: 300px;
   }
 
+  /* Dark hover variant — distinguishes the transient hover tooltip from
+     the persistent click tooltip. Pointer-events disabled so the hover
+     tooltip doesn't intercept mouse leave on the underlying node. */
+  .graph-tooltip.is-hover {
+    background: rgba(28, 25, 23, 0.95); /* stone-900 with slight transparency */
+    border-color: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    color: #fafaf9;
+  }
+  .graph-tooltip.is-hover .graph-tooltip-date,
+  .graph-tooltip.is-hover .graph-tooltip-name,
+  .graph-tooltip.is-hover .graph-tooltip-meta {
+    color: #fafaf9;
+  }
+  .graph-tooltip.is-hover .graph-tooltip-role,
+  .graph-tooltip.is-hover .graph-tooltip-ref {
+    color: #a8a29e; /* stone-400 */
+  }
+  .graph-tooltip.is-hover .graph-tooltip-name a {
+    color: #c9d5ff; /* periwinkle for contrast on dark */
+  }
+
   .graph-tooltip-date {
     font-size: 0.8rem;
     font-weight: 600;
