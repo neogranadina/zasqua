@@ -126,6 +126,38 @@ module.exports = function(eleventyConfig) {
     return years;
   });
 
+  // Distinct centuries spanned by a date range, as integer century numbers
+  // (e.g. 1820..1880 → [19], 1580..1610 → [16, 17]). Used to emit one
+  // pagefind century facet tag per century an entity touches, so century-level
+  // counts represent unique entities rather than year-occurrence sums.
+  eleventyConfig.addFilter("centuryRange", function(start, end) {
+    if (!start) return [];
+    const s = parseInt(start, 10);
+    if (isNaN(s)) return [];
+    const e = end ? parseInt(end, 10) : s;
+    const capEnd = Math.min(e, s + 500);
+    const startCentury = Math.floor((s - 1) / 100) + 1;
+    const endCentury = Math.floor((capEnd - 1) / 100) + 1;
+    const out = [];
+    for (let c = startCentury; c <= endCentury; c++) out.push(c);
+    return out;
+  });
+
+  // Distinct decade base years spanned by a date range
+  // (e.g. 1823..1841 → [1820, 1830, 1840]).
+  eleventyConfig.addFilter("decadeRange", function(start, end) {
+    if (!start) return [];
+    const s = parseInt(start, 10);
+    if (isNaN(s)) return [];
+    const e = end ? parseInt(end, 10) : s;
+    const capEnd = Math.min(e, s + 500);
+    const startDecade = Math.floor(s / 10) * 10;
+    const endDecade = Math.floor(capEnd / 10) * 10;
+    const out = [];
+    for (let d = startDecade; d <= endDecade; d += 10) out.push(d);
+    return out;
+  });
+
   // Truncate text with ellipsis
   var countryNames = new Intl.DisplayNames(['es'], { type: 'region' });
   eleventyConfig.addFilter("countryName", function(code) {

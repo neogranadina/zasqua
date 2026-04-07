@@ -18,6 +18,12 @@ eleventyComputed:
   {% for y in ent.date_earliest | yearRange(ent.date_latest) %}
     <span data-pagefind-filter="year">{{ y }}</span>
   {% endfor %}
+  {% for c in ent.date_earliest | centuryRange(ent.date_latest) %}
+    <span data-pagefind-filter="century">{{ c }}</span>
+  {% endfor %}
+  {% for d in ent.date_earliest | decadeRange(ent.date_latest) %}
+    <span data-pagefind-filter="decade">{{ d }}</span>
+  {% endfor %}
   {% if ent.roles and ent.roles.length %}
     {% for r in ent.roles %}
       <span data-pagefind-filter="role">{{ r }}</span>
