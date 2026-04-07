@@ -754,64 +754,90 @@ class EntityExplorer {
     }
   }
 
-  // --- Focal entity card (D-13) ---
+  // --- Selected entity card (right column, D-13) ---
+  // Renders into the #focal-entity-card host. Layout matches the
+  // EntityExplorerRefinedPage Make spec: eyebrow + Cormorant name +
+  // periwinkle type pill + big burgundy doc count + "Ver página completa"
+  // link, with an X button that restores the stub state.
 
   highlightEntity(entityCode, entityMeta) {
-    // 1. Render focal entity card
+    this._currentFocalCode = entityCode;
+    this._currentFocalMeta = entityMeta || {};
+
     const cardEl = document.getElementById('focal-entity-card');
     if (cardEl) {
       const typeLabel = entityMeta.entity_type === 'person' ? 'Persona'
-        : entityMeta.entity_type === 'corporate_body' || entityMeta.entity_type === 'corporate' ? 'Institución'
+        : entityMeta.entity_type === 'corporate_body' || entityMeta.entity_type === 'corporate' ? 'Entidad corporativa'
         : entityMeta.entity_type === 'family' ? 'Familia'
         : (entityMeta.entity_type || '');
 
-      const color = entityColors[entityMeta.entity_type] || '#8B2942';
+      cardEl.classList.remove('is-stub');
+      cardEl.innerHTML = '';
 
-      const dateRange = entityMeta.date_range || entityMeta.dates_of_existence || '';
+      // Header row: eyebrow + close button
+      const header = document.createElement('div');
+      header.className = 'selected-entity-header';
+      const eyebrow = document.createElement('div');
+      eyebrow.className = 'selected-entity-eyebrow';
+      eyebrow.textContent = 'Entidad seleccionada';
+      header.appendChild(eyebrow);
 
-      const card = document.createElement('div');
-      card.className = 'focal-entity-card';
-
-      const labelEl = document.createElement('div');
-      labelEl.className = 'focal-entity-card-label';
-      labelEl.textContent = 'Entidad seleccionada';
-      card.appendChild(labelEl);
+      const closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'selected-entity-close';
+      closeBtn.setAttribute('aria-label', 'Deseleccionar entidad');
+      closeBtn.textContent = '\u2715';
+      closeBtn.addEventListener('click', () => {
+        this.clearFocalCard();
+        if (typeof this.onFocalCleared === 'function') this.onFocalCleared();
+      });
+      header.appendChild(closeBtn);
+      cardEl.appendChild(header);
 
       const nameEl = document.createElement('div');
-      nameEl.className = 'focal-entity-card-name';
+      nameEl.className = 'selected-entity-name';
       nameEl.textContent = entityMeta.label || entityCode;
-      card.appendChild(nameEl);
+      cardEl.appendChild(nameEl);
 
-      const badge = document.createElement('span');
-      badge.className = 'entity-type-badge';
-      badge.style.background = color;
-      badge.style.color = '#fff';
-      badge.textContent = typeLabel;
-      card.appendChild(badge);
-
-      if (dateRange) {
-        const meta = document.createElement('div');
-        meta.className = 'focal-entity-card-meta';
-        meta.textContent = dateRange;
-        card.appendChild(meta);
+      if (typeLabel) {
+        const badge = document.createElement('span');
+        badge.className = 'selected-entity-badge';
+        badge.textContent = typeLabel;
+        cardEl.appendChild(badge);
       }
 
-      const docCount = document.createElement('div');
-      docCount.className = 'focal-entity-card-doccount';
+      // Big doc count
       const count = entityMeta.linked_count || 0;
-      docCount.textContent = `${count} documentos vinculados`;
-      card.appendChild(docCount);
+      const stat = document.createElement('div');
+      stat.className = 'selected-entity-stat';
+      const statNum = document.createElement('div');
+      statNum.className = 'selected-entity-stat-num';
+      statNum.textContent = Number(count).toLocaleString('es-CO');
+      const statLbl = document.createElement('div');
+      statLbl.className = 'selected-entity-stat-label';
+      statLbl.textContent = count === 1 ? 'documento vinculado' : 'documentos vinculados';
+      stat.appendChild(statNum);
+      stat.appendChild(statLbl);
+      cardEl.appendChild(stat);
 
-      cardEl.innerHTML = '';
-      cardEl.appendChild(card);
+      // Footer link
+      const footer = document.createElement('div');
+      footer.className = 'selected-entity-footer';
+      const link = document.createElement('a');
+      link.className = 'selected-entity-link';
+      link.href = `/entidad/${entityCode}/`;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      link.textContent = 'Ver ficha completa \u2192';
+      footer.appendChild(link);
+      cardEl.appendChild(footer);
     }
 
-    // 2. Try to find the entity in the current result list and highlight it
+    // Highlight the entity in the result list if present
     const existingItem = this.container.querySelector(
       `.search-result-item a[href*="/entidad/${entityCode}/"]`
     );
     if (existingItem) {
-      // Remove any previous highlight
       this.container.querySelectorAll('.search-result-item.graph-focused')
         .forEach(el => el.classList.remove('graph-focused'));
       const itemEl = existingItem.closest('.search-result-item');
@@ -820,15 +846,17 @@ class EntityExplorer {
         itemEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
-    // If the entity isn't in the current result list, we leave the right
-    // sidebar alone. The focal card shows it; the sidebar stays in browse
-    // mode so it's still useful as an entry point. The previous behaviour
-    // (auto-search by entity code) hijacked the sidebar to a single hit.
   }
 
   clearFocalCard() {
+    this._currentFocalCode = null;
+    this._currentFocalMeta = null;
     const cardEl = document.getElementById('focal-entity-card');
-    if (cardEl) cardEl.innerHTML = '';
+    if (!cardEl) return;
+    cardEl.classList.add('is-stub');
+    cardEl.innerHTML = '<div class="selected-entity-stub">Selecciona una entidad para ver más detalles</div>';
+    this.container.querySelectorAll('.search-result-item.graph-focused')
+      .forEach(el => el.classList.remove('graph-focused'));
   }
 
   renderFacets(data) {

@@ -83,6 +83,11 @@ permalink: /entidades/
         sidebar.highlightEntity(entityCode, entityMeta);
       };
 
+      // X on the selected-entity card → tell the graph to drop its selection
+      sidebar.onFocalCleared = function() {
+        graph.dismissTooltip && graph.dismissTooltip();
+      };
+
       // D-14: Sidebar -> Graph: when user clicks entity in sidebar, load in graph
       sidebar.onEntitySelected = function(entityCode) {
         graph.refocusOn(entityCode);
