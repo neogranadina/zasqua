@@ -87,16 +87,11 @@
   InfiniteBipartiteExplorer.prototype.init = async function () {
     var self = this;
 
-    // Load reverse lookup (5.7 MB) — needed for expandability checks
-    try {
-      var res = await fetch('/data/desc-entity-lookup.json');
-      if (res.ok) {
-        var obj = await res.json();
-        self.descLookup = new Map(Object.entries(obj));
-      }
-    } catch (e) {
-      console.warn('[IBE] desc-entity-lookup load failed:', e);
-    }
+    // Expandability checks are lazy (Pagefind on hover) — matches entity.js
+    // pattern. No upfront fetch of any large lookup file.
+    this.descLookup = new Map();
+    this.expandableCache = new Map(); // refCode → array of entity codes
+    this.pagefindDesc = null;
 
     // Determine starting entity
     var startingEntity = DEFAULT_ENTITY;
@@ -120,10 +115,34 @@
     this.initGraph();
     await this.loadEntity(startingEntity);
 
-    // Initial zoom — once only (D-40)
-    setTimeout(function () {
-      if (self.graphInstance) self.graphInstance.zoomToFit(400, 30);
-    }, 300);
+    // Fire focal callback so the sidebar/overlay shows the initial entity
+    // immediately, not just after the user clicks something.
+    if (this.onEntityFocused) {
+      this.onEntityFocused(startingEntity, this.entityMeta.get(startingEntity) || null);
+    }
+
+    // Force dimension update after layout settles. Force-graph reads container
+    // dimensions at construction; if flexbox hadn't computed yet, the canvas
+    // gets stuck at small internal pixel size and CSS-upscales. Update on
+    // multiple animation frames to catch async layout.
+    var updateSize = function () {
+      if (!self.graphInstance) return;
+      var rect = self.container.getBoundingClientRect();
+      var w = Math.round(rect.width);
+      var h = Math.round(rect.height);
+      if (w > 0 && h > 0) {
+        self.graphInstance.width(w).height(h);
+      }
+    };
+    requestAnimationFrame(function () {
+      updateSize();
+      requestAnimationFrame(function () {
+        updateSize();
+        // Use zoom(1) instead of zoomToFit — fit can produce extreme zooms
+        // for sparse graphs which makes everything appear at wrong scale.
+        if (self.graphInstance) self.graphInstance.zoom(1);
+      });
+    });
 
     this.renderLegend();
 
@@ -144,11 +163,16 @@
 
     // ForceGraph is loaded via CDN as window.ForceGraph
     /* global ForceGraph */
+    var initialWidth = this.container.clientWidth || 800;
+    var initialHeight = this.container.clientHeight || 600;
     this.graphInstance = new ForceGraph(this.container)
+      .width(initialWidth)
+      .height(initialHeight)
       .graphData({ nodes: [], links: [] })
       .nodeId('id')
       .nodeCanvasObjectMode(function () { return 'replace'; })
       .nodeCanvasObject(this.drawNode.bind(this))
+      .nodePointerAreaPaint(this.drawNodeHitArea.bind(this))
       .d3AlphaDecay(0.02)    // D-41
       .d3VelocityDecay(0.3)  // D-41
       // NO .cooldownTime() — omit entirely for continuous simulation (D-40, CRITICAL)
@@ -164,12 +188,14 @@
     this.graphInstance.d3Force('charge').strength(-20);  // D-41
     this.graphInstance.d3Force('link').distance(20).strength(0.5);  // D-41
 
-    // Resize observer
+    // Resize observer — use getBoundingClientRect for sub-pixel accuracy
     new ResizeObserver(function () {
-      if (self.graphInstance && self.container.clientWidth > 0) {
-        self.graphInstance
-          .width(self.container.clientWidth)
-          .height(self.container.clientHeight);
+      if (!self.graphInstance) return;
+      var rect = self.container.getBoundingClientRect();
+      var w = Math.round(rect.width);
+      var h = Math.round(rect.height);
+      if (w > 0 && h > 0) {
+        self.graphInstance.width(w).height(h);
       }
     }).observe(this.container);
   };
@@ -194,9 +220,15 @@
 
     ctx.globalAlpha = opacity;
 
+    // All sizes are SCREEN pixels divided by globalScale (force-graph
+    // pre-applies the zoom transform to ctx, so dividing by globalScale
+    // produces a constant on-screen size regardless of zoom level).
+    var s = globalScale;
+
     if (node.type === 'entity') {
       var color = entityColors[node.entity_type] || '#8B2942';
-      var r = Math.max(3, Math.min(12, Math.sqrt(node.linked_count || 1) * 1.5));
+      var rScreen = Math.max(4, Math.min(11, Math.sqrt(node.linked_count || 1) * 1.5));
+      var r = rScreen / s;
 
       ctx.beginPath();
       ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
@@ -204,64 +236,59 @@
       ctx.fill();
 
       // Label (D-30)
-      var showLabel = globalScale > 1.2 || node === this.hoveredNode;
+      var showLabel = s > 1.2 || node === this.hoveredNode;
       if (showLabel && node.label) {
-        var fontSize = Math.max(8, 12 / globalScale);
+        var fontSize = 11 / s;
         ctx.font = fontSize + 'px DM Sans, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillStyle = '#333';
-        ctx.fillText(node.label, node.x, node.y + r + 1);
+        ctx.fillText(node.label, node.x, node.y + r + (2 / s));
       }
 
     } else if (node.type === 'document') {
-      // Three visual states (D-31, D-32, D-33)
+      // Three visual states (D-31, D-32, D-33) — all in screen px
       if (node.expanded === true) {
-        // Expanded: larger filled circle (D-33)
         ctx.beginPath();
-        ctx.arc(node.x, node.y, 4, 0, 2 * Math.PI);
+        ctx.arc(node.x, node.y, 4 / s, 0, 2 * Math.PI);
         ctx.fillStyle = DOC_COLOR;
         ctx.fill();
       } else if (node.expandable === true) {
-        // Expandable: filled circle (D-32)
         ctx.beginPath();
-        ctx.arc(node.x, node.y, 2.5, 0, 2 * Math.PI);
+        ctx.arc(node.x, node.y, 3 / s, 0, 2 * Math.PI);
         ctx.fillStyle = DOC_COLOR;
         ctx.fill();
       } else {
-        // Terminal: hollow circle, stroke only (D-31)
         ctx.beginPath();
-        ctx.arc(node.x, node.y, 2, 0, 2 * Math.PI);
+        ctx.arc(node.x, node.y, 2.5 / s, 0, 2 * Math.PI);
         ctx.fillStyle = '#FAFAF9';
         ctx.fill();
         ctx.strokeStyle = DOC_COLOR;
-        ctx.lineWidth = 1.2 / globalScale;
+        ctx.lineWidth = 1.2 / s;
         ctx.stroke();
       }
 
-      // Label on hover (D-30)
+      // Label on hover only — actual tooltip is shown via showDocumentTooltip
       if (node === this.hoveredNode && node.title) {
         var titleText = node.title.length > 30 ? node.title.slice(0, 30) + '…' : node.title;
-        var docFontSize = Math.max(8, 12 / globalScale);
-        ctx.font = docFontSize + 'px DM Sans, sans-serif';
+        ctx.font = (10 / s) + 'px DM Sans, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillStyle = '#555';
-        ctx.fillText(titleText, node.x, node.y + 5);
+        ctx.fillText(titleText, node.x, node.y + (6 / s));
       }
 
     } else if (node.type === 'overflow') {
-      // Dashed border circle with count label (D-35)
+      // Dashed border circle with count label (D-35) — screen px
       ctx.beginPath();
-      ctx.arc(node.x, node.y, 6, 0, 2 * Math.PI);
-      ctx.setLineDash([3, 3]);
+      ctx.arc(node.x, node.y, 7 / s, 0, 2 * Math.PI);
+      ctx.setLineDash([3 / s, 3 / s]);
       ctx.strokeStyle = OVERFLOW_COLOR;
-      ctx.lineWidth = 1.5 / globalScale;
+      ctx.lineWidth = 1.5 / s;
       ctx.stroke();
       ctx.setLineDash([]);
 
-      var overflowFontSize = Math.max(8, 10 / globalScale);
-      ctx.font = overflowFontSize + 'px DM Sans, sans-serif';
+      ctx.font = (9 / s) + 'px DM Sans, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = OVERFLOW_COLOR;
@@ -273,13 +300,42 @@
   };
 
   // -----------------------------------------------------------------------
+  // Hit-area paint — must match screen-space sizes used in drawNode so
+  // pointer events line up with the visible nodes.
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype.drawNodeHitArea = function (node, color, ctx, globalScale) {
+    var s = globalScale;
+    var r;
+    if (node.type === 'entity') {
+      r = Math.max(4, Math.min(11, Math.sqrt(node.linked_count || 1) * 1.5)) / s;
+    } else if (node.type === 'overflow') {
+      r = 8 / s;
+    } else {
+      r = 5 / s; // generous hit area for tiny doc nodes
+    }
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+    ctx.fill();
+  };
+
+  // -----------------------------------------------------------------------
   // Hover handling (D-29)
   // -----------------------------------------------------------------------
+
+  // force-graph (standalone) has no refresh() method — trigger a redraw by
+  // re-applying the current graphData. This is cheap and reliable.
+  InfiniteBipartiteExplorer.prototype._redraw = function () {
+    if (!this.graphInstance) return;
+    var data = this.graphInstance.graphData();
+    this.graphInstance.graphData(data);
+  };
 
   InfiniteBipartiteExplorer.prototype.handleHover = function (node) {
     this.hoveredNode = node || null;
     this.container.style.cursor = node ? 'pointer' : '';
-    if (this.graphInstance) this.graphInstance.refresh();
+    this._redraw();
   };
 
   // -----------------------------------------------------------------------
@@ -339,6 +395,9 @@
     var tooltip = this.tooltipEl;
     if (!tooltip) return;
 
+    // Match the entity-page tooltip pattern (entity.js):
+    // - title is a link
+    // - actions appended async after expandability is resolved via Pagefind
     var html = '';
     if (node.date_expression) {
       html += '<div class="graph-tooltip-date">' + escapeHtml(formatDate(node.date_expression)) + '</div>';
@@ -346,23 +405,77 @@
     if (node.role) {
       html += '<div class="graph-tooltip-role">' + escapeHtml(roleLabels[node.role] || node.role) + '</div>';
     }
-    html += '<div class="graph-tooltip-name">' + escapeHtml(node.title || node.reference_code) + '</div>';
+    html += '<div class="graph-tooltip-name"><a href="/descripcion/' + escapeHtml(node.reference_code) + '/" target="_blank">' + escapeHtml(node.title || node.reference_code) + '</a></div>';
     html += '<div class="graph-tooltip-ref">' + escapeHtml(node.reference_code) + '</div>';
-    html += '<button class="graph-tooltip-btn graph-tooltip-expand" data-ref="' + escapeHtml(node.reference_code) + '">Desplegar</button>';
-    html += '<a class="graph-tooltip-btn" href="/descripcion/' + escapeHtml(node.reference_code) + '/" target="_blank">Ver descripci&oacute;n</a>';
 
     tooltip.innerHTML = html;
     this.positionTooltip(node);
     tooltip.style.display = 'block';
     this.selectedNode = node;
 
-    // Wire the Desplegar button
-    var expandBtn = tooltip.querySelector('.graph-tooltip-expand');
-    if (expandBtn) {
-      expandBtn.addEventListener('click', function () {
+    if (node.expanded) return;
+
+    // Resolve expandability lazily, then append the action button if any
+    // new entities are reachable from this document.
+    this.lookupDocEntities(node.reference_code).then(function (codes) {
+      if (self.selectedNode !== node) return; // user moved on
+      var newCodes = codes.filter(function (c) { return !self.graphNodes.has(c); });
+      node.expandable = newCodes.length > 0;
+      if (newCodes.length === 0) return;
+
+      var actions = document.createElement('div');
+      actions.className = 'graph-tooltip-actions';
+      var span = document.createElement('span');
+      span.textContent = 'Conectado a ' + newCodes.length + ' entidad' + (newCodes.length !== 1 ? 'es' : '') + ' m\u00e1s. ';
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'graph-tooltip-btn';
+      btn.textContent = 'Desplegar';
+      btn.addEventListener('click', function () {
+        btn.textContent = 'Cargando\u2026';
+        btn.disabled = true;
         self.expandDocument(node);
       });
+      actions.appendChild(span);
+      actions.appendChild(btn);
+      tooltip.appendChild(actions);
+    });
+  };
+
+  // -----------------------------------------------------------------------
+  // Lazy expandability lookup via Pagefind descriptions index
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype.lookupDocEntities = async function (refCode) {
+    if (this.expandableCache.has(refCode)) {
+      return this.expandableCache.get(refCode);
     }
+    if (!this.pagefindDesc) {
+      try {
+        this.pagefindDesc = await import('/pagefind/pagefind.js');
+        await this.pagefindDesc.options({ basePath: '/pagefind/' });
+        await this.pagefindDesc.init();
+      } catch (e) {
+        console.warn('[IBE] Pagefind descriptions load failed:', e);
+        this.expandableCache.set(refCode, []);
+        return [];
+      }
+    }
+    try {
+      var search = await this.pagefindDesc.search(refCode);
+      for (var i = 0; i < search.results.length; i++) {
+        var hit = await search.results[i].data();
+        if (hit.meta && hit.meta.reference_code === refCode) {
+          var codes = (hit.filters && hit.filters.entidad) || [];
+          this.expandableCache.set(refCode, codes);
+          return codes;
+        }
+      }
+    } catch (e) {
+      // fall through
+    }
+    this.expandableCache.set(refCode, []);
+    return [];
   };
 
   // -----------------------------------------------------------------------
@@ -436,8 +549,6 @@
     // Document nodes
     var self = this;
     var docNodes = capped.map(function (entry) {
-      var entityCodes = self.descLookup.get(entry.reference_code) || [];
-      var expandable = entityCodes.some(function (c) { return c !== entityCode; });
       return {
         id: entry.reference_code,
         type: 'document',
@@ -446,7 +557,7 @@
         role: entry.role,
         reference_code: entry.reference_code,
         repository_code: entry.repository_code,
-        expandable: expandable,
+        expandable: undefined,  // resolved lazily on hover via Pagefind
         expanded: false
       };
     });
@@ -552,24 +663,27 @@
   // -----------------------------------------------------------------------
 
   InfiniteBipartiteExplorer.prototype.rebuildAdjacency = function () {
-    this.nodeNeighbours = new Map();
-    this.nodeLinks = new Map();
+    var nodeNeighbours = new Map();
+    var nodeLinks = new Map();
 
     var data = this.graphInstance.graphData();
     data.links.forEach(function (l) {
       var s = typeof l.source === 'object' ? l.source.id : l.source;
       var t = typeof l.target === 'object' ? l.target.id : l.target;
 
-      if (!this.nodeNeighbours.has(s)) this.nodeNeighbours.set(s, new Set());
-      if (!this.nodeNeighbours.has(t)) this.nodeNeighbours.set(t, new Set());
-      this.nodeNeighbours.get(s).add(t);
-      this.nodeNeighbours.get(t).add(s);
+      if (!nodeNeighbours.has(s)) nodeNeighbours.set(s, new Set());
+      if (!nodeNeighbours.has(t)) nodeNeighbours.set(t, new Set());
+      nodeNeighbours.get(s).add(t);
+      nodeNeighbours.get(t).add(s);
 
-      if (!this.nodeLinks.has(s)) this.nodeLinks.set(s, new Set());
-      if (!this.nodeLinks.has(t)) this.nodeLinks.set(t, new Set());
-      this.nodeLinks.get(s).add(l);
-      this.nodeLinks.get(t).add(l);
-    }, this);
+      if (!nodeLinks.has(s)) nodeLinks.set(s, new Set());
+      if (!nodeLinks.has(t)) nodeLinks.set(t, new Set());
+      nodeLinks.get(s).add(l);
+      nodeLinks.get(t).add(l);
+    });
+
+    this.nodeNeighbours = nodeNeighbours;
+    this.nodeLinks = nodeLinks;
   };
 
   // -----------------------------------------------------------------------
@@ -657,14 +771,16 @@
   InfiniteBipartiteExplorer.prototype.expandDocument = async function (node) {
     this.dismissTooltip();
 
-    var entityCodes = this.descLookup.get(node.reference_code) || [];
+    // Lazy lookup via Pagefind descriptions index — no upfront 5.7 MB fetch
+    var entityCodes = await this.lookupDocEntities(node.reference_code);
     // Filter out entities already in the graph
-    var newCodes = entityCodes.filter(function (c) { return !this.graphNodes.has(c); }, this);
+    var self0 = this;
+    var newCodes = entityCodes.filter(function (c) { return !self0.graphNodes.has(c); });
 
     if (newCodes.length === 0) {
       // Mark as expanded even if no new entities — all connections already loaded
       node.expanded = true;
-      if (this.graphInstance) this.graphInstance.refresh();
+      this._redraw();
       return;
     }
 
@@ -758,8 +874,6 @@
 
     var self = this;
     var docNodes = capped.map(function (entry) {
-      var codes = self.descLookup.get(entry.reference_code) || [];
-      var expandable = codes.some(function (c) { return c !== entityCode; });
       return {
         id: entry.reference_code,
         type: 'document',
@@ -768,7 +882,7 @@
         role: entry.role,
         reference_code: entry.reference_code,
         repository_code: entry.repository_code,
-        expandable: expandable,
+        expandable: undefined,  // resolved lazily on hover
         expanded: false
       };
     });
@@ -907,8 +1021,6 @@
     var entityCode = overflowNode.parentEntityCode;
 
     var newDocNodes = batch.map(function (entry) {
-      var codes = self.descLookup.get(entry.reference_code) || [];
-      var expandable = codes.some(function (c) { return c !== entityCode; });
       return {
         id: entry.reference_code,
         type: 'document',
@@ -917,7 +1029,7 @@
         role: entry.role,
         reference_code: entry.reference_code,
         repository_code: entry.repository_code,
-        expandable: expandable,
+        expandable: undefined,  // resolved lazily on hover
         expanded: false
       };
     });
@@ -947,7 +1059,7 @@
       });
     } else {
       overflowNode.label = '+' + overflowNode.hiddenCount + ' documentos';
-      if (this.graphInstance) this.graphInstance.refresh();
+      this._redraw();
     }
 
     this.addNodesToGraph(newDocNodes, newDocEdges, entityCode);
@@ -1019,10 +1131,8 @@
       node._visible = anyVisible;
     });
 
-    if (this.graphInstance) {
-      this.graphInstance.refresh();
-      this.graphInstance.d3ReheatSimulation();
-    }
+    this._redraw();
+    if (this.graphInstance) this.graphInstance.d3ReheatSimulation();
   };
 
   // -----------------------------------------------------------------------
@@ -1033,10 +1143,8 @@
     this.graphNodes.forEach(function (node) {
       node._visible = true;
     });
-    if (this.graphInstance) {
-      this.graphInstance.refresh();
-      this.graphInstance.d3ReheatSimulation();
-    }
+    this._redraw();
+    if (this.graphInstance) this.graphInstance.d3ReheatSimulation();
   };
 
   // -----------------------------------------------------------------------
