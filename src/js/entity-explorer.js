@@ -83,6 +83,9 @@ class EntityExplorer {
     this.onFilterChanged = null;   // (filters) — fired when any filter/search changes
 
     this.facetGroupState = { entity_type: true, primary_function: true, date: true };
+    // Compact mode: when facets are rendered separately into #sidebar-facets,
+    // suppress the inline facet column in render() to avoid duplication.
+    this.compactMode = !!document.getElementById('sidebar-facets');
     // Note: init() is called explicitly by the wiring script (entidades.njk) to control
     // initialization order. Do not call this.init() here.
   }
@@ -101,9 +104,15 @@ class EntityExplorer {
       return;
     }
 
-    // Render role pills and sidebar facets into their dedicated containers (D-07)
+    // Render role pills, sidebar facets, and the search input into their
+    // dedicated containers in the left sidebar (D-07)
     this.renderRoleFilters(document.getElementById('role-filters'));
     this.renderSidebarFacets(document.getElementById('sidebar-facets'));
+    const searchInputContainer = document.getElementById('entity-search-input');
+    if (searchInputContainer) {
+      searchInputContainer.innerHTML = '';
+      searchInputContainer.appendChild(this.renderSearchInput());
+    }
 
     window.addEventListener('popstate', () => {
       this.parseUrlParams();
@@ -120,7 +129,7 @@ class EntityExplorer {
     this.state.q = params.get('q') || '';
     this.state.entity_type = params.getAll('tipo');
     this.state.primary_function = params.getAll('funcion');
-    this.state.sort = params.get('orden') || 'count:desc';
+    this.state.sort = params.get('orden') || '';
     this.state.page = parseInt(params.get('pagina'), 10) || 1;
     this.state.role = params.getAll('rol');
     // Sync activeRoles Set with URL state
@@ -190,11 +199,20 @@ class EntityExplorer {
     const isPreSearch = !this.state.q && !hasActiveFilters && !this.state.sort;
 
     this.showLoading();
-    // Allow browser to paint spinner before WASM blocks
-    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    // Yield once so the spinner can paint before any WASM blocks. Use
+    // setTimeout instead of requestAnimationFrame: rAF is paused in hidden
+    // tabs (e.g. when the user opens /entidades/ in a background tab and
+    // switches to it later), which would otherwise leave the explorer
+    // permanently stuck on the loading spinner.
+    await new Promise(r => setTimeout(r, 0));
 
     try {
       if (isPreSearch) {
+        // Reset left-sidebar facets to global counts — the user has cleared
+        // all filters, so other options should reappear at their full counts.
+        const sidebarFacetsEl = document.getElementById('sidebar-facets');
+        if (sidebarFacetsEl) this.renderSidebarFacets(sidebarFacetsEl, this.globalFilters);
+
         // Show browse prompt with total entity count
         const totalCount = this.getTotalEntityCount();
         this.renderSearchResults({
@@ -225,16 +243,18 @@ class EntityExplorer {
       }
       if (this.state.role.length) pfFilters.role = this.state.role;
 
-      // Build Pagefind sort
-      const pfSort = {};
-      if (this.state.sort) {
-        const [field, dir] = this.state.sort.split(':');
-        pfSort[field] = dir;
-      }
+      // Build Pagefind sort. Apply the count:desc default only for real
+      // searches — never on initial load (the pre-search guard above already
+      // short-circuited that case). Sorting the full 92k index in WASM blocks
+      // the main thread for 30+ seconds, so we only pay that cost when the
+      // user has actually narrowed the result set with a query or filter.
+      const effectiveSort = this.state.sort || 'count:desc';
+      const [sortField, sortDir] = effectiveSort.split(':');
+      const pfSort = { [sortField]: sortDir };
 
       const search = await this.pagefind.search(this.state.q || null, {
         filters: Object.keys(pfFilters).length ? pfFilters : undefined,
-        sort: Object.keys(pfSort).length ? pfSort : undefined
+        sort: pfSort
       });
 
       const total = search.results.length;
@@ -244,6 +264,11 @@ class EntityExplorer {
       const hits = await Promise.all(pageResults.map(r => r.data()));
 
       const scopedFilters = search.filters || this.globalFilters;
+
+      // Re-render the left-sidebar facets with scoped counts so other
+      // filter options narrow to reflect what's still reachable.
+      const sidebarFacetsEl = document.getElementById('sidebar-facets');
+      if (sidebarFacetsEl) this.renderSidebarFacets(sidebarFacetsEl, scopedFilters);
 
       this.renderSearchResults({
         hits,
@@ -342,7 +367,7 @@ class EntityExplorer {
 
         // Run full search (all entities)
         this.showLoading();
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise(r => setTimeout(r, 0));
         try {
           const search = await this.pagefind.search(null);
           const total = search.results.length;
@@ -366,8 +391,10 @@ class EntityExplorer {
 
       resultsCol.appendChild(prompt);
 
-      const sidebar = this.renderFacets(data);
-      layout.appendChild(sidebar);
+      if (!this.compactMode) {
+        const sidebar = this.renderFacets(data);
+        layout.appendChild(sidebar);
+      }
       layout.appendChild(resultsCol);
       this.container.appendChild(layout);
       return;
@@ -380,9 +407,7 @@ class EntityExplorer {
     const pills = this.renderPills();
     if (pills) resultsCol.appendChild(pills);
 
-    // Search input (inline above results on mobile/at top)
-    const searchWrap = this.renderSearchInput();
-    resultsCol.insertBefore(searchWrap, resultsCol.firstChild);
+    // (Search input lives in the left filter sidebar — see init().)
 
     // Result items or empty state
     if (data.hits.length === 0) {
@@ -401,22 +426,24 @@ class EntityExplorer {
       resultsCol.appendChild(this.renderPagination(data));
     }
 
-    // Sidebar
-    const sidebar = this.renderFacets(data);
-    layout.appendChild(sidebar);
+    // Sidebar (suppressed in compact mode — facets render into #sidebar-facets)
+    if (!this.compactMode) {
+      const sidebar = this.renderFacets(data);
+      layout.appendChild(sidebar);
+    }
     layout.appendChild(resultsCol);
 
     this.container.appendChild(layout);
   }
 
   renderSearchInput() {
+    // Use the same .refine-search styling as the descriptions explorer
+    // (rounded pill, stone-50 bg, burgundy focus border).
     const wrap = document.createElement('div');
-    wrap.className = 'search-refine-wrap';
-    wrap.style.marginBottom = '1rem';
+    wrap.className = 'refine-search';
 
     const input = document.createElement('input');
     input.type = 'search';
-    input.className = 'search-refine-input';
     input.placeholder = 'Buscar entidades...';
     input.value = this.state.q;
     input.setAttribute('aria-label', 'Buscar entidades');
@@ -656,12 +683,15 @@ class EntityExplorer {
 
   // --- Sidebar facets (entity type, function, date) — D-08 ---
 
-  renderSidebarFacets(containerEl) {
+  renderSidebarFacets(containerEl, filtersArg) {
     if (!containerEl || !this.globalFilters) return;
 
     containerEl.innerHTML = '';
 
-    const filters = this.globalFilters;
+    // Use scoped filters from a recent search when available so the facet
+    // counts narrow as the user applies filters (matching the descriptions
+    // explorer behavior). Fall back to globalFilters on initial render.
+    const filters = filtersArg || this.globalFilters;
 
     if (filters.entity_type) {
       containerEl.appendChild(this.renderFacetGroup(
@@ -684,7 +714,7 @@ class EntityExplorer {
     }
 
     if (filters.year && Object.values(filters.year).some(c => c > 0)) {
-      containerEl.appendChild(this.renderDateTree(filters.year));
+      containerEl.appendChild(this.renderDateTree(filters.year, filters.century || {}, filters.decade || {}));
     }
   }
 
@@ -753,18 +783,11 @@ class EntityExplorer {
         itemEl.classList.add('graph-focused');
         itemEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
-    } else {
-      // Entity not in current results — search for it to bring it into view
-      this.state.q = entityCode;
-      this.state.entity_type = [];
-      this.state.primary_function = [];
-      this.state.role = [];
-      this.activeRoles.clear();
-      this.state.dateFilter = null;
-      this.state.page = 1;
-      this.updateUrl();
-      this.search();
     }
+    // If the entity isn't in the current result list, we leave the right
+    // sidebar alone. The focal card shows it; the sidebar stays in browse
+    // mode so it's still useful as an entry point. The previous behaviour
+    // (auto-search by entity code) hijacked the sidebar to a single hit.
   }
 
   clearFocalCard() {
@@ -820,7 +843,7 @@ class EntityExplorer {
 
     // Facet: date drill-down tree
     if (filters.year && Object.values(filters.year).some(c => c > 0)) {
-      sidebar.appendChild(this.renderDateTree(filters.year));
+      sidebar.appendChild(this.renderDateTree(filters.year, filters.century || {}, filters.decade || {}));
     }
 
     // Mobile panel bottom close
@@ -937,7 +960,13 @@ class EntityExplorer {
     return group;
   }
 
-  renderDateTree(yearData) {
+  renderDateTree(yearData, centuryFacet, decadeFacet) {
+    // centuryFacet / decadeFacet: pagefind filter maps from dedicated
+    // entity-level century/decade tags. Each entity contributes once per
+    // century/decade it spans, so these counts represent unique entities.
+    // The year-level data is unchanged (single year per entity per year).
+    centuryFacet = centuryFacet || {};
+    decadeFacet = decadeFacet || {};
     const group = document.createElement('div');
     group.className = 'facet-group';
 
@@ -1029,7 +1058,9 @@ class EntityExplorer {
 
       const countSpan = document.createElement('span');
       countSpan.className = 'date-tree-count';
-      countSpan.textContent = `(${centuryData.total.toLocaleString('es-CO')})`;
+      const centuryEntityCount = centuryFacet[String(centuryNum)];
+      const centuryDisplay = (centuryEntityCount != null ? centuryEntityCount : centuryData.total);
+      countSpan.textContent = `(${Number(centuryDisplay).toLocaleString('es-CO')})`;
 
       row.appendChild(toggleBtn);
       row.appendChild(checkbox);
@@ -1055,6 +1086,8 @@ class EntityExplorer {
 
         let decadeTotal = 0;
         for (const c of yearsMap.values()) decadeTotal += c;
+        const decadeEntityCount = decadeFacet[String(decadeBase)];
+        if (decadeEntityCount != null) decadeTotal = decadeEntityCount;
 
         const isDecadeActive = df && df.level === 'decade' && df.label === decadeLabel;
         const autoExpandDecade = isDecadeActive || (df && df.level === 'year');

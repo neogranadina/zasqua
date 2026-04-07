@@ -17,37 +17,55 @@ permalink: /entidades/
   </div>
 </nav>
 
-{# Viewport-filling app layout (D-01, D-05, D-06) #}
-<div class="explorer-app" data-pagefind-ignore>
+<div class="container explorer-page" data-pagefind-ignore>
 
-  {# Sidebar: filter section + entity index (D-02, D-03) #}
-  <div class="explorer-sidebar">
+  {# Page header #}
+  <header class="explorer-page-header">
+    <h1 class="explorer-page-title">Explorar entidades</h1>
+    <p class="explorer-page-intro">
+      Explora las <strong id="entity-count-live">92.042</strong> entidades vinculadas a las descripciones de Zasqua.
+      Busca por nombre, filtra por tipo, fecha o rol.
+    </p>
+  </header>
 
-    {# Filter section at top of sidebar (D-07) #}
-    <div class="explorer-sidebar-filters">
-      <h2 class="explorer-sidebar-heading">Explorar entidades</h2>
-      {# Role filter pills — filled by JS (Plan 02) #}
-      <div id="role-filters" class="entity-role-filters"></div>
-      {# Facets (entity type, function, date) — filled by JS (Plan 03) #}
+  {# Network graph panel — full width, 450px tall #}
+  <section class="explorer-graph-panel entity-graph-frame">
+    <div id="graph-container" style="width:100%;height:100%"></div>
+    <div id="graph-legend" class="graph-legend"></div>
+    <div id="graph-tooltip" class="graph-tooltip" style="display:none"></div>
+  </section>
+
+  {# Three-column grid: filters | results | selected entity #}
+  <div class="explorer-grid">
+
+    {# Left column — filters #}
+    <aside class="explorer-filters-col">
+      {# Search input — filled by JS #}
+      <div id="entity-search-input" class="explorer-filter-search"></div>
+
+      {# Facets (entity type, date) — filled by JS #}
       <div id="sidebar-facets"></div>
-    </div>
+    </aside>
 
-    {# Entity index fills the rest of the sidebar (D-11) #}
-    <div class="explorer-sidebar-index">
-      {# Focal entity card — shown when an entity is focused in the graph (D-13) #}
-      <div id="focal-entity-card"></div>
-      {# Entity search + results — Pagefind-powered via entity-explorer.js (D-11) #}
+    {# Middle column — results #}
+    <div class="explorer-results-col">
+      {# Role filter pills — populated by JS once the entity index has the
+         role dimension. Roles are aggregated at build time in
+         src/_data/entities.js from data/entity_links.json. #}
+      <div id="role-filters" class="entity-role-filters"></div>
+
+      {# Search results, active filter pills, sort, pagination #}
       <div id="entity-explorer"
            data-entity-types='{{ ui.entity.types | dump | safe }}'></div>
     </div>
 
-  </div>
+    {# Right column — selected entity card (sticky) #}
+    <aside class="explorer-selected-col">
+      <div id="focal-entity-card" class="selected-entity-card">
+        <div class="selected-entity-stub">Selecciona una entidad para ver más detalles</div>
+      </div>
+    </aside>
 
-  {# Graph panel fills the remaining viewport width (D-01, D-47) #}
-  <div class="explorer-graph entity-graph-frame">
-    <div id="graph-container" style="width:100%;height:100%"></div>
-    <div id="graph-legend" class="graph-legend"></div>
-    <div id="graph-tooltip" class="graph-tooltip" style="display:none"></div>
   </div>
 
 </div>
@@ -83,6 +101,15 @@ permalink: /entidades/
       // Initialise both — graph first (renders immediately), sidebar async (Pagefind WASM)
       graph.init();
       sidebar.init();
+
+      // After Pagefind init resolves, replace the live entity count placeholder
+      sidebar.onReady = function() {
+        var el = document.getElementById('entity-count-live');
+        if (el && typeof sidebar.getTotalEntityCount === 'function') {
+          var n = sidebar.getTotalEntityCount();
+          if (n > 0) el.textContent = n.toLocaleString('es-CO');
+        }
+      };
     })();
   </script>
 {% endblock %}
