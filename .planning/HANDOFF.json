@@ -1,34 +1,52 @@
 {
   "version": "1.0",
-  "timestamp": "2026-04-05T20:32:39.936Z",
-  "phase": "10",
-  "phase_name": "explorer-ux-redesign",
-  "phase_dir": ".planning/phases/10-explorer-ux-redesign",
+  "timestamp": "2026-04-07T17:11:30.665Z",
+  "phase": "10.1",
+  "phase_name": "infinite-bipartite-graph-explorer",
+  "phase_dir": ".planning/phases/10.1-infinite-bipartite-graph-explorer",
   "plan": 4,
   "task": 2,
   "total_tasks": 2,
   "status": "paused",
   "completed_tasks": [
-    {"id": 1, "name": "Remove Phase 9 graph dead code and CI references", "status": "done", "commit": "30cf68d"},
-    {"id": 2, "name": "Visual verification — graph rendering, tooltips, Pagefind build fixed", "status": "done", "commit": "3b83d5e"}
+    {"id": "10.1-01", "name": "Data pipeline alignment and layout shell", "status": "done", "commit": "9f3debe"},
+    {"id": "10.1-02", "name": "InfiniteBipartiteExplorer core engine", "status": "done", "commit": "e1d9cf3"},
+    {"id": "10.1-03", "name": "Sidebar integration and bidirectional sync", "status": "done", "commit": "0885341"},
+    {"id": "10.1-04 task 1", "name": "Build site and start local server", "status": "done", "progress": "Site built, http-server running on :8080 with -c-1 (no cache), all 3 Pagefind indices built"}
   ],
   "remaining_tasks": [
-    {"id": "NEW-1", "name": "Implement three-column layout (alt Figma design) with ego-subset graph in sticky right panel", "status": "not_started"},
-    {"id": "NEW-2", "name": "Implement expand/collapse toggle between compact right panel and full-width graph", "status": "not_started"},
-    {"id": "NEW-3", "name": "Implement infinite ego-network exploration — click node to refocus, graph drives results list and filter pills", "status": "not_started"},
-    {"id": "NEW-4", "name": "Full build + E2E verification with Pagefind entity index", "status": "not_started"}
+    {"id": "10.1-04 task 2", "name": "Human verification of all 7 success criteria", "status": "blocked", "blocker": "browser hangs/crashes on /entidades/ despite server returning <200ms — requires fresh-context debugging session"}
   ],
-  "blockers": [],
-  "human_actions_pending": [],
+  "blockers": [
+    {
+      "description": "User reports the entidades page hangs/crashes the browser even on fresh sessions, despite server logs and HAR confirming fast responses (DOMContentLoaded 139ms, full load 186ms, no 5.7MB sync fetch)",
+      "type": "technical",
+      "workaround": "None — needs fresh debugging session with DevTools Performance/Memory profiling. Try disabling graph init first to isolate whether the issue is in infinite-bipartite-explorer.js or entity-explorer.js."
+    }
+  ],
+  "human_actions_pending": [
+    {
+      "action": "Debug browser hang on /entidades/ in fresh Claude Code session",
+      "context": "Current session has accumulated test state (background WASM queries) that may be misleading diagnostics. Fresh context recommended.",
+      "blocking": true
+    }
+  ],
   "decisions": [
-    {"decision": "Graph panel: percentile-based coordinate normalisation in precompute script", "rationale": "ForceAtlas2 outliers stretched bounding box, 97% of nodes clustered in one quadrant", "phase": "10"},
-    {"decision": "nodeCanvasObject rendering with hover highlighting and click tooltips", "rationale": "Match entity detail page UX — labels on zoom/hover, positioned tooltip on click", "phase": "10"},
-    {"decision": "Tooltip appended to .graph-panel container (not .graph-canvas) to avoid overflow:hidden clipping", "rationale": "graph-canvas has overflow:hidden which clips absolutely-positioned tooltips", "phase": "10"},
-    {"decision": "npm build scripts produce all three Pagefind indices (descriptions, entities, places)", "rationale": "Previously only CI built separate indices; local builds produced a single default index", "phase": "10"},
-    {"decision": "MAJOR UX PIVOT — switch from full-width graph above results to three-column layout per Figma alt design", "rationale": "100 nodes with 1428 edges is a hairball. Alt design: filters|results|graph as sticky right panel showing ego-subset of ~15-25 nodes focused on one entity. Enables infinite exploration.", "phase": "10"},
-    {"decision": "Graph and results list become interconnected — graph drives results, filter pills reflect graph state, Pagefind search works alongside", "rationale": "User wants the explorer graph to be an open-ended discovery tool unlike the entity detail page graph which is a dead end", "phase": "10"}
+    {"decision": "Replaced upfront 5.7MB desc-entity-lookup.json fetch with lazy Pagefind-based expandability checks", "rationale": "Initial sync load was the primary slowness culprit. Pattern matches entity.js which already uses lazy Pagefind lookup.", "phase": "10.1"},
+    {"decision": "All graph node radii and font sizes converted to screen-space (divided by globalScale)", "rationale": "force-graph pre-applies the zoom transform to ctx; world-coord sizes get scaled, making 12px circles render at 100+px when zoom is high.", "phase": "10.1"},
+    {"decision": "Added nodePointerAreaPaint with matching screen-space hit areas", "rationale": "Without it, force-graph default hit detection uses world coords and misses the tiny screen-space circles, breaking clicks.", "phase": "10.1"},
+    {"decision": "Tooltip restructured to match entity.js pattern (title as anchor link, action button in graph-tooltip-actions wrapper, appended async after expandability resolves)", "rationale": "Original concatenated DesplegarVer descripción was a CSS layout failure; entity.js pattern is the canonical Zasqua tooltip style.", "phase": "10.1"},
+    {"decision": "Added compactMode flag to EntityExplorer that suppresses inline facet column when sidebar-facets exists", "rationale": "Wave 3 extracted facets to top sidebar but EntityExplorer.render() still built its own facet column, causing duplicate facets.", "phase": "10.1"},
+    {"decision": "Replaced graphInstance.refresh() (does not exist on standalone force-graph) with _redraw() helper that re-applies graphData", "rationale": "TypeError was breaking handleHover, applyFilters, clearFilters, loadMoreDocs.", "phase": "10.1"},
+    {"decision": "Fixed rebuildAdjacency this-scope bug — was using function(l){this.nodeNeighbours} where this was undefined", "rationale": "Critical: silent throw after every addNodesToGraph call broke adjacency entirely, which broke hover dimming, filter application, expansion, and pruning. This was the root cause of multiple visible symptoms (flashing nodes, disappearing entities).", "phase": "10.1"}
   ],
-  "uncommitted_files": [],
-  "next_action": "Restructure entidades.njk template from full-width-graph-above-results to three-column layout (sidebar filters | results | sticky graph panel). Then rewrite CuratedEntityGraph to show ego-subset (~15-25 nodes around one focal entity) instead of all 100 nodes, with click-to-refocus and results list sync.",
-  "context_notes": "Plan 10-04 tasks are effectively complete (graph rendering and verification fixed in 3b83d5e). The NEW tasks represent a UX pivot based on the Figma EntityExplorerAltPage design (file LBeOKVLOkLXsJRe6zYdLyt, read via get_design_context + ReadMcpResourceTool). The user wants: (a) default = alt layout with graph as 400px sticky right panel showing ego-network of one entity, (b) option to expand to full-width view, (c) infinite exploration where clicking nodes refocuses the graph and updates results/filters — the key difference from entity detail page graphs which are dead ends. The curated graph JSON (100 nodes, 1428 edges) stays as the data source — filtered client-side to show ego-subsets. The graph-tooltip CSS was restored in main.css (had been stripped with a comment saying curated graph uses nodeLabel). Pagefind entity and place indices both 404 on live site — next deploy will fix (CI workflow already has three-index build)."
+  "uncommitted_files": [
+    "src/css/input.css",
+    "src/css/main.css",
+    "src/js/entity-explorer.js",
+    "src/js/infinite-bipartite-explorer.js",
+    ".planning/ROADMAP.md"
+  ],
+  "next_action": "In fresh session: open /entidades/ in browser with DevTools Performance tab recording. If page hangs/crashes, take a heap snapshot. Then comment out graph.init() in src/explorar/entidades.njk to isolate whether the issue is in the graph engine or the entity explorer. The HAR file at /Users/juancobo/Downloads/localhost.har confirms server responses are <200ms, so the issue is client-side.",
+  "context_notes": "Phase 10.1 implements an infinite bipartite graph explorer replacing the curated 100-node graph. Plans 01-03 are committed on main. Plan 04 is human verification checkpoint. Multiple critical bugs found and fixed during verification: (1) refresh() does not exist on standalone force-graph, (2) rebuildAdjacency had a this-scope bug, (3) all node sizes were in world coords instead of screen coords, (4) tooltip rendered concatenated buttons, (5) facets duplicated, (6) 5.7MB sync fetch at init. All fixes deployed to _site/js but NOT yet committed. Server is fast (HAR confirms). User reports browser still crashes — needs fresh-context debugging. Critical background warning: any full-92k-entity Pagefind sort (e.g. pagefind.search(null, {sort: ...})) takes 24+ seconds and hangs the WASM thread for that duration."
 }
