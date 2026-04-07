@@ -244,8 +244,10 @@
       ctx.fillStyle = color;
       ctx.fill();
 
-      // Label (D-30)
-      var showLabel = s > 1.2 || node === this.hoveredNode;
+      // Label (D-30) — only when zoomed in. The hover tooltip handles the
+      // name on hover, so we no longer draw a canvas label for the hovered
+      // node (it produced a duplicate label below the dark tooltip).
+      var showLabel = s > 1.2;
       if (showLabel && node.label) {
         var fontSize = 11 / s;
         ctx.font = fontSize + 'px DM Sans, sans-serif';
@@ -277,15 +279,7 @@
         ctx.stroke();
       }
 
-      // Label on hover only — actual tooltip is shown via showDocumentTooltip
-      if (node === this.hoveredNode && node.title) {
-        var titleText = node.title.length > 30 ? node.title.slice(0, 30) + '…' : node.title;
-        ctx.font = (10 / s) + 'px DM Sans, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillStyle = '#555';
-        ctx.fillText(titleText, node.x, node.y + (6 / s));
-      }
+      // Document title shown via the dark hover tooltip — no canvas label.
 
     } else if (node.type === 'overflow') {
       // Dashed border circle with count label (D-35) — screen px
@@ -773,6 +767,40 @@
       return n.type === 'document' && n.expandable === undefined;
     });
     if (newDocNodes.length > 0) this._preCheckExpandable(newDocNodes);
+  };
+
+  // -----------------------------------------------------------------------
+  // Visible-viewport entity codes — used by the entity explorer's
+  // "filter to graph viewport" toggle. Returns the set of entity codes
+  // whose nodes currently render inside the canvas viewport rectangle.
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype.getVisibleEntityCodes = function () {
+    var codes = new Set();
+    if (!this.graphInstance) return codes;
+    var rect = this.container.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return codes;
+    var topLeft, bottomRight;
+    try {
+      topLeft = this.graphInstance.screen2GraphCoords(0, 0);
+      bottomRight = this.graphInstance.screen2GraphCoords(rect.width, rect.height);
+    } catch (e) {
+      return codes;
+    }
+    var minX = Math.min(topLeft.x, bottomRight.x);
+    var maxX = Math.max(topLeft.x, bottomRight.x);
+    var minY = Math.min(topLeft.y, bottomRight.y);
+    var maxY = Math.max(topLeft.y, bottomRight.y);
+
+    this.graphNodes.forEach(function (node, id) {
+      if (node.type !== 'entity') return;
+      if (node.x === undefined || node.y === undefined) return;
+      if (node._visible === false) return;
+      if (node.x >= minX && node.x <= maxX && node.y >= minY && node.y <= maxY) {
+        codes.add(id);
+      }
+    });
+    return codes;
   };
 
   // -----------------------------------------------------------------------
