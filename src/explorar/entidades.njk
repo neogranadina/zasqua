@@ -33,6 +33,14 @@ permalink: /entidades/
     <div id="graph-container" style="width:100%;height:100%"></div>
     <div id="graph-legend" class="graph-legend"></div>
     <div id="graph-tooltip" class="graph-tooltip" style="display:none"></div>
+    {# Filter-by-viewport toggle — sits bottom-right of the graph panel.
+       Mirrors the place explorer's "Filtrar por área del mapa" button. #}
+    <button type="button"
+            id="viewport-filter-toggle"
+            class="explorer-graph-action"
+            aria-pressed="false">
+      Filtrar por vista del grafo
+    </button>
   </section>
 
   {# Three-column grid: filters | results | selected entity #}
@@ -110,9 +118,44 @@ permalink: /entidades/
         graph.applyFilters(filters);
       };
 
+      // Wire viewport filter — sidebar reads visible entity codes (and full
+      // entity records for the fast viewport-only render path) from the
+      // graph via these callbacks when its viewportFilter state is on.
+      sidebar._visibleCodeSource = function() { return graph.getVisibleEntityCodes(); };
+      sidebar._visibleEntitiesSource = function() { return graph.getVisibleEntities(); };
+
+      // Toggle button on the bottom-right of the graph panel.
+      var viewportToggle = document.getElementById('viewport-filter-toggle');
+      var rerunDebounced = null;
+      if (viewportToggle) {
+        viewportToggle.addEventListener('click', function() {
+          sidebar.viewportFilter = !sidebar.viewportFilter;
+          viewportToggle.classList.toggle('is-active', sidebar.viewportFilter);
+          viewportToggle.setAttribute('aria-pressed', sidebar.viewportFilter ? 'true' : 'false');
+          viewportToggle.textContent = sidebar.viewportFilter
+            ? 'Filtrando por vista del grafo'
+            : 'Filtrar por vista del grafo';
+          sidebar.state.page = 1;
+          sidebar.search();
+        });
+      }
+
       // Initialise both — graph first (renders immediately), sidebar async (Pagefind WASM)
       graph.init();
       sidebar.init();
+
+      // After graph.initGraph() has run (synchronously inside init()),
+      // graphInstance exists. Wrap its onZoom so the viewport-filtered list
+      // re-runs whenever the user pans or zooms. Force-graph fires onZoom
+      // on every interaction step, so debounce the re-run.
+      if (graph.graphInstance && typeof graph.graphInstance.onZoom === 'function') {
+        graph.graphInstance.onZoom(function() {
+          graph.updateTooltipPosition && graph.updateTooltipPosition();
+          if (!sidebar.viewportFilter) return;
+          clearTimeout(rerunDebounced);
+          rerunDebounced = setTimeout(function() { sidebar.search(); }, 250);
+        });
+      }
 
       // After Pagefind init resolves, replace the live entity count placeholder
       sidebar.onReady = function() {

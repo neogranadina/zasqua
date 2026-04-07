@@ -2950,6 +2950,47 @@
     cursor: grabbing;
   }
 
+  /* Action button overlaid on the graph panel — currently used by the
+     "filter by graph viewport" toggle. Mirrors the place explorer's
+     map-area filter button styling. */
+  .explorer-graph-action {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    z-index: 6;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px solid var(--color-stone-300, #d6d3d1);
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--color-stone-700, #44403c);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .explorer-graph-action:hover {
+    background: var(--color-stone-50, #fafaf8);
+    border-color: var(--color-stone-400, #a8a29e);
+    color: var(--color-stone-900, #1c1917);
+  }
+
+  .explorer-graph-action.is-active {
+    background: var(--color-burgundy, #8b2942);
+    border-color: var(--color-burgundy, #8b2942);
+    color: #fff;
+  }
+
+  .explorer-graph-action.is-active:hover {
+    background: var(--color-burgundy-deep, #6b1f33);
+    border-color: var(--color-burgundy-deep, #6b1f33);
+    color: #fff;
+  }
+
   /* Override entity-graph-frame defaults when used in the explorer panel */
   .explorer-graph-panel.entity-graph-frame {
     margin-top: 0;

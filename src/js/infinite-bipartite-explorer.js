@@ -777,30 +777,63 @@
 
   InfiniteBipartiteExplorer.prototype.getVisibleEntityCodes = function () {
     var codes = new Set();
-    if (!this.graphInstance) return codes;
+    var bounds = this._getViewportBounds();
+    if (!bounds) return codes;
+    this.graphNodes.forEach(function (node, id) {
+      if (node.type !== 'entity') return;
+      if (node.x === undefined || node.y === undefined) return;
+      if (node._visible === false) return;
+      if (node.x >= bounds.minX && node.x <= bounds.maxX &&
+          node.y >= bounds.minY && node.y <= bounds.maxY) {
+        codes.add(id);
+      }
+    });
+    return codes;
+  };
+
+  // Returns full entity records for nodes currently inside the viewport,
+  // including label, type, and linked_count, so the explorer can render
+  // result cards without going through Pagefind.
+  InfiniteBipartiteExplorer.prototype.getVisibleEntities = function () {
+    var entities = [];
+    var bounds = this._getViewportBounds();
+    if (!bounds) return entities;
+    var self = this;
+    this.graphNodes.forEach(function (node, id) {
+      if (node.type !== 'entity') return;
+      if (node.x === undefined || node.y === undefined) return;
+      if (node._visible === false) return;
+      if (node.x >= bounds.minX && node.x <= bounds.maxX &&
+          node.y >= bounds.minY && node.y <= bounds.maxY) {
+        var meta = self.entityMeta.get(id) || {};
+        entities.push({
+          entity_code: id,
+          label: node.label || meta.label || id,
+          entity_type: node.entity_type || meta.entity_type || 'person',
+          linked_count: node.linked_count || meta.linked_count || 0
+        });
+      }
+    });
+    return entities;
+  };
+
+  InfiniteBipartiteExplorer.prototype._getViewportBounds = function () {
+    if (!this.graphInstance) return null;
     var rect = this.container.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return codes;
+    if (rect.width === 0 || rect.height === 0) return null;
     var topLeft, bottomRight;
     try {
       topLeft = this.graphInstance.screen2GraphCoords(0, 0);
       bottomRight = this.graphInstance.screen2GraphCoords(rect.width, rect.height);
     } catch (e) {
-      return codes;
+      return null;
     }
-    var minX = Math.min(topLeft.x, bottomRight.x);
-    var maxX = Math.max(topLeft.x, bottomRight.x);
-    var minY = Math.min(topLeft.y, bottomRight.y);
-    var maxY = Math.max(topLeft.y, bottomRight.y);
-
-    this.graphNodes.forEach(function (node, id) {
-      if (node.type !== 'entity') return;
-      if (node.x === undefined || node.y === undefined) return;
-      if (node._visible === false) return;
-      if (node.x >= minX && node.x <= maxX && node.y >= minY && node.y <= maxY) {
-        codes.add(id);
-      }
-    });
-    return codes;
+    return {
+      minX: Math.min(topLeft.x, bottomRight.x),
+      maxX: Math.max(topLeft.x, bottomRight.x),
+      minY: Math.min(topLeft.y, bottomRight.y),
+      maxY: Math.max(topLeft.y, bottomRight.y)
+    };
   };
 
   // -----------------------------------------------------------------------

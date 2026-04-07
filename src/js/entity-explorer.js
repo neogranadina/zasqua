@@ -78,12 +78,17 @@ class EntityExplorer {
 
     this.activeRoles = new Set(); // role filter state for pills
 
-    // Viewport filter — when true, post-filter results to entities whose
-    // graph nodes are currently inside the visible canvas viewport. The
-    // host wires getVisibleEntityCodes via setViewportCodeSource so the
-    // explorer doesn't need a direct reference to the graph instance.
+    // Viewport filter — when true, render the result list directly from
+    // the in-memory graph nodes whose data is currently visible in the
+    // canvas viewport. We bypass Pagefind because an unfiltered query on
+    // the 92k entity index would block the WASM thread for tens of
+    // seconds. The host wires _visibleEntitiesSource (and the
+    // lower-level _visibleCodeSource for post-filtering with other
+    // facets) so the explorer doesn't need a direct reference to the
+    // graph instance.
     this.viewportFilter = false;
     this._visibleCodeSource = null;
+    this._visibleEntitiesSource = null;
 
     // Callback hooks — set by wiring script in entidades.njk
     this.onEntitySelected = null;  // (entityCode) — fired when user clicks entity in results
@@ -261,21 +266,60 @@ class EntityExplorer {
       const [sortField, sortDir] = effectiveSort.split(':');
       const pfSort = { [sortField]: sortDir };
 
-      const search = await this.pagefind.search(this.state.q || null, {
-        filters: Object.keys(pfFilters).length ? pfFilters : undefined,
-        sort: pfSort
-      });
-
-      // Apply viewport filter if active — post-filter the search results
-      // by the set of entity codes currently visible in the graph viewport.
-      // Mirrors the place explorer's mapBound filter pattern.
-      let allResults = search.results;
-      if (this.viewportFilter && typeof this._visibleCodeSource === 'function') {
-        const visibleCodes = this._visibleCodeSource() || new Set();
-        allResults = search.results.filter(r => {
-          const m = (r.url || '').match(/\/entidad\/([^/]+)\//);
-          return m && visibleCodes.has(m[1]);
+      // Viewport-only fast path: when the user has no other filters active
+      // and the viewport toggle is on, render result cards directly from
+      // the in-memory graph node data instead of going through Pagefind. A
+      // null/null Pagefind search on the 92k entity index blocks the WASM
+      // thread for tens of seconds; the visible viewport is at most ~100
+      // entities, so we just synthesise hit objects from getVisibleEntities.
+      const viewportOnly = this.viewportFilter && Object.keys(pfFilters).length === 0 && !this.state.q;
+      let search;
+      let allResults;
+      if (viewportOnly) {
+        const visible = (typeof this._visibleEntitiesSource === 'function')
+          ? (this._visibleEntitiesSource() || [])
+          : [];
+        // Sort client-side per current sort selection (default count desc).
+        const sortKey = (this.state.sort || 'count:desc').split(':');
+        visible.sort((a, b) => {
+          if (sortKey[0] === 'name') {
+            return (a.label || '').localeCompare(b.label || '', 'es') * (sortKey[1] === 'desc' ? -1 : 1);
+          }
+          if (sortKey[0] === 'date') {
+            return ((a.date_earliest || '') < (b.date_earliest || '') ? -1 : 1) * (sortKey[1] === 'desc' ? -1 : 1);
+          }
+          // count:desc default
+          return (b.linked_count || 0) - (a.linked_count || 0);
         });
+        // Synthesise Pagefind-style hit objects so renderResultCard works.
+        allResults = visible.map(e => ({
+          url: `/entidad/${e.entity_code}/`,
+          data: () => Promise.resolve({
+            url: `/entidad/${e.entity_code}/`,
+            meta: {
+              title: e.label,
+              entity_type: e.entity_type,
+              linked_count: String(e.linked_count || 0),
+              date_earliest: e.date_earliest || '',
+              date_latest: e.date_latest || ''
+            }
+          })
+        }));
+        search = { results: allResults, filters: this.globalFilters };
+      } else {
+        search = await this.pagefind.search(this.state.q || null, {
+          filters: Object.keys(pfFilters).length ? pfFilters : undefined,
+          sort: pfSort
+        });
+        allResults = search.results;
+        // Combine viewport with other filters: post-filter by visible code set.
+        if (this.viewportFilter && typeof this._visibleCodeSource === 'function') {
+          const visibleCodes = this._visibleCodeSource() || new Set();
+          allResults = search.results.filter(r => {
+            const m = (r.url || '').match(/\/entidad\/([^/]+)\//);
+            return m && visibleCodes.has(m[1]);
+          });
+        }
       }
 
       const total = allResults.length;
