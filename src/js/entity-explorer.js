@@ -78,6 +78,13 @@ class EntityExplorer {
 
     this.activeRoles = new Set(); // role filter state for pills
 
+    // Viewport filter — when true, post-filter results to entities whose
+    // graph nodes are currently inside the visible canvas viewport. The
+    // host wires getVisibleEntityCodes via setViewportCodeSource so the
+    // explorer doesn't need a direct reference to the graph instance.
+    this.viewportFilter = false;
+    this._visibleCodeSource = null;
+
     // Callback hooks — set by wiring script in entidades.njk
     this.onEntitySelected = null;  // (entityCode) — fired when user clicks entity in results
     this.onFilterChanged = null;   // (filters) — fired when any filter/search changes
@@ -195,7 +202,8 @@ class EntityExplorer {
     const hasActiveFilters = this.state.entity_type.length > 0 ||
       this.state.primary_function.length > 0 ||
       this.state.role.length > 0 ||
-      this.state.dateFilter !== null;
+      this.state.dateFilter !== null ||
+      this.viewportFilter;
 
     const isPreSearch = !this.state.q && !hasActiveFilters && !this.state.sort;
 
@@ -258,10 +266,22 @@ class EntityExplorer {
         sort: pfSort
       });
 
-      const total = search.results.length;
+      // Apply viewport filter if active — post-filter the search results
+      // by the set of entity codes currently visible in the graph viewport.
+      // Mirrors the place explorer's mapBound filter pattern.
+      let allResults = search.results;
+      if (this.viewportFilter && typeof this._visibleCodeSource === 'function') {
+        const visibleCodes = this._visibleCodeSource() || new Set();
+        allResults = search.results.filter(r => {
+          const m = (r.url || '').match(/\/entidad\/([^/]+)\//);
+          return m && visibleCodes.has(m[1]);
+        });
+      }
+
+      const total = allResults.length;
       const totalPages = Math.ceil(total / this.perPage);
       const start = (this.state.page - 1) * this.perPage;
-      const pageResults = search.results.slice(start, start + this.perPage);
+      const pageResults = allResults.slice(start, start + this.perPage);
       const hits = await Promise.all(pageResults.map(r => r.data()));
 
       const scopedFilters = search.filters || this.globalFilters;
@@ -500,7 +520,12 @@ class EntityExplorer {
     const entityType = hit.meta.entity_type || '';
     if (entityType) {
       const badge = document.createElement('span');
-      badge.className = 'entity-type-badge';
+      badge.className = 'entity-type-badge entity-type-badge--' + (
+        entityType === 'person' ? 'person'
+        : (entityType === 'corporate_body' || entityType === 'corporate') ? 'corporate'
+        : entityType === 'family' ? 'family'
+        : 'unknown'
+      );
       badge.textContent = this.entityTypeLabels[entityType] || entityType;
       row1.appendChild(badge);
     }
@@ -801,7 +826,12 @@ class EntityExplorer {
 
       if (typeLabel) {
         const badge = document.createElement('span');
-        badge.className = 'selected-entity-badge';
+        badge.className = 'selected-entity-badge selected-entity-badge--' + (
+          entityMeta.entity_type === 'person' ? 'person'
+          : (entityMeta.entity_type === 'corporate_body' || entityMeta.entity_type === 'corporate') ? 'corporate'
+          : entityMeta.entity_type === 'family' ? 'family'
+          : 'unknown'
+        );
         badge.textContent = typeLabel;
         cardEl.appendChild(badge);
       }

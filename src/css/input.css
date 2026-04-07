@@ -1205,16 +1205,24 @@
 
   .search-result-item .entity-type-badge {
     display: inline-block;
-    padding: 2px 8px;
-    background: var(--color-burgundy, #8b2942);
-    color: #fff;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
     font-family: var(--font-sans);
     font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.025em;
     line-height: 1.4;
+    color: #1c1917;
+  }
+  .search-result-item .entity-type-badge--person {
+    background: var(--color-burgundy-light, #b14d66);
+    color: #fff;
+  }
+  .search-result-item .entity-type-badge--corporate,
+  .search-result-item .entity-type-badge--family {
+    background: var(--color-periwinkle, #c9d5ff);
+    color: #030213;
   }
 
   .search-result-item .result-meta {
@@ -3051,8 +3059,6 @@
   .selected-entity-badge {
     display: inline-block;
     padding: 3px 10px;
-    background: var(--color-periwinkle, #c9d5ff);
-    color: #030213;
     border-radius: 999px;
     font-family: var(--font-sans);
     font-size: 0.6875rem;
@@ -3060,6 +3066,15 @@
     text-transform: uppercase;
     letter-spacing: 0.025em;
     line-height: 1.4;
+  }
+  .selected-entity-badge--person {
+    background: var(--color-burgundy-light, #b14d66);
+    color: #fff;
+  }
+  .selected-entity-badge--corporate,
+  .selected-entity-badge--family {
+    background: var(--color-periwinkle, #c9d5ff);
+    color: #030213;
   }
 
   .selected-entity-stat {
