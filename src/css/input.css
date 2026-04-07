@@ -2935,6 +2935,11 @@
 
   .explorer-graph-panel canvas {
     display: block;
+    cursor: grab;
+  }
+
+  .explorer-graph-panel canvas:active {
+    cursor: grabbing;
   }
 
   /* Override entity-graph-frame defaults when used in the explorer panel */

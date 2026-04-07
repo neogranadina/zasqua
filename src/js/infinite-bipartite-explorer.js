@@ -343,7 +343,7 @@
 
   InfiniteBipartiteExplorer.prototype.handleHover = function (node) {
     this.hoveredNode = node || null;
-    this.container.style.cursor = node ? 'pointer' : '';
+    this.container.style.cursor = node ? 'pointer' : 'grab';
     // Do NOT call _redraw() here. Re-applying graphData on every hover
     // perturbs the d3 force simulation, which makes nodes wiggle and the
     // tooltip drift out of position. The canvas redraws on every animation
