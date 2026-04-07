@@ -2831,6 +2831,25 @@
     @apply text-stone-500;
   }
 
+  /* When the legend lives inside the explorer graph panel, overlay it
+     bottom-left as a white card with a drop shadow (matching the
+     EntityExplorerRefinedPage Make spec). The default flow rendering above
+     is preserved for the entity-detail page graph. */
+  .explorer-graph-panel .graph-legend {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    z-index: 5;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 14px;
+    background: #fff;
+    border: 1px solid var(--color-stone-200, #e7e5e4);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    pointer-events: none;
+  }
+
   .graph-legend-item {
     display: inline-flex;
     align-items: center;
