@@ -2792,13 +2792,13 @@
      Entity Explorer page (scroll-page layout, Phase 10.1 redesign)
      ==================== */
 
-  /* Custom container — explicitly override Tailwind v4's .container utility */
-  .explorer-page.container {
+  /* Standalone container — does not use .container so Tailwind v4's
+     .container utility (which lives in @layer utilities and would otherwise
+     win the cascade against any component-layer rule) cannot clobber it. */
+  .explorer-page {
     max-width: var(--max-width);
-    padding-top: 32px;
-    padding-bottom: 64px;
-    padding-left: 15px;
-    padding-right: 15px;
+    margin: 0 auto;
+    padding: 32px 15px 64px;
   }
 
   .explorer-page-header {

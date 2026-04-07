@@ -105,9 +105,10 @@ class EntityExplorer {
     }
 
     // Render role pills, sidebar facets, and the search input into their
-    // dedicated containers in the left sidebar (D-07)
+    // dedicated containers (D-07)
     this.renderRoleFilters(document.getElementById('role-filters'));
     this.renderSidebarFacets(document.getElementById('sidebar-facets'));
+    if (typeof this.onReady === 'function') this.onReady();
     const searchInputContainer = document.getElementById('entity-search-input');
     if (searchInputContainer) {
       searchInputContainer.innerHTML = '';
