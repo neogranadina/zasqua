@@ -665,6 +665,67 @@
     });
     this.graphInstance.d3ReheatSimulation();
     this.rebuildAdjacency();
+
+    // Eagerly resolve which of the new document nodes have further entity
+    // links so they can render filled (expandable) vs hollow (leaf). This is
+    // the same trick entity.js uses on the entity-detail page graph: a
+    // sequential pass over Pagefind on the descriptions index. We only check
+    // the freshly-added doc nodes whose expandability is still unknown so
+    // each call is small and the WASM thread isn't held for long.
+    var newDocNodes = filteredNodes.filter(function (n) {
+      return n.type === 'document' && n.expandable === undefined;
+    });
+    if (newDocNodes.length > 0) this._preCheckExpandable(newDocNodes);
+  };
+
+  // -----------------------------------------------------------------------
+  // Eager expandability resolution (ported from entity.js preCheckExpandable)
+  // -----------------------------------------------------------------------
+
+  InfiniteBipartiteExplorer.prototype._preCheckExpandable = async function (docNodes) {
+    var self = this;
+    if (!this.pagefindDesc) {
+      try {
+        this.pagefindDesc = await import('/pagefind/pagefind.js');
+        await this.pagefindDesc.options({ basePath: '/pagefind/' });
+        await this.pagefindDesc.init();
+      } catch (e) {
+        // If Pagefind can't load, leave nodes as undefined → render hollow
+        return;
+      }
+    }
+
+    var dirty = false;
+    for (var i = 0; i < docNodes.length; i++) {
+      var node = docNodes[i];
+      // The user may have refocused while we were resolving — abandon
+      // expandability checks for nodes that have since been pruned.
+      if (!self.graphNodes.has(node.id)) continue;
+      try {
+        var search = await this.pagefindDesc.search(node.reference_code);
+        var resolved = false;
+        for (var si = 0; si < search.results.length; si++) {
+          var hit = await search.results[si].data();
+          if (hit.meta && hit.meta.reference_code === node.reference_code) {
+            var codes = (hit.filters && hit.filters.entidad) || [];
+            // Cache for the lazy hover lookup so we don't re-fetch
+            self.expandableCache.set(node.reference_code, codes);
+            // Expandable iff at least one linked entity is not yet in graph
+            node.expandable = false;
+            for (var j = 0; j < codes.length; j++) {
+              if (!self.graphNodes.has(codes[j])) { node.expandable = true; break; }
+            }
+            resolved = true;
+            dirty = true;
+            break;
+          }
+        }
+        if (!resolved) node.expandable = false;
+      } catch (e) {
+        node.expandable = false;
+      }
+    }
+    if (dirty) this._redraw();
   };
 
   // -----------------------------------------------------------------------
