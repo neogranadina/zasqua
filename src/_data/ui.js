@@ -121,6 +121,7 @@ module.exports = {
     types: {
       person: "Persona",
       corporate_body: "Entidad corporativa",
+      corporate: "Entidad corporativa",
       family: "Familia"
     },
     // Section headers (ISAAR CPF areas — D-27)
