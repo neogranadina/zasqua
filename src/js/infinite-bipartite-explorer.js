@@ -183,7 +183,16 @@
       .onZoom(this.updateTooltipPosition.bind(this))
       .onBackgroundClick(this.dismissTooltip.bind(this))
       .linkColor(function () { return 'rgba(160,152,136,0.3)'; })
-      .linkWidth(1);
+      .linkWidth(1)
+      // Hide a link if either of its endpoints is filtered out. Without
+      // this, filtering an entity leaves its incident edges as orphaned
+      // spokes radiating from invisible nodes.
+      .linkVisibility(function (link) {
+        var s = typeof link.source === 'object' ? link.source : self.graphNodes.get(link.source);
+        var t = typeof link.target === 'object' ? link.target : self.graphNodes.get(link.target);
+        if (!s || !t) return false;
+        return s._visible !== false && t._visible !== false;
+      });
 
     this.graphInstance.d3Force('charge').strength(-20);  // D-41
     this.graphInstance.d3Force('link').distance(20).strength(0.5);  // D-41
