@@ -39,7 +39,7 @@ permalink: /entidades/
             id="viewport-filter-toggle"
             class="explorer-graph-action"
             aria-pressed="false">
-      Filtrar por vista del grafo
+      Filtrar por vista del explorador
     </button>
   </section>
 
@@ -133,8 +133,8 @@ permalink: /entidades/
           viewportToggle.classList.toggle('is-active', sidebar.viewportFilter);
           viewportToggle.setAttribute('aria-pressed', sidebar.viewportFilter ? 'true' : 'false');
           viewportToggle.textContent = sidebar.viewportFilter
-            ? 'Filtrando por vista del grafo'
-            : 'Filtrar por vista del grafo';
+            ? 'Filtrando por vista del explorador'
+            : 'Filtrar por vista del explorador';
           sidebar.state.page = 1;
           sidebar.search();
         });

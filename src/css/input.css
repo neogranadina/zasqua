@@ -2980,15 +2980,15 @@
   }
 
   .explorer-graph-action.is-active {
-    background: var(--color-burgundy, #8b2942);
-    border-color: var(--color-burgundy, #8b2942);
-    color: #fff;
+    background: var(--color-periwinkle, #c9d5ff);
+    border-color: var(--color-periwinkle, #c9d5ff);
+    color: #030213;
   }
 
   .explorer-graph-action.is-active:hover {
-    background: var(--color-burgundy-deep, #6b1f33);
-    border-color: var(--color-burgundy-deep, #6b1f33);
-    color: #fff;
+    background: #b8c5ff;
+    border-color: #b8c5ff;
+    color: #030213;
   }
 
   /* Override entity-graph-frame defaults when used in the explorer panel */
