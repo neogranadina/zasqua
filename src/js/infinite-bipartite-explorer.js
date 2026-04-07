@@ -1300,6 +1300,13 @@
 
     this._redraw();
     if (this.graphInstance) this.graphInstance.d3ReheatSimulation();
+
+    // Notify observers whether the focal entity is currently included
+    // in the filtered set so the right-column card can shade itself.
+    if (typeof this.onFocalVisibilityChanged === 'function' && this.focalEntityCode) {
+      var focal = this.graphNodes.get(this.focalEntityCode);
+      this.onFocalVisibilityChanged(focal ? focal._visible !== false : true);
+    }
   };
 
   // -----------------------------------------------------------------------
@@ -1312,6 +1319,9 @@
     });
     this._redraw();
     if (this.graphInstance) this.graphInstance.d3ReheatSimulation();
+    if (typeof this.onFocalVisibilityChanged === 'function') {
+      this.onFocalVisibilityChanged(true);
+    }
   };
 
   // -----------------------------------------------------------------------

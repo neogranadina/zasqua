@@ -88,6 +88,18 @@ permalink: /entidades/
         graph.dismissTooltip && graph.dismissTooltip();
       };
 
+      // Graph -> Sidebar: shade the selected-entity card if the focal entity
+      // is currently filtered out by the active filter combination.
+      graph.onFocalVisibilityChanged = function(visible) {
+        var card = document.getElementById('focal-entity-card');
+        if (!card) return;
+        if (visible) {
+          card.classList.remove('is-excluded');
+        } else {
+          card.classList.add('is-excluded');
+        }
+      };
+
       // D-14: Sidebar -> Graph: when user clicks entity in sidebar, load in graph
       sidebar.onEntitySelected = function(entityCode) {
         graph.refocusOn(entityCode);
