@@ -49,11 +49,6 @@ permalink: /entidades/
 
     {# Middle column — results #}
     <div class="explorer-results-col">
-      {# Role filter pills — populated by JS once the entity index has the
-         role dimension. Roles are aggregated at build time in
-         src/_data/entities.js from data/entity_links.json. #}
-      <div id="role-filters" class="entity-role-filters"></div>
-
       {# Search results, active filter pills, sort, pagination #}
       <div id="entity-explorer"
            data-entity-types='{{ ui.entity.types | dump | safe }}'></div>

@@ -104,9 +104,8 @@ class EntityExplorer {
       return;
     }
 
-    // Render role pills, sidebar facets, and the search input into their
-    // dedicated containers (D-07)
-    this.renderRoleFilters(document.getElementById('role-filters'));
+    // Render sidebar facets (entity type, role, date) and the search input
+    // into their dedicated containers (D-07)
     this.renderSidebarFacets(document.getElementById('sidebar-facets'));
     if (typeof this.onReady === 'function') this.onReady();
     const searchInputContainer = document.getElementById('entity-search-input');
@@ -195,6 +194,7 @@ class EntityExplorer {
 
     const hasActiveFilters = this.state.entity_type.length > 0 ||
       this.state.primary_function.length > 0 ||
+      this.state.role.length > 0 ||
       this.state.dateFilter !== null;
 
     const isPreSearch = !this.state.q && !hasActiveFilters && !this.state.sort;
@@ -242,7 +242,7 @@ class EntityExplorer {
       if (this.state.dateFilter && this.state.dateFilter.years.length) {
         pfFilters.year = { any: this.state.dateFilter.years };
       }
-      if (this.state.role.length) pfFilters.role = this.state.role;
+      if (this.state.role.length) pfFilters.role = { any: this.state.role };
 
       // Build Pagefind sort. Apply the count:desc default only for real
       // searches — never on initial load (the pre-search guard above already
@@ -636,50 +636,81 @@ class EntityExplorer {
 
   // --- Role filter pills (D-07, D-09) ---
 
-  renderRoleFilters(containerEl) {
-    if (!containerEl || !this.globalFilters) return;
+  // Render the role facet as a checkbox group, styled like the other
+  // facet groups in the left filter sidebar. Multi-select: each click
+  // toggles a single role in this.activeRoles. Returns a DOM element
+  // suitable for appending into #sidebar-facets.
+  renderRoleFacet(roleData) {
+    const group = document.createElement('div');
+    group.className = 'facet-group';
 
-    const roleData = this.globalFilters.role || {};
-    const roles = Object.keys(roleData).filter(r => roleData[r] > 0);
-    if (roles.length === 0) return;
+    const isOpen = this.facetGroupState.role !== false;
 
-    // Sort by count descending
-    roles.sort((a, b) => roleData[b] - roleData[a]);
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'facet-group-toggle';
+    toggle.innerHTML = `<span class="facet-group-title">Rol</span><span class="facet-group-indicator">${isOpen ? '\u2212' : '+'}</span>`;
+    toggle.addEventListener('click', () => {
+      this.facetGroupState.role = !this.facetGroupState.role;
+      const content = group.querySelector('.facet-group-content');
+      const indicator = toggle.querySelector('.facet-group-indicator');
+      if (content) {
+        content.style.display = this.facetGroupState.role ? '' : 'none';
+        indicator.textContent = this.facetGroupState.role ? '\u2212' : '+';
+      }
+    });
+    group.appendChild(toggle);
 
-    containerEl.innerHTML = '';
+    const content = document.createElement('div');
+    content.className = 'facet-group-content';
+    content.style.display = isOpen ? '' : 'none';
+
+    const roles = Object.keys(roleData)
+      .filter(r => roleData[r] > 0)
+      .sort((a, b) => {
+        const aActive = this.activeRoles.has(a) ? 1 : 0;
+        const bActive = this.activeRoles.has(b) ? 1 : 0;
+        if (aActive !== bActive) return bActive - aActive;
+        return roleData[b] - roleData[a];
+      });
+
     for (const role of roles) {
       const count = roleData[role];
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'entity-role-btn';
-      btn.dataset.role = role;
-      if (this.activeRoles.has(role)) btn.classList.add('active');
+      const label = document.createElement('label');
+      label.className = 'facet-option';
 
-      const labelSpan = document.createElement('span');
-      labelSpan.textContent = roleLabels[role] || role;
-      btn.appendChild(labelSpan);
-
-      const countSpan = document.createElement('span');
-      countSpan.className = 'entity-role-count';
-      countSpan.textContent = ` (${count})`;
-      btn.appendChild(countSpan);
-
-      btn.addEventListener('click', () => {
-        if (this.activeRoles.has(role)) {
-          this.activeRoles.delete(role);
-          btn.classList.remove('active');
-        } else {
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = role;
+      checkbox.checked = this.activeRoles.has(role);
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
           this.activeRoles.add(role);
-          btn.classList.add('active');
+        } else {
+          this.activeRoles.delete(role);
         }
         this.state.role = Array.from(this.activeRoles);
         this.state.page = 1;
         this.updateUrl();
         this.search();
       });
+      label.appendChild(checkbox);
 
-      containerEl.appendChild(btn);
+      const text = document.createElement('span');
+      text.className = 'facet-label-text';
+      text.textContent = roleLabels[role] || role;
+      label.appendChild(text);
+
+      const countSpan = document.createElement('span');
+      countSpan.className = 'facet-count';
+      countSpan.textContent = `(${Number(count).toLocaleString('es-CO')})`;
+      label.appendChild(countSpan);
+
+      content.appendChild(label);
     }
+
+    group.appendChild(content);
+    return group;
   }
 
   // --- Sidebar facets (entity type, function, date) — D-08 ---
@@ -712,6 +743,10 @@ class EntityExplorer {
         this.state.primary_function,
         (value) => value
       ));
+    }
+
+    if (filters.role && Object.values(filters.role).some(c => c > 0)) {
+      containerEl.appendChild(this.renderRoleFacet(filters.role));
     }
 
     if (filters.year && Object.values(filters.year).some(c => c > 0)) {
@@ -1201,6 +1236,7 @@ class EntityExplorer {
     const hasFilters = this.state.q ||
       this.state.entity_type.length > 0 ||
       this.state.primary_function.length > 0 ||
+      this.state.role.length > 0 ||
       this.state.dateFilter !== null;
 
     if (!hasFilters) return null;
@@ -1234,6 +1270,20 @@ class EntityExplorer {
       container.appendChild(this.createPill(
         f,
         () => this.handlePillRemove('primary_function', f)
+      ));
+    }
+
+    // Role pills (multi-select — also update activeRoles set)
+    for (const r of this.state.role) {
+      container.appendChild(this.createPill(
+        roleLabels[r] || r,
+        () => {
+          this.activeRoles.delete(r);
+          this.state.role = this.state.role.filter(v => v !== r);
+          this.state.page = 1;
+          this.updateUrl();
+          this.search();
+        }
       ));
     }
 
@@ -1441,6 +1491,8 @@ class EntityExplorer {
     this.state.q = '';
     this.state.entity_type = [];
     this.state.primary_function = [];
+    this.state.role = [];
+    this.activeRoles.clear();
     this.state.dateFilter = null;
     this.state.page = 1;
     this.updateUrl();
