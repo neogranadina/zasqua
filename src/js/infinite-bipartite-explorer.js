@@ -344,7 +344,11 @@
   InfiniteBipartiteExplorer.prototype.handleHover = function (node) {
     this.hoveredNode = node || null;
     this.container.style.cursor = node ? 'pointer' : '';
-    this._redraw();
+    // Do NOT call _redraw() here. Re-applying graphData on every hover
+    // perturbs the d3 force simulation, which makes nodes wiggle and the
+    // tooltip drift out of position. The canvas redraws on every animation
+    // frame anyway because the simulation runs continuously, so drawNode
+    // will pick up the new this.hoveredNode value on the next frame.
 
     // Show a hover tooltip in addition to the dimming. The click tooltip
     // (selectedNode) takes priority — never overwrite it from a hover.
@@ -357,6 +361,8 @@
       this.showEntityHoverTooltip(node);
     } else if (node.type === 'document') {
       this.showDocumentHoverTooltip(node);
+    } else if (node.type === 'overflow') {
+      this.showOverflowHoverTooltip(node);
     } else {
       this.dismissHoverTooltip();
     }
@@ -408,6 +414,20 @@
     }
     html += '<div class="graph-tooltip-name">' + escapeHtml(node.title || node.reference_code) + '</div>';
     html += '<div class="graph-tooltip-ref">' + escapeHtml(node.reference_code) + '</div>';
+
+    tooltip.innerHTML = html;
+    tooltip.classList.add('is-hover');
+    this.positionTooltip(node);
+    tooltip.style.display = 'block';
+  };
+
+  InfiniteBipartiteExplorer.prototype.showOverflowHoverTooltip = function (node) {
+    var tooltip = this.tooltipEl;
+    if (!tooltip) return;
+
+    var html = '';
+    html += '<div class="graph-tooltip-name">' + (node.hiddenCount || 0) + ' documentos m\u00e1s</div>';
+    html += '<div class="graph-tooltip-meta">Haz clic para cargar el siguiente lote</div>';
 
     tooltip.innerHTML = html;
     tooltip.classList.add('is-hover');
