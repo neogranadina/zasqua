@@ -87,8 +87,13 @@ permalink: /entidades/
       var sidebar = new EntityExplorer(sidebarContainer);
 
       // D-13: Graph -> Sidebar: when graph refocuses on entity, update sidebar
-      graph.onEntityFocused = function(entityCode, entityMeta) {
-        sidebar.highlightEntity(entityCode, entityMeta);
+      graph.onEntityFocused = function(entityCode, entityMeta, shard) {
+        sidebar.highlightEntity(entityCode, entityMeta, shard);
+      };
+
+      // Focal-card role filter -> graph: filter docs hanging off focal entity
+      sidebar.onFocalRoleFilterChanged = function(rolesSet) {
+        graph.setFocalRoleFilter(rolesSet);
       };
 
       // X on the selected-entity card → tell the graph to drop its selection

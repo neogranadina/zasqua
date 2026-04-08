@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
 status: Executing Phase 10
-stopped_at: Phase 10.1 context gathered (discuss mode)
-last_updated: "2026-04-06T00:02:43.787Z"
+stopped_at: Phase 10.1 free-form shakedown — uncap, role-facet relocation, sim tuning
+last_updated: "2026-04-07T22:55:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 5
@@ -68,12 +68,27 @@ v0.5.0 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-06T00:02:43.783Z
-Stopped at: Phase 10.1 context gathered (discuss mode)
+Last session: 2026-04-07T22:55:00.000Z
+Stopped at: Mid free-form shakedown of /entidades/. Three changes shipped today
+beyond the previous redesign:
+
+1. **Focal entity uncapped** — `loadEntity`/`refocusOn` no longer slice docs
+   to `MAX_INITIAL_DOCS=30`. Focal entity now renders all linked docs (matches
+   entity detail page). Overflow node code is dormant but kept.
+2. **Role facet relocated** to the selected entity card under "documentos
+   vinculados" — scoped to the focal entity's shard, organised by the
+   Phase 12.1/13 7-group taxonomy (Producción y menciones, Correspondencia,
+   Atestación notarial, Procesos judiciales, Familia y sucesión,
+   Transacciones, Materiales visuales). Empty groups hidden. Sidebar role
+   facet, `?rol=` URL param, and Pagefind role filter all removed.
+3. **Force simulation tuned** for expanded clusters — entity nodes get
+   `charge=-120` (docs stay at -20), and link distance is 20 only for
+   focal-entity edges, 45 elsewhere. Stops bunched expanded clusters
+   without inflating the focal ring.
 
 ### To resume
 
 1. `/clear` and start fresh context
 2. `/gsd-resume-work`
 
-Resume file: .planning/phases/10.1-infinite-bipartite-graph-explorer/10.1-CONTEXT.md
+User has another small request to handle next.

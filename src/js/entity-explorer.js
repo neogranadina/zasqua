@@ -52,6 +52,57 @@ var entityColors = {
   family: '#6666BB'
 };
 
+// Documentary-role taxonomy (Phase 12.1 / 13).
+// Spanish primary, English secondary. Members are the canonical lowercase
+// enum values stored in DescriptionEntity.role. Some values (fiador,
+// apoderado, editor, photographer, artist) are not in the live data yet —
+// they will land with Phase 13's import. Groups with zero hits in the
+// focal entity's shard are hidden in the UI.
+var roleGroups = [
+  {
+    id: 'production',
+    label_es: 'Producción y menciones',
+    label_en: 'Production & mentions',
+    members: ['creator', 'author', 'editor', 'publisher', 'mentioned', 'subject', 'official']
+  },
+  {
+    id: 'correspondence',
+    label_es: 'Correspondencia',
+    label_en: 'Correspondence',
+    members: ['sender', 'recipient']
+  },
+  {
+    id: 'notarial',
+    label_es: 'Atestación notarial',
+    label_en: 'Notarial attestation',
+    members: ['scribe', 'witness', 'notary']
+  },
+  {
+    id: 'legal',
+    label_es: 'Procesos judiciales',
+    label_en: 'Legal proceedings',
+    members: ['plaintiff', 'defendant', 'petitioner', 'judge', 'appellant', 'fiador', 'apoderado', 'victim']
+  },
+  {
+    id: 'family',
+    label_es: 'Familia y sucesión',
+    label_en: 'Family & inheritance',
+    members: ['heir', 'albacea', 'spouse']
+  },
+  {
+    id: 'transactions',
+    label_es: 'Transacciones',
+    label_en: 'Transactions',
+    members: ['grantor', 'donor', 'seller', 'buyer', 'mortgagor', 'mortgagee', 'creditor', 'debtor']
+  },
+  {
+    id: 'visual',
+    label_es: 'Materiales visuales',
+    label_en: 'Visual materials',
+    members: ['photographer', 'artist']
+  }
+];
+
 class EntityExplorer {
   constructor(container) {
     this.container = container;
@@ -72,11 +123,15 @@ class EntityExplorer {
       primary_function: [],
       dateFilter: null,  // { level: 'century'|'decade'|'year', label, years: string[] }
       sort: '',
-      page: 1,
-      role: []           // active role filters (array of role strings) — D-07, D-09
+      page: 1
     };
 
-    this.activeRoles = new Set(); // role filter state for pills
+    // Focal-card role filter — scoped to the currently selected entity's
+    // documents. Lives on the right-column card (not the left sidebar)
+    // because role is a per-document relationship, not an entity property.
+    // Reset whenever the focal entity changes.
+    this.focalRoleFilter = new Set();
+    this.focalShard = [];
 
     // Viewport filter — when true, render the result list directly from
     // the in-memory graph nodes whose data is currently visible in the
@@ -93,6 +148,7 @@ class EntityExplorer {
     // Callback hooks — set by wiring script in entidades.njk
     this.onEntitySelected = null;  // (entityCode) — fired when user clicks entity in results
     this.onFilterChanged = null;   // (filters) — fired when any filter/search changes
+    this.onFocalRoleFilterChanged = null;  // (Set<role>) — focal-card role filter changed
 
     this.facetGroupState = { entity_type: true, primary_function: true, date: true };
     // Compact mode: when facets are rendered separately into #sidebar-facets,
@@ -143,9 +199,6 @@ class EntityExplorer {
     this.state.primary_function = params.getAll('funcion');
     this.state.sort = params.get('orden') || '';
     this.state.page = parseInt(params.get('pagina'), 10) || 1;
-    this.state.role = params.getAll('rol');
-    // Sync activeRoles Set with URL state
-    this.activeRoles = new Set(this.state.role);
 
     // Date drill-down: one active at a time
     this.state.dateFilter = null;
@@ -174,7 +227,6 @@ class EntityExplorer {
     if (this.state.q) params.set('q', this.state.q);
     for (const t of this.state.entity_type) params.append('tipo', t);
     for (const f of this.state.primary_function) params.append('funcion', f);
-    for (const r of this.state.role) params.append('rol', r);
     if (this.state.sort) params.set('orden', this.state.sort);
     if (this.state.page > 1) params.set('pagina', this.state.page);
 
@@ -206,7 +258,6 @@ class EntityExplorer {
 
     const hasActiveFilters = this.state.entity_type.length > 0 ||
       this.state.primary_function.length > 0 ||
-      this.state.role.length > 0 ||
       this.state.dateFilter !== null ||
       this.viewportFilter;
 
@@ -255,7 +306,6 @@ class EntityExplorer {
       if (this.state.dateFilter && this.state.dateFilter.years.length) {
         pfFilters.year = { any: this.state.dateFilter.years };
       }
-      if (this.state.role.length) pfFilters.role = { any: this.state.role };
 
       // Build Pagefind sort. Apply the count:desc default only for real
       // searches — never on initial load (the pre-search guard above already
@@ -347,7 +397,6 @@ class EntityExplorer {
       // D-08, D-09, D-15: fire filter callback so graph stays in sync
       if (this.onFilterChanged) {
         this.onFilterChanged({
-          roles: new Set(this.state.role),
           entityTypes: new Set(this.state.entity_type),
           functions: new Set(this.state.primary_function),
           searchQuery: this.state.q
@@ -703,83 +752,172 @@ class EntityExplorer {
     return info;
   }
 
-  // --- Role filter pills (D-07, D-09) ---
-
-  // Render the role facet as a checkbox group, styled like the other
-  // facet groups in the left filter sidebar. Multi-select: each click
-  // toggles a single role in this.activeRoles. Returns a DOM element
-  // suitable for appending into #sidebar-facets.
-  renderRoleFacet(roleData) {
-    const group = document.createElement('div');
-    group.className = 'facet-group';
-
-    const isOpen = this.facetGroupState.role !== false;
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'facet-group-toggle';
-    toggle.innerHTML = `<span class="facet-group-title">Rol</span><span class="facet-group-indicator">${isOpen ? '\u2212' : '+'}</span>`;
-    toggle.addEventListener('click', () => {
-      this.facetGroupState.role = !this.facetGroupState.role;
-      const content = group.querySelector('.facet-group-content');
-      const indicator = toggle.querySelector('.facet-group-indicator');
-      if (content) {
-        content.style.display = this.facetGroupState.role ? '' : 'none';
-        indicator.textContent = this.facetGroupState.role ? '\u2212' : '+';
-      }
-    });
-    group.appendChild(toggle);
-
-    const content = document.createElement('div');
-    content.className = 'facet-group-content';
-    content.style.display = isOpen ? '' : 'none';
-
-    const roles = Object.keys(roleData)
-      .filter(r => roleData[r] > 0)
-      .sort((a, b) => {
-        const aActive = this.activeRoles.has(a) ? 1 : 0;
-        const bActive = this.activeRoles.has(b) ? 1 : 0;
-        if (aActive !== bActive) return bActive - aActive;
-        return roleData[b] - roleData[a];
-      });
-
-    for (const role of roles) {
-      const count = roleData[role];
-      const label = document.createElement('label');
-      label.className = 'facet-option';
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.value = role;
-      checkbox.checked = this.activeRoles.has(role);
-      checkbox.addEventListener('change', () => {
-        if (checkbox.checked) {
-          this.activeRoles.add(role);
-        } else {
-          this.activeRoles.delete(role);
-        }
-        this.state.role = Array.from(this.activeRoles);
-        this.state.page = 1;
-        this.updateUrl();
-        this.search();
-      });
-      label.appendChild(checkbox);
-
-      const text = document.createElement('span');
-      text.className = 'facet-label-text';
-      text.textContent = roleLabels[role] || role;
-      label.appendChild(text);
-
-      const countSpan = document.createElement('span');
-      countSpan.className = 'facet-count';
-      countSpan.textContent = `(${Number(count).toLocaleString('es-CO')})`;
-      label.appendChild(countSpan);
-
-      content.appendChild(label);
+  // --- Focal-card role facet (Phase 12.1 / 13 taxonomy) ---
+  //
+  // Renders the 7-group documentary-role taxonomy scoped to the currently
+  // selected entity's shard. Groups (and their children) with zero hits
+  // in the focal entity's documents are hidden. Ticking a checkbox
+  // filters which docs hang off the focal entity in the graph — it does
+  // NOT filter the entity results list (role is per-document, not
+  // per-entity).
+  //
+  // The 7-group rollup is computed client-side from a flat list of
+  // canonical role values. When Phase 13 lands more roles (fiador,
+  // apoderado, etc.) they slot into the existing groups without
+  // restructuring the UI.
+  renderFocalRoleFacet(shard) {
+    // Count roles in the focal entity's shard
+    const counts = {};
+    for (const link of shard) {
+      const r = (link.role || '').toLowerCase();
+      if (!r) continue;
+      counts[r] = (counts[r] || 0) + 1;
     }
 
-    group.appendChild(content);
-    return group;
+    // Compute per-group totals and surviving members
+    const visibleGroups = [];
+    for (const group of roleGroups) {
+      const members = group.members
+        .map(role => ({ role, count: counts[role] || 0 }))
+        .filter(m => m.count > 0)
+        .sort((a, b) => b.count - a.count);
+      if (members.length === 0) continue;
+      const total = members.reduce((s, m) => s + m.count, 0);
+      visibleGroups.push({ ...group, members, total });
+    }
+
+    if (visibleGroups.length === 0) return null;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'focal-role-facet';
+
+    const header = document.createElement('div');
+    header.className = 'focal-role-facet-header';
+    const title = document.createElement('span');
+    title.className = 'focal-role-facet-title';
+    title.textContent = 'Filtrar por rol';
+    header.appendChild(title);
+
+    const clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'focal-role-facet-clear';
+    clearBtn.textContent = 'Limpiar';
+    clearBtn.style.display = this.focalRoleFilter.size > 0 ? '' : 'none';
+    clearBtn.addEventListener('click', () => {
+      this.focalRoleFilter = new Set();
+      this._notifyFocalRoleFilter();
+      // Re-render the facet so checkboxes reset
+      const stale = wrap.parentElement;
+      const fresh = this.renderFocalRoleFacet(this.focalShard);
+      if (stale && fresh) stale.replaceChild(fresh, wrap);
+    });
+    header.appendChild(clearBtn);
+    wrap.appendChild(header);
+
+    for (const group of visibleGroups) {
+      const groupEl = document.createElement('div');
+      groupEl.className = 'focal-role-group';
+
+      const groupHeader = document.createElement('div');
+      groupHeader.className = 'focal-role-group-header';
+
+      // Group-level checkbox: checked iff every visible member is active
+      const allChecked = group.members.every(m => this.focalRoleFilter.has(m.role));
+      const someChecked = group.members.some(m => this.focalRoleFilter.has(m.role));
+      const groupCheckbox = document.createElement('input');
+      groupCheckbox.type = 'checkbox';
+      groupCheckbox.className = 'focal-role-group-checkbox';
+      groupCheckbox.checked = allChecked;
+      groupCheckbox.indeterminate = someChecked && !allChecked;
+      groupCheckbox.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+      groupCheckbox.addEventListener('change', () => {
+        if (groupCheckbox.checked) {
+          group.members.forEach(m => this.focalRoleFilter.add(m.role));
+        } else {
+          group.members.forEach(m => this.focalRoleFilter.delete(m.role));
+        }
+        this._notifyFocalRoleFilter();
+        const stale = wrap.parentElement;
+        const fresh = this.renderFocalRoleFacet(this.focalShard);
+        if (stale && fresh) stale.replaceChild(fresh, wrap);
+      });
+      groupHeader.appendChild(groupCheckbox);
+
+      const groupLabel = document.createElement('span');
+      groupLabel.className = 'focal-role-group-label';
+      groupLabel.textContent = group.label_es;
+      groupHeader.appendChild(groupLabel);
+
+      const groupCount = document.createElement('span');
+      groupCount.className = 'focal-role-group-count';
+      groupCount.textContent = `(${group.total.toLocaleString('es-CO')})`;
+      groupHeader.appendChild(groupCount);
+
+      const chevron = document.createElement('span');
+      chevron.className = 'focal-role-group-chevron';
+      const expanded = someChecked; // expand if anything in this group is checked
+      chevron.textContent = expanded ? '\u2212' : '+';
+      groupHeader.appendChild(chevron);
+
+      groupHeader.addEventListener('click', () => {
+        const isExpanded = groupEl.classList.toggle('is-expanded');
+        chevron.textContent = isExpanded ? '\u2212' : '+';
+      });
+      if (expanded) groupEl.classList.add('is-expanded');
+
+      groupEl.appendChild(groupHeader);
+
+      const memberList = document.createElement('div');
+      memberList.className = 'focal-role-group-members';
+      for (const m of group.members) {
+        const optLabel = document.createElement('label');
+        optLabel.className = 'focal-role-option';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = m.role;
+        cb.checked = this.focalRoleFilter.has(m.role);
+        cb.addEventListener('change', () => {
+          if (cb.checked) {
+            this.focalRoleFilter.add(m.role);
+          } else {
+            this.focalRoleFilter.delete(m.role);
+          }
+          this._notifyFocalRoleFilter();
+          // Refresh group-level checkbox state and clear button visibility
+          const stale = wrap.parentElement;
+          const fresh = this.renderFocalRoleFacet(this.focalShard);
+          if (stale && fresh) stale.replaceChild(fresh, wrap);
+        });
+        optLabel.appendChild(cb);
+
+        const text = document.createElement('span');
+        text.className = 'focal-role-option-label';
+        text.textContent = roleLabels[m.role] || m.role;
+        optLabel.appendChild(text);
+
+        const cnt = document.createElement('span');
+        cnt.className = 'focal-role-option-count';
+        cnt.textContent = `(${m.count.toLocaleString('es-CO')})`;
+        optLabel.appendChild(cnt);
+
+        memberList.appendChild(optLabel);
+      }
+      groupEl.appendChild(memberList);
+
+      wrap.appendChild(groupEl);
+    }
+
+    return wrap;
+  }
+
+  // Notify the graph that the focal-card role filter changed.
+  _notifyFocalRoleFilter() {
+    if (typeof this.onFocalRoleFilterChanged === 'function') {
+      this.onFocalRoleFilterChanged(new Set(this.focalRoleFilter));
+    }
   }
 
   // --- Sidebar facets (entity type, function, date) — D-08 ---
@@ -814,10 +952,6 @@ class EntityExplorer {
       ));
     }
 
-    if (filters.role && Object.values(filters.role).some(c => c > 0)) {
-      containerEl.appendChild(this.renderRoleFacet(filters.role));
-    }
-
     if (filters.year && Object.values(filters.year).some(c => c > 0)) {
       containerEl.appendChild(this.renderDateTree(filters.year, filters.century || {}, filters.decade || {}));
     }
@@ -829,9 +963,16 @@ class EntityExplorer {
   // periwinkle type pill + big burgundy doc count + "Ver página completa"
   // link, with an X button that restores the stub state.
 
-  highlightEntity(entityCode, entityMeta) {
+  highlightEntity(entityCode, entityMeta, shard) {
     this._currentFocalCode = entityCode;
     this._currentFocalMeta = entityMeta || {};
+
+    // Reset focal-card role filter when focal entity changes
+    if (entityCode !== this._lastFocalForRoleFilter) {
+      this.focalRoleFilter = new Set();
+      this._lastFocalForRoleFilter = entityCode;
+    }
+    this.focalShard = Array.isArray(shard) ? shard : [];
 
     const cardEl = document.getElementById('focal-entity-card');
     if (cardEl) {
@@ -893,6 +1034,11 @@ class EntityExplorer {
       stat.appendChild(statNum);
       stat.appendChild(statLbl);
       cardEl.appendChild(stat);
+
+      // Documentary-role facet (scoped to this entity's docs).
+      // Hidden entirely if the shard has no roles to show.
+      const roleFacet = this.renderFocalRoleFacet(this.focalShard);
+      if (roleFacet) cardEl.appendChild(roleFacet);
 
       // Footer link
       const footer = document.createElement('div');
@@ -1338,7 +1484,6 @@ class EntityExplorer {
     const hasFilters = this.state.q ||
       this.state.entity_type.length > 0 ||
       this.state.primary_function.length > 0 ||
-      this.state.role.length > 0 ||
       this.state.dateFilter !== null;
 
     if (!hasFilters) return null;
@@ -1372,20 +1517,6 @@ class EntityExplorer {
       container.appendChild(this.createPill(
         f,
         () => this.handlePillRemove('primary_function', f)
-      ));
-    }
-
-    // Role pills (multi-select — also update activeRoles set)
-    for (const r of this.state.role) {
-      container.appendChild(this.createPill(
-        roleLabels[r] || r,
-        () => {
-          this.activeRoles.delete(r);
-          this.state.role = this.state.role.filter(v => v !== r);
-          this.state.page = 1;
-          this.updateUrl();
-          this.search();
-        }
       ));
     }
 
@@ -1593,8 +1724,6 @@ class EntityExplorer {
     this.state.q = '';
     this.state.entity_type = [];
     this.state.primary_function = [];
-    this.state.role = [];
-    this.activeRoles.clear();
     this.state.dateFilter = null;
     this.state.page = 1;
     this.updateUrl();

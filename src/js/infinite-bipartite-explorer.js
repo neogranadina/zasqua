@@ -75,6 +75,14 @@
     this.hoveredNode = null;
     this.selectedNode = null;
 
+    // Focal-card role filter — set of role strings restricting which focal
+    // docs are visible. Empty set = no filter. Composes with applyFilters'
+    // entity-type / search-query visibility flags. Reset on refocus.
+    this.focalRoleFilter = new Set();
+    // Last filter args from applyFilters, kept so setFocalRoleFilter can
+    // recompute visibility consistently with whatever the sidebar last sent.
+    this._lastSidebarFilters = null;
+
     // Callbacks (wired by Plan 04)
     this.onEntityFocused = null;
     this.onFiltersNeeded = null;
@@ -118,7 +126,11 @@
     // Fire focal callback so the sidebar/overlay shows the initial entity
     // immediately, not just after the user clicks something.
     if (this.onEntityFocused) {
-      this.onEntityFocused(startingEntity, this.entityMeta.get(startingEntity) || null);
+      this.onEntityFocused(
+        startingEntity,
+        this.entityMeta.get(startingEntity) || null,
+        this.shardCache.get(startingEntity) || []
+      );
     }
 
     // Force dimension update after layout settles. Force-graph reads container
@@ -194,8 +206,25 @@
         return s._visible !== false && t._visible !== false;
       });
 
-    this.graphInstance.d3Force('charge').strength(-20);  // D-41
-    this.graphInstance.d3Force('link').distance(20).strength(0.5);  // D-41
+    // Per-node charge: stronger repulsion for entity nodes (so expanded
+    // clusters of ~10–20 entities around a doc actually spread out) while
+    // keeping doc nodes weak so the focal entity's large doc ring stays
+    // compact (D-41).
+    this.graphInstance.d3Force('charge').strength(function (node) {
+      if (node.type === 'entity') return -120;
+      return -20;
+    });
+    var graphSelf = this;
+    this.graphInstance.d3Force('link').distance(function (link) {
+      // Short links from the focal entity to its docs (keeps the big
+      // focal ring compact, per D-41). Longer links elsewhere so
+      // expanded entity clusters around a doc get breathing room.
+      var sId = typeof link.source === 'object' ? link.source.id : link.source;
+      var tId = typeof link.target === 'object' ? link.target.id : link.target;
+      var focal = graphSelf.focalEntityCode;
+      if (focal && (sId === focal || tId === focal)) return 20;
+      return 45;
+    }).strength(0.5);
 
     // Resize observer — use getBoundingClientRect for sub-pixel accuracy
     new ResizeObserver(function () {
@@ -628,13 +657,12 @@
 
     var shard = this.shardCache.get(entityCode) || [];
 
-    // Sort by date descending, cap at MAX_INITIAL_DOCS
-    var sorted = shard.slice().sort(function (a, b) {
+    // Focal entity: render all linked documents (matches entity detail page)
+    var capped = shard.slice().sort(function (a, b) {
       var da = a.date_expression || '';
       var db = b.date_expression || '';
       return db.localeCompare(da);
     });
-    var capped = sorted.slice(0, MAX_INITIAL_DOCS);
 
     // Entity node metadata
     var meta = await this.fetchEntityMeta(entityCode);
@@ -666,21 +694,6 @@
     var newEdges = capped.map(function (entry) {
       return { source: entityCode, target: entry.reference_code, role: entry.role };
     });
-
-    // Overflow node (D-35)
-    if (shard.length > MAX_INITIAL_DOCS) {
-      var hiddenCount = shard.length - MAX_INITIAL_DOCS;
-      var overflowNode = {
-        id: '__overflow__' + entityCode,
-        type: 'overflow',
-        hiddenCount: hiddenCount,
-        nextBatchOffset: MAX_INITIAL_DOCS,
-        parentEntityCode: entityCode,
-        label: '+' + hiddenCount + ' documentos'
-      };
-      newNodes.push(overflowNode);
-      newEdges.push({ source: entityCode, target: overflowNode.id, role: '' });
-    }
 
     this.addNodesToGraph(newNodes, newEdges, entityCode);
   };
@@ -735,13 +748,19 @@
       return !existingEdgeKeys.has(key);
     });
 
-    // Position new nodes near anchor
+    // Position new nodes around the anchor on a ring whose radius scales
+    // with node count, with a small jitter so coincident positions don't
+    // deadlock the (deliberately weak, per D-41) charge force.
     var anchor = currentData.nodes.find(function (n) { return n.id === anchorId; });
     if (anchor && filteredNodes.length > 0) {
-      filteredNodes.forEach(function (n, i) {
-        var angle = (2 * Math.PI * i) / filteredNodes.length;
-        n.x = anchor.x + 30 * Math.cos(angle);
-        n.y = anchor.y + 30 * Math.sin(angle);
+      var n = filteredNodes.length;
+      // ~12px arc-length per neighbour, with floor and ceiling
+      var radius = Math.max(30, Math.min(260, (12 * n) / (2 * Math.PI) + 30));
+      filteredNodes.forEach(function (node, i) {
+        var angle = (2 * Math.PI * i) / n + (Math.random() - 0.5) * 0.2;
+        var r = radius + (Math.random() - 0.5) * 10;
+        node.x = anchor.x + r * Math.cos(angle);
+        node.y = anchor.y + r * Math.sin(angle);
       });
     }
 
@@ -1043,7 +1062,11 @@
     this.computeHopDistances();
 
     if (this.onEntityFocused) {
-      this.onEntityFocused(this.focalEntityCode, this.entityMeta.get(this.focalEntityCode) || null);
+      this.onEntityFocused(
+        this.focalEntityCode,
+        this.entityMeta.get(this.focalEntityCode) || null,
+        this.shardCache.get(this.focalEntityCode) || []
+      );
     }
   };
 
@@ -1073,12 +1096,12 @@
     }
 
     var shard = this.shardCache.get(entityCode) || [];
-    var sorted = shard.slice().sort(function (a, b) {
+    // Focal entity: render all linked documents (matches entity detail page)
+    var capped = shard.slice().sort(function (a, b) {
       var da = a.date_expression || '';
       var db = b.date_expression || '';
       return db.localeCompare(da);
     });
-    var capped = sorted.slice(0, MAX_INITIAL_DOCS);
 
     // Ensure entity node exists (may not if it was pruned as too distant)
     if (!this.graphNodes.has(entityCode)) {
@@ -1116,24 +1139,6 @@
       return { source: entityCode, target: entry.reference_code, role: entry.role };
     });
 
-    // Handle overflow (D-35)
-    if (shard.length > MAX_INITIAL_DOCS) {
-      var hiddenCount = shard.length - MAX_INITIAL_DOCS;
-      var overflowId = '__overflow__' + entityCode;
-      if (!this.graphNodes.has(overflowId)) {
-        var overflowNode = {
-          id: overflowId,
-          type: 'overflow',
-          hiddenCount: hiddenCount,
-          nextBatchOffset: MAX_INITIAL_DOCS,
-          parentEntityCode: entityCode,
-          label: '+' + hiddenCount + ' documentos'
-        };
-        docNodes.push(overflowNode);
-        docEdges.push({ source: entityCode, target: overflowId, role: '' });
-      }
-    }
-
     this.addNodesToGraph(docNodes, docEdges, entityCode);
     this.computeHopDistances();
 
@@ -1146,10 +1151,13 @@
       this.graphInstance.centerAt(node.x, node.y, 400);
     }
 
+    // Reset focal-card role filter on focal change
+    this.focalRoleFilter = new Set();
+
     // Fire callback for sidebar sync (D-13)
     if (this.onEntityFocused) {
       var entityMeta = this.entityMeta.get(entityCode) || { label: entityCode, entity_type: 'person', linked_count: shard.length };
-      this.onEntityFocused(entityCode, entityMeta);
+      this.onEntityFocused(entityCode, entityMeta, shard);
     }
   };
 
@@ -1295,16 +1303,32 @@
   // Filter application (D-10, D-15, D-17)
   // -----------------------------------------------------------------------
 
+  // Sidebar filters: entity-type / search-query (no longer roles — role
+  // is per-document and lives on the focal-card filter instead).
   InfiniteBipartiteExplorer.prototype.applyFilters = function (filters) {
-    // filters: {roles: Set, entityTypes: Set, functions: Set, searchQuery: string}
-    var hasRoles = filters.roles && filters.roles.size > 0;
+    this._lastSidebarFilters = filters || null;
+    this._recomputeVisibility();
+  };
+
+  // Focal-card filter: which roles (relative to the focal entity) should
+  // restrict visible focal docs. Empty set = no restriction.
+  InfiniteBipartiteExplorer.prototype.setFocalRoleFilter = function (rolesSet) {
+    this.focalRoleFilter = rolesSet instanceof Set ? rolesSet : new Set();
+    this._recomputeVisibility();
+  };
+
+  InfiniteBipartiteExplorer.prototype._recomputeVisibility = function () {
+    var filters = this._lastSidebarFilters || {};
     var hasTypes = filters.entityTypes && filters.entityTypes.size > 0;
     var hasQuery = filters.searchQuery && filters.searchQuery.trim().length > 0;
     var query = hasQuery ? filters.searchQuery.trim().toLowerCase() : '';
+    var focalRoles = this.focalRoleFilter || new Set();
+    var hasFocalRoles = focalRoles.size > 0;
+    var focalCode = this.focalEntityCode;
 
     var self = this;
 
-    // First pass: determine visibility of entity nodes
+    // First pass: entity nodes
     this.graphNodes.forEach(function (node) {
       if (node.type === 'overflow') {
         node._visible = true;
@@ -1313,12 +1337,10 @@
       if (node.type === 'entity') {
         var visible = true;
 
-        // Entity type filter
         if (hasTypes && !filters.entityTypes.has(node.entity_type)) {
           visible = false;
         }
 
-        // Search query filter
         if (visible && hasQuery) {
           var label = (node.label || '').toLowerCase();
           if (label.indexOf(query) === -1 && node.id.indexOf(query) === -1) {
@@ -1326,27 +1348,48 @@
           }
         }
 
-        // Role filter — entity is visible if it has at least one edge with a matching role
-        if (visible && hasRoles) {
-          var entityHasRole = false;
-          var data = self.graphInstance.graphData();
-          data.links.forEach(function (l) {
-            var s = typeof l.source === 'object' ? l.source.id : l.source;
-            var t = typeof l.target === 'object' ? l.target.id : l.target;
-            if ((s === node.id || t === node.id) && filters.roles.has(l.role)) {
-              entityHasRole = true;
-            }
-          });
-          if (!entityHasRole) visible = false;
-        }
-
         node._visible = visible;
       }
     });
 
-    // Second pass: document nodes — visible if any connected entity is visible
+    // Build a quick lookup for focal-edge roles per doc
+    // (only if focal-role filter active)
+    var focalDocRoles = null;
+    if (hasFocalRoles && focalCode && this.graphInstance) {
+      focalDocRoles = new Map(); // docId -> Set<role>
+      var data = this.graphInstance.graphData();
+      data.links.forEach(function (l) {
+        var s = typeof l.source === 'object' ? l.source.id : l.source;
+        var t = typeof l.target === 'object' ? l.target.id : l.target;
+        var docId = null;
+        if (s === focalCode) docId = t;
+        else if (t === focalCode) docId = s;
+        if (!docId) return;
+        var n = self.graphNodes.get(docId);
+        if (!n || n.type !== 'document') return;
+        if (!focalDocRoles.has(docId)) focalDocRoles.set(docId, new Set());
+        focalDocRoles.get(docId).add(l.role);
+      });
+    }
+
+    // Second pass: document nodes
     this.graphNodes.forEach(function (node) {
       if (node.type !== 'document') return;
+
+      // Focal-role filter: doc connected to focal must have at least one
+      // matching role on its focal edges. Docs not connected to focal are
+      // unaffected by this filter.
+      if (hasFocalRoles && focalDocRoles && focalDocRoles.has(node.id)) {
+        var roles = focalDocRoles.get(node.id);
+        var anyMatch = false;
+        roles.forEach(function (r) { if (focalRoles.has(r)) anyMatch = true; });
+        if (!anyMatch) {
+          node._visible = false;
+          return;
+        }
+      }
+
+      // Standard rule: doc visible if at least one connected entity is visible
       var neighbours = self.nodeNeighbours.get(node.id) || new Set();
       var anyVisible = false;
       neighbours.forEach(function (nid) {
