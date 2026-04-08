@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Executing Phase 10
-stopped_at: Phase 10.1 shakedown complete — layout, empty state, infinite trail, viewport filter
-last_updated: "2026-04-08T02:00:00.000Z"
+status: Phase 10.1 complete — ready for next phase
+stopped_at: Phase 10.1 closed; 10.1-04-SUMMARY written, all 4 plans done
+last_updated: "2026-04-08T02:30:00.000Z"
 progress:
   total_phases: 9
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 21
-  completed_plans: 19
-  percent: 90
+  completed_plans: 20
+  percent: 95
 ---
 
 # Project State
@@ -24,8 +24,8 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 
 ## Current Position
 
-Phase: 10 (explorer-ux-redesign) — EXECUTING
-Plan: 1 of 4
+Phase: 10.1 (infinite-bipartite-graph-explorer) — COMPLETE (all 4 plans)
+Next: Phase 10.2 (or whatever the roadmap has next after 10.1)
 
 ## Accumulated Context
 
@@ -68,53 +68,28 @@ v0.5.0 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-08T02:00:00.000Z
-Stopped at: /entidades/ shakedown wrapped up clean. Earlier in the session
-(committed in 279ee55): focal-entity uncap, role facet relocated to the
-selected card with the 7-group Phase 12.1/13 taxonomy, simulation tuned
-for expanded clusters. Since then:
-
-1. **Layout restructure** — graph + selected entity card now sit on the
-   top row of a 2-row grid; filters + entity index occupy row 2.
-   Card and graph share a 560px height; card scrolls internally.
-   Both share the 12px corner radius.
-2. **Browse-prompt parity with description search** — added the
-   `Tomará algunos segundos en cargar` warning paragraph; new
-   filter-overload mode triggers at >10k estimated results when only
-   facets are active (estimateFilterCount mirrors search.js).
-3. **Empty-state overlay on first load** — explainer text + faint
-   pomegranate emblem + four example entity buttons (Real Audiencia
-   de Quito, Cabildo de Rionegro, José Gabriel Túpac Amaru, Simón
-   Bolívar). Inline single-paragraph styling. Skipped when ?entidad=
-   URL param is present. Dismissed on first focal load.
-4. **Truly infinite trail** — `MAX_EXPAND_ENTITIES` removed (corpus
-   worst case is 210 entities on a single doc; 99% have ≤20).
-   `MAX_HOPS` raised to 50 as a soft long-session safety valve.
-   pruneDistantNodes now resets `expanded`/`expandable` flags on
-   docs that lose entities so they can be re-expanded later.
-5. **Critical bugfix**: pruneDistantNodes still referenced the
-   removed `MAX_HOPS` constant briefly, throwing a ReferenceError on
-   every refocus and silently breaking tooltip/hover state. Fixed
-   alongside the hop-cap restoration.
-6. **Viewport filter button** moved into the filter column above the
-   search bar with a vertical-arrows icon. Two bugs fixed: the
-   overload threshold no longer trips when only viewport mode is
-   active, and the sidebar facets now narrow to scoped counts
-   computed locally from visible entities (entity_type + year +
-   century + decade).
-7. **Entity tooltip on click** — non-focal entities now show a
-   tooltip with badge/name/id/count and a single
-   "Seleccionar y desplegar vínculos" link in `.graph-tooltip-actions`.
-   Click no longer immediately refocuses; mirrors the doc-click
-   "Desplegar" pattern.
-8. **Card facet label** changed to "Filtrar conexiones a documentos
-   por rol".
+Last session: 2026-04-08T02:30:00.000Z
+Stopped at: Phase 10.1 closed cleanly. 10.1-04-SUMMARY.md written (full
+shakedown narrative, decisions, original-criteria verification table,
+backend open items). Decision: the redesign and infinite-trail work
+stayed in scope of 10.1-04 — no 10.1-05 plan, no separate phase. Three
+of the original 7 success criteria were marked superseded (viewport-fill
+layout → scroll-page; auto-load → empty state; sidebar role facet →
+card-scoped role facet) per user-driven scope changes during the
+shakedown. The other four are met or exceeded.
 
 ### To resume
 
 1. `/clear` and start fresh context
 2. `/gsd-resume-work`
 
-Phase 10.1 ready for closure: write 10.1-04-SUMMARY.md, decide
-whether the redesign is in scope of 10.1 (10.1-05 plan) or its own
-phase, then formal phase verification.
+Next up: whatever the roadmap has after Phase 10.1 (likely Phase 11
+description linking, but that depends on zasqua-entities phases 10.1–10.2
+finishing first per the v0.5.0 decisions log).
+
+### Backend follow-ups (non-blocking, surfaced during Phase 10.1)
+
+- Normalise `corporate` vs `corporate_body` in entity export
+- Populate `Entity.primary_function` (currently null for all 92k) or drop the field
+- Phase 13 will replace flat creator/witness/mentioned with the 7-group taxonomy
+  the card facet is already built against
