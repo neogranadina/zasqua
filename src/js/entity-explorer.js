@@ -288,10 +288,39 @@ class EntityExplorer {
           total_pages: 0,
           query: '',
           browsePrompt: true,
+          browsePromptMode: 'landing',
           totalEntityCount: totalCount
         });
         return;
       }
+
+      // Filter-only with too many results: skip the slow Pagefind scan
+      // and show the same warning prompt as description-search.
+      // Viewport-only mode bypasses Pagefind entirely (synthesises hits
+      // from in-memory graph nodes), so the threshold doesn't apply there.
+      const onlyViewportActive = this.viewportFilter
+        && this.state.entity_type.length === 0
+        && this.state.primary_function.length === 0
+        && this.state.dateFilter === null;
+      if (!this.state.q && hasActiveFilters && !this.skipBrowsePrompt && !onlyViewportActive) {
+        const estimated = this.estimateFilterCount();
+        if (estimated > 10000) {
+          this.renderSearchResults({
+            hits: [],
+            filters: this.globalFilters,
+            total: estimated,
+            page: 1,
+            total_pages: 0,
+            query: '',
+            browsePrompt: true,
+            browsePromptMode: 'overload'
+          });
+          return;
+        }
+      }
+
+      // Reset the override so future filter changes re-evaluate the threshold
+      this.skipBrowsePrompt = false;
 
       // Resolve dateFilter years against actual index
       if (this.state.dateFilter && this.globalFilters && this.globalFilters.year) {
@@ -355,7 +384,40 @@ class EntityExplorer {
             }
           })
         }));
-        search = { results: allResults, filters: this.globalFilters };
+        // Compute scoped facet counts from the visible entities so the
+        // left sidebar facets narrow to reflect what's actually in the
+        // graph viewport (and empty facet groups disappear).
+        const scopedFacets = { entity_type: {}, primary_function: {}, year: {}, century: {}, decade: {} };
+        for (const e of visible) {
+          if (e.entity_type) {
+            scopedFacets.entity_type[e.entity_type] = (scopedFacets.entity_type[e.entity_type] || 0) + 1;
+          }
+          if (e.primary_function) {
+            scopedFacets.primary_function[e.primary_function] = (scopedFacets.primary_function[e.primary_function] || 0) + 1;
+          }
+          // Year coverage: contribute the entity once per year in its lifespan
+          const yEarly = parseInt(e.date_earliest, 10);
+          const yLate = parseInt(e.date_latest, 10);
+          if (!Number.isNaN(yEarly) && !Number.isNaN(yLate) && yEarly <= yLate && yLate - yEarly < 200) {
+            const seenCenturies = new Set();
+            const seenDecades = new Set();
+            for (let y = yEarly; y <= yLate; y++) {
+              const ys = String(y);
+              scopedFacets.year[ys] = (scopedFacets.year[ys] || 0) + 1;
+              const c = String(Math.floor((y - 1) / 100) + 1);
+              const d = String(Math.floor(y / 10) * 10);
+              if (!seenCenturies.has(c)) {
+                seenCenturies.add(c);
+                scopedFacets.century[c] = (scopedFacets.century[c] || 0) + 1;
+              }
+              if (!seenDecades.has(d)) {
+                seenDecades.add(d);
+                scopedFacets.decade[d] = (scopedFacets.decade[d] || 0) + 1;
+              }
+            }
+          }
+        }
+        search = { results: allResults, filters: scopedFacets };
       } else {
         search = await this.pagefind.search(this.state.q || null, {
           filters: Object.keys(pfFilters).length ? pfFilters : undefined,
@@ -417,6 +479,41 @@ class EntityExplorer {
     return 0;
   }
 
+  // Estimate the result-set size for a filter-only query by summing the
+  // global facet counts of each active filter and taking the smallest
+  // (intersection upper bound). Mirrors search.js#estimateFilterCount.
+  estimateFilterCount() {
+    if (!this.globalFilters) return 0;
+    const counts = [];
+
+    if (this.state.entity_type.length && this.globalFilters.entity_type) {
+      let sum = 0;
+      for (const v of this.state.entity_type) {
+        sum += this.globalFilters.entity_type[v] || 0;
+      }
+      counts.push(sum);
+    }
+
+    if (this.state.primary_function.length && this.globalFilters.primary_function) {
+      let sum = 0;
+      for (const v of this.state.primary_function) {
+        sum += this.globalFilters.primary_function[v] || 0;
+      }
+      counts.push(sum);
+    }
+
+    if (this.state.dateFilter && this.state.dateFilter.years && this.globalFilters.year) {
+      let sum = 0;
+      for (const y of this.state.dateFilter.years) {
+        sum += this.globalFilters.year[y] || 0;
+      }
+      counts.push(sum);
+    }
+
+    if (counts.length === 0) return this.getTotalEntityCount();
+    return Math.min.apply(null, counts);
+  }
+
   // --- Rendering ---
 
   renderSearchResults(data) {
@@ -445,33 +542,54 @@ class EntityExplorer {
     });
     resultsCol.appendChild(mobileToggle);
 
-    // Browse prompt (pre-search state: no query, no filters)
+    // Browse prompt — two modes:
+    //   landing  → no query, no filters (initial pre-search state)
+    //   overload → filter-only with too many results to scan via Pagefind
+    // Both share the same visual treatment (count + hint + button + warning)
+    // matching the description-search overload prompt for consistency.
     if (data.browsePrompt) {
+      const mode = data.browsePromptMode || 'landing';
+
+      // Active filter pills (only relevant in overload mode)
+      if (mode === 'overload') {
+        const pills = this.renderPills();
+        if (pills) resultsCol.appendChild(pills);
+      }
+
       const prompt = document.createElement('div');
       prompt.className = 'search-browse-prompt';
 
       const countText = document.createElement('p');
       countText.className = 'browse-prompt-count';
-      const countStr = data.totalEntityCount > 0
-        ? data.totalEntityCount.toLocaleString('es-CO')
-        : '';
-      if (countStr) {
-        countText.innerHTML = `<strong>${countStr}</strong> entidades en el archivo`;
+      if (mode === 'overload') {
+        countText.innerHTML = `<strong>${Number(data.total).toLocaleString('es-CO')}</strong> entidades coinciden con estos filtros.`;
       } else {
-        countText.innerHTML = '';
+        const totalCount = data.totalEntityCount || 0;
+        countText.innerHTML = totalCount > 0
+          ? `<strong>${totalCount.toLocaleString('es-CO')}</strong> entidades en el archivo.`
+          : '';
       }
       prompt.appendChild(countText);
 
       const hint = document.createElement('p');
       hint.className = 'browse-prompt-hint';
-      hint.textContent = 'Empieza a escribir para buscar, o explora filtrando por tipo o fecha.';
+      hint.textContent = mode === 'overload'
+        ? 'Agrega m\u00E1s t\u00E9rminos o filtros para acotar los resultados, o presiona:'
+        : 'Empieza a escribir para buscar, o explora filtrando por tipo o fecha, o presiona:';
       prompt.appendChild(hint);
 
-      const exploreBtn = document.createElement('button');
-      exploreBtn.type = 'button';
-      exploreBtn.className = 'browse-prompt-btn';
-      exploreBtn.textContent = 'Explorar todas';
-      exploreBtn.addEventListener('click', async () => {
+      const continueBtn = document.createElement('button');
+      continueBtn.type = 'button';
+      continueBtn.className = 'browse-prompt-btn';
+      continueBtn.textContent = mode === 'overload' ? 'Ver todos' : 'Explorar todas';
+      continueBtn.addEventListener('click', async () => {
+        if (mode === 'overload') {
+          // Force the next search to bypass the threshold guard
+          this.skipBrowsePrompt = true;
+          this.search();
+          return;
+        }
+        // Landing mode: clear state and run a full search
         this.state.q = '';
         this.state.entity_type = [];
         this.state.primary_function = [];
@@ -479,7 +597,6 @@ class EntityExplorer {
         this.state.page = 1;
         this.updateUrl();
 
-        // Run full search (all entities)
         this.showLoading();
         await new Promise(r => setTimeout(r, 0));
         try {
@@ -501,7 +618,12 @@ class EntityExplorer {
           this.showError();
         }
       });
-      prompt.appendChild(exploreBtn);
+      prompt.appendChild(continueBtn);
+
+      const warning = document.createElement('p');
+      warning.className = 'browse-prompt-warning';
+      warning.textContent = 'Tomar\u00E1 algunos segundos en cargar.';
+      prompt.appendChild(warning);
 
       resultsCol.appendChild(prompt);
 
@@ -795,7 +917,7 @@ class EntityExplorer {
     header.className = 'focal-role-facet-header';
     const title = document.createElement('span');
     title.className = 'focal-role-facet-title';
-    title.textContent = 'Filtrar por rol';
+    title.textContent = 'Filtrar conexiones a documentos por rol';
     header.appendChild(title);
 
     const clearBtn = document.createElement('button');

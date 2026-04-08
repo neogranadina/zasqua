@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
 status: Executing Phase 10
-stopped_at: Phase 10.1 free-form shakedown — uncap, role-facet relocation, sim tuning
-last_updated: "2026-04-07T22:55:00.000Z"
+stopped_at: Phase 10.1 shakedown complete — layout, empty state, infinite trail, viewport filter
+last_updated: "2026-04-08T02:00:00.000Z"
 progress:
   total_phases: 9
   completed_phases: 5
@@ -68,27 +68,53 @@ v0.5.0 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-07T22:55:00.000Z
-Stopped at: Mid free-form shakedown of /entidades/. Three changes shipped today
-beyond the previous redesign:
+Last session: 2026-04-08T02:00:00.000Z
+Stopped at: /entidades/ shakedown wrapped up clean. Earlier in the session
+(committed in 279ee55): focal-entity uncap, role facet relocated to the
+selected card with the 7-group Phase 12.1/13 taxonomy, simulation tuned
+for expanded clusters. Since then:
 
-1. **Focal entity uncapped** — `loadEntity`/`refocusOn` no longer slice docs
-   to `MAX_INITIAL_DOCS=30`. Focal entity now renders all linked docs (matches
-   entity detail page). Overflow node code is dormant but kept.
-2. **Role facet relocated** to the selected entity card under "documentos
-   vinculados" — scoped to the focal entity's shard, organised by the
-   Phase 12.1/13 7-group taxonomy (Producción y menciones, Correspondencia,
-   Atestación notarial, Procesos judiciales, Familia y sucesión,
-   Transacciones, Materiales visuales). Empty groups hidden. Sidebar role
-   facet, `?rol=` URL param, and Pagefind role filter all removed.
-3. **Force simulation tuned** for expanded clusters — entity nodes get
-   `charge=-120` (docs stay at -20), and link distance is 20 only for
-   focal-entity edges, 45 elsewhere. Stops bunched expanded clusters
-   without inflating the focal ring.
+1. **Layout restructure** — graph + selected entity card now sit on the
+   top row of a 2-row grid; filters + entity index occupy row 2.
+   Card and graph share a 560px height; card scrolls internally.
+   Both share the 12px corner radius.
+2. **Browse-prompt parity with description search** — added the
+   `Tomará algunos segundos en cargar` warning paragraph; new
+   filter-overload mode triggers at >10k estimated results when only
+   facets are active (estimateFilterCount mirrors search.js).
+3. **Empty-state overlay on first load** — explainer text + faint
+   pomegranate emblem + four example entity buttons (Real Audiencia
+   de Quito, Cabildo de Rionegro, José Gabriel Túpac Amaru, Simón
+   Bolívar). Inline single-paragraph styling. Skipped when ?entidad=
+   URL param is present. Dismissed on first focal load.
+4. **Truly infinite trail** — `MAX_EXPAND_ENTITIES` removed (corpus
+   worst case is 210 entities on a single doc; 99% have ≤20).
+   `MAX_HOPS` raised to 50 as a soft long-session safety valve.
+   pruneDistantNodes now resets `expanded`/`expandable` flags on
+   docs that lose entities so they can be re-expanded later.
+5. **Critical bugfix**: pruneDistantNodes still referenced the
+   removed `MAX_HOPS` constant briefly, throwing a ReferenceError on
+   every refocus and silently breaking tooltip/hover state. Fixed
+   alongside the hop-cap restoration.
+6. **Viewport filter button** moved into the filter column above the
+   search bar with a vertical-arrows icon. Two bugs fixed: the
+   overload threshold no longer trips when only viewport mode is
+   active, and the sidebar facets now narrow to scoped counts
+   computed locally from visible entities (entity_type + year +
+   century + decade).
+7. **Entity tooltip on click** — non-focal entities now show a
+   tooltip with badge/name/id/count and a single
+   "Seleccionar y desplegar vínculos" link in `.graph-tooltip-actions`.
+   Click no longer immediately refocuses; mirrors the doc-click
+   "Desplegar" pattern.
+8. **Card facet label** changed to "Filtrar conexiones a documentos
+   por rol".
 
 ### To resume
 
 1. `/clear` and start fresh context
 2. `/gsd-resume-work`
 
-User has another small request to handle next.
+Phase 10.1 ready for closure: write 10.1-04-SUMMARY.md, decide
+whether the redesign is in scope of 10.1 (10.1-05 plan) or its own
+phase, then formal phase verification.

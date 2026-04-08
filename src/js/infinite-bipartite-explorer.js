@@ -44,8 +44,11 @@
   var DOC_COLOR = '#A09888';
   var OVERFLOW_COLOR = '#C0B8A8';
   var MAX_INITIAL_DOCS = 30;
-  var MAX_EXPAND_ENTITIES = 15;
-  var MAX_HOPS = 3;
+  // Soft pruning limit — distant branches get cleaned up only after very
+  // deep exploration. The corpus's worst-case doc has 210 connected
+  // entities and only one doc breaks 200, so a normal trail will never
+  // hit this and the prune is mostly a long-session safety valve.
+  var MAX_HOPS = 50;
   var DEFAULT_ENTITY = 'ne-69501';
 
   // -----------------------------------------------------------------------
@@ -92,8 +95,9 @@
   // Initialisation
   // -----------------------------------------------------------------------
 
-  InfiniteBipartiteExplorer.prototype.init = async function () {
+  InfiniteBipartiteExplorer.prototype.init = async function (opts) {
     var self = this;
+    opts = opts || {};
 
     // Expandability checks are lazy (Pagefind on hover) — matches entity.js
     // pattern. No upfront fetch of any large lookup file.
@@ -101,37 +105,8 @@
     this.expandableCache = new Map(); // refCode → array of entity codes
     this.pagefindDesc = null;
 
-    // Determine starting entity
-    var startingEntity = DEFAULT_ENTITY;
-    var urlParam = new URLSearchParams(location.search).get('entidad');
-    if (urlParam) {
-      startingEntity = urlParam;
-    } else {
-      try {
-        var cg = await fetch('/data/curated-entity-graph.json');
-        if (cg.ok) {
-          var cgData = await cg.json();
-          if (cgData.nodes && cgData.nodes.length > 0) {
-            startingEntity = cgData.nodes[0].id;
-          }
-        }
-      } catch (e) {
-        // fall back to DEFAULT_ENTITY
-      }
-    }
-
     this.initGraph();
-    await this.loadEntity(startingEntity);
-
-    // Fire focal callback so the sidebar/overlay shows the initial entity
-    // immediately, not just after the user clicks something.
-    if (this.onEntityFocused) {
-      this.onEntityFocused(
-        startingEntity,
-        this.entityMeta.get(startingEntity) || null,
-        this.shardCache.get(startingEntity) || []
-      );
-    }
+    this.renderLegend();
 
     // Force dimension update after layout settles. Force-graph reads container
     // dimensions at construction; if flexbox hadn't computed yet, the canvas
@@ -156,14 +131,48 @@
       });
     });
 
-    this.renderLegend();
-
     // Back button navigation (D-18)
     window.addEventListener('popstate', function (e) {
       if (e.state && e.state.entidad) {
         self.refocusOn(e.state.entidad);
       }
     });
+
+    // Skip auto-load when the host wants the empty-state overlay to show
+    // first (no ?entidad= URL param). User interaction will trigger
+    // refocusOn() which populates the graph.
+    if (opts.skipAutoLoad) return;
+
+    // Determine starting entity
+    var startingEntity = DEFAULT_ENTITY;
+    var urlParam = new URLSearchParams(location.search).get('entidad');
+    if (urlParam) {
+      startingEntity = urlParam;
+    } else {
+      try {
+        var cg = await fetch('/data/curated-entity-graph.json');
+        if (cg.ok) {
+          var cgData = await cg.json();
+          if (cgData.nodes && cgData.nodes.length > 0) {
+            startingEntity = cgData.nodes[0].id;
+          }
+        }
+      } catch (e) {
+        // fall back to DEFAULT_ENTITY
+      }
+    }
+
+    await this.loadEntity(startingEntity);
+
+    // Fire focal callback so the sidebar/overlay shows the initial entity
+    // immediately, not just after the user clicks something.
+    if (this.onEntityFocused) {
+      this.onEntityFocused(
+        startingEntity,
+        this.entityMeta.get(startingEntity) || null,
+        this.shardCache.get(startingEntity) || []
+      );
+    }
   };
 
   // -----------------------------------------------------------------------
@@ -475,11 +484,11 @@
     if (node.type === 'overflow') {
       this.loadMoreDocs(node);
     } else if (node.type === 'entity') {
-      if (node.id === this.focalEntityCode) {
-        this.showEntityTooltip(node);
-      } else {
-        this.refocusOn(node.id);
-      }
+      // Always show the tooltip — non-focal entities get an explicit
+      // "Centrar aquí" button instead of being refocused immediately on
+      // click. Mirrors the doc-click pattern (which surfaces a "Desplegar"
+      // confirmation button).
+      this.showEntityTooltip(node);
     } else if (node.type === 'document') {
       this.showDocumentTooltip(node);
     }
@@ -494,20 +503,55 @@
     var tooltip = this.tooltipEl;
     if (!tooltip) return;
 
+    var self = this;
     var typeLabel = entityColors[node.entity_type] || '#8B2942';
     var typeName = { person: 'Persona', corporate_body: 'Entidad corporativa', corporate: 'Entidad corporativa', family: 'Familia' };
+    var isFocal = node.id === this.focalEntityCode;
 
-    var html = '';
-    html += '<div class="graph-tooltip-header">';
-    html += '<span class="entity-type-badge" style="background:' + typeLabel + ';color:#fff">';
-    html += escapeHtml(typeName[node.entity_type] || node.entity_type || 'Entidad');
-    html += '</span></div>';
-    html += '<div class="graph-tooltip-name">' + escapeHtml(node.label || node.id) + '</div>';
-    html += '<div class="graph-tooltip-ref">' + escapeHtml(node.id) + '</div>';
-    html += '<div class="graph-tooltip-meta">' + (node.linked_count || '?') + ' documentos vinculados</div>';
-    html += '<a class="graph-tooltip-btn" href="/entidad/' + escapeHtml(node.id) + '/" target="_blank">Ver ficha completa</a>';
+    tooltip.innerHTML = '';
 
-    tooltip.innerHTML = html;
+    var header = document.createElement('div');
+    header.className = 'graph-tooltip-header';
+    var badge = document.createElement('span');
+    badge.className = 'entity-type-badge';
+    badge.style.background = typeLabel;
+    badge.style.color = '#fff';
+    badge.textContent = typeName[node.entity_type] || node.entity_type || 'Entidad';
+    header.appendChild(badge);
+    tooltip.appendChild(header);
+
+    var name = document.createElement('div');
+    name.className = 'graph-tooltip-name';
+    name.textContent = node.label || node.id;
+    tooltip.appendChild(name);
+
+    var ref = document.createElement('div');
+    ref.className = 'graph-tooltip-ref';
+    ref.textContent = node.id;
+    tooltip.appendChild(ref);
+
+    var meta = document.createElement('div');
+    meta.className = 'graph-tooltip-meta';
+    meta.textContent = (node.linked_count || '?') + ' documentos vinculados';
+    tooltip.appendChild(meta);
+
+    // For non-focal entities, surface a single explicit refocus action
+    // (mirrors the doc-click "Desplegar" pattern). The focal entity
+    // doesn't get this button — it's already the centre of the graph.
+    if (!isFocal) {
+      var actions = document.createElement('div');
+      actions.className = 'graph-tooltip-actions';
+      var refocusBtn = document.createElement('button');
+      refocusBtn.type = 'button';
+      refocusBtn.className = 'graph-tooltip-btn';
+      refocusBtn.textContent = 'Seleccionar y desplegar v\u00EDnculos';
+      refocusBtn.addEventListener('click', function () {
+        self.refocusOn(node.id);
+      });
+      actions.appendChild(refocusBtn);
+      tooltip.appendChild(actions);
+    }
+
     this.positionTooltip(node);
     tooltip.style.display = 'block';
     this.selectedNode = node;
@@ -1028,11 +1072,7 @@
       return;
     }
 
-    // Cap at MAX_EXPAND_ENTITIES (D-34)
-    if (newCodes.length > MAX_EXPAND_ENTITIES) {
-      node.hiddenEntityCount = newCodes.length - MAX_EXPAND_ENTITIES;
-      newCodes = newCodes.slice(0, MAX_EXPAND_ENTITIES);
-    }
+    // No cap — expand all connected entities (the explorer is infinite by name)
 
     // Batch-fetch entity metadata via Promise.all (pattern from entity.js lines 669-684)
     var self = this;
@@ -1186,6 +1226,26 @@
     });
 
     if (toRemove.size === 0) return;
+
+    // Reset the `expanded` flag on any surviving doc nodes whose connected
+    // entities are about to be removed — otherwise, if the user navigates
+    // back to such a doc later, the tooltip thinks it's already fully
+    // expanded and won't offer to re-fetch its entities.
+    this.graphNodes.forEach(function (node) {
+      if (node.type !== 'document' || !node.expanded) return;
+      var neighbours = self.nodeNeighbours.get(node.id) || new Set();
+      var lostAnEntity = false;
+      neighbours.forEach(function (nid) {
+        if (toRemove.has(nid)) {
+          var n = self.graphNodes.get(nid);
+          if (n && n.type === 'entity') lostAnEntity = true;
+        }
+      });
+      if (lostAnEntity) {
+        node.expanded = false;
+        node.expandable = undefined; // force re-resolve on next hover
+      }
+    });
 
     // Remove from internal maps
     toRemove.forEach(function (id) { self.graphNodes.delete(id); });
