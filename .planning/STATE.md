@@ -25,9 +25,14 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 ## Current Position
 
 Phase: 10.1 (infinite-bipartite-graph-explorer) — COMPLETE (all 4 plans)
-Next: Phase 10.2 (or whatever the roadmap has next after 10.1)
+Next: Phase 10.2 (explorer-parity) — INSERTED, ready to plan
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- 2026-04-05: Phase 10.1 inserted after Phase 10 — infinite bipartite graph explorer (completed 2026-04-08)
+- 2026-04-08: Phase 10.2 inserted after Phase 10.1 — explorer parity for place explorer, place pages, and entity pages
 
 ### Decisions
 

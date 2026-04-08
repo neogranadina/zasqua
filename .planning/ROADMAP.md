@@ -139,6 +139,24 @@ Plans:
 - [ ] 10-04-PLAN.md — Cleanup dead code and visual verification
 **UI hint**: yes
 
+### Phase 10.2: Explorer Parity (INSERTED)
+**Goal**: Bring the place explorer, place detail pages, and entity detail pages to parity with the Phase 10.1 entity explorer redesign — consistent layout, facet behavior, interaction patterns, and visual language across all explorer and detail surfaces
+**Depends on**: Phase 10.1 (design language, layout patterns, reusable JS modules), Phase 9 (entity/place detail page baselines)
+**Success Criteria** (what must be TRUE):
+  1. Place explorer mirrors the entity explorer's 2-row layout (map + selected place card on top, filters + place index below), card-scoped facets, empty state with example places, and viewport filter keyed to map bounds
+  2. Protomaps CDN basemap renders correctly on both the place explorer and place detail pages (currently broken on detail pages — burgundy dot visible but no tiles)
+  3. Place detail pages show hover/click tooltips on map markers
+  4. Entity detail page bipartite graph uses the Phase 12.1/13 7-group role taxonomy as a collapsible facet (not pill buttons)
+  5. Focal/home node on entity detail page graphs uses the correct entity-type colour (burgundy for person, periwinkle for corporate/family)
+  6. Cross-navigation links from entity detail pages deep-link correctly into the entity explorer via `?entidad=ne-XXX` URL param
+**Plans**: 3 plans
+- [ ] 10.2-01-PLAN.md — Place explorer parity + Protomaps CDN fix on the explorer
+- [ ] 10.2-02-PLAN.md — Place detail page map tooltips + Protomaps CDN fix on detail pages
+- [ ] 10.2-03-PLAN.md — Entity detail page polish (7-group role facet, focal node colour, explorer deep links)
+**Deferred / tracked elsewhere**:
+- Linked Places JSON-LD and EAC-CPF XML authority manifest production → backend work in zasqua-backend-dev (or v0.6.0 if v0.5.0 is feature-frozen). Once published, the frontend wire-up is a trivial follow-up — URL references from detail page templates.
+**UI hint**: yes
+
 ### Phase 10.1: Infinite Bipartite Graph Explorer (INSERTED)
 **Goal**: Replace the entity explorer's curated 100-node graph with an infinite bipartite graph explorer enabling entity→document→entity chain navigation, with graph-dominant layout
 **Depends on**: Phase 10 (entity explorer template and curated graph exist), Phase 9 (entity.js bipartite graph is the proven pattern)
@@ -173,7 +191,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1 → 11
+Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1 → 10.2 → 11
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
