@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const ui = require('./ui.js');
 
 const DEV_MODE = process.env.DEV_MODE === 'true';
 const DEV_LIMIT = 100;
@@ -67,12 +68,24 @@ module.exports = async function() {
     // Repository object
     desc._repo = reposByCode.get(desc.repository_code) || null;
 
-    // Entity and place codes (for Pagefind filter spans)
-    desc._entity_codes = entityLookup[desc.reference_code] || [];
-    desc._place_codes = placeLookup[desc.reference_code] || [];
+    // Enriched entity/place objects (for template links — D-12)
+    const entityLinks = entityLookup[desc.reference_code] || [];
+    desc._entity_links = entityLinks.map(ent => ({
+      ...ent,
+      role_labels: ent.roles
+        .map(r => ui.roles[r])
+        .filter(Boolean),
+    }));
+
+    const placeLinks = placeLookup[desc.reference_code] || [];
+    desc._place_links = placeLinks;
+
+    // String arrays for Pagefind filter spans (must stay as strings)
+    desc._entity_codes = entityLinks.map(e => e.code);
+    desc._place_codes = placeLinks.map(p => p.id);
   }
 
   console.log(`[descriptions] Precomputed ancestors and repos`);
-  console.log(`[descriptions] Attached entity/place codes to ${descriptions.length} descriptions`);
+  console.log(`[descriptions] Attached enriched entity/place links to ${descriptions.length} descriptions`);
   return descriptions;
 };
