@@ -521,25 +521,32 @@ class PlaceExplorer {
       var filteredResults = allResults;
       if (this.state.mapBound && this.map && this.mapReady) {
         var bounds = this.map.getBounds();
-        var viewportUrls = new Set(
+        var viewportNames = new Set(
           this.allPlaces
             .filter(function(p) {
               return p.lat != null && p.lon != null &&
                 p.lon >= bounds.getWest() && p.lon <= bounds.getEast() &&
                 p.lat >= bounds.getSouth() && p.lat <= bounds.getNorth();
             })
-            .map(function(p) { return '/lugar/' + p.display_name.replace(/[?#]/g, '') + '/'; })
+            .map(function(p) { return p.display_name; })
         );
-        filteredResults = allResults.filter(function(r) { return viewportUrls.has(r.url); });
+        // Load data for all results to check title against viewport names.
+        // Pagefind stubs don't expose URL or title, so we must resolve them.
+        var allData = await Promise.all(allResults.map(function(r) { return r.data(); }));
+        allData = allData.filter(function(d) { return viewportNames.has(d.meta.title); });
+        var total = allData.length;
+        var totalPages = Math.ceil(total / this.perPage) || 1;
+        if (this.state.page > totalPages) this.state.page = 1;
+        var start = (this.state.page - 1) * this.perPage;
+        var hits = allData.slice(start, start + this.perPage);
+      } else {
+        var total = filteredResults.length;
+        var totalPages = Math.ceil(total / this.perPage) || 1;
+        if (this.state.page > totalPages) this.state.page = 1;
+        var start = (this.state.page - 1) * this.perPage;
+        var pageResults = filteredResults.slice(start, start + this.perPage);
+        var hits = await Promise.all(pageResults.map(function(r) { return r.data(); }));
       }
-
-      var total = filteredResults.length;
-      var totalPages = Math.ceil(total / this.perPage) || 1;
-      if (this.state.page > totalPages) this.state.page = 1;
-
-      var start = (this.state.page - 1) * this.perPage;
-      var pageResults = filteredResults.slice(start, start + this.perPage);
-      var hits = await Promise.all(pageResults.map(function(r) { return r.data(); }));
 
       // Apply 'linked' sort after loading (Pagefind doesn't support count sort)
       if (this.state.sort === 'linked') {
