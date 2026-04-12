@@ -30,6 +30,7 @@ class PlaceExplorer {
     this.perPage = 20;
     this._debounce = null;
     this._onMoveEnd = null;
+    this._searchGen = 0;
 
     this.placeTypes = {};
     try {
@@ -423,25 +424,6 @@ class PlaceExplorer {
     var docText = n + ' ' + (n === 1 ? 'documento vinculado' : 'documentos vinculados');
     var placeId = place.id;
 
-    var tgnId = place.tgn_id || '';
-    var whgId = place.whg_id || '';
-
-    var authorityHtml = '';
-    if (tgnId || whgId) {
-      authorityHtml = '<div class="selected-entity-footer">';
-      if (tgnId) {
-        authorityHtml +=
-          '<a href="https://vocab.getty.edu/page/tgn/' + this.escapeHtml(String(tgnId)) + '" ' +
-          'target="_blank" rel="noopener" class="selected-entity-link">TGN ' + this.escapeHtml(String(tgnId)) + '</a>';
-      }
-      if (whgId) {
-        authorityHtml +=
-          '<a href="https://whgazetteer.org/places/' + this.escapeHtml(String(whgId)) + '/portal" ' +
-          'target="_blank" rel="noopener" class="selected-entity-link">WHG ' + this.escapeHtml(String(whgId)) + '</a>';
-      }
-      authorityHtml += '</div>';
-    }
-
     card.innerHTML =
       '<div class="selected-entity-header">' +
         '<h3 class="selected-entity-name">' + this.escapeHtml(name) + '</h3>' +
@@ -449,7 +431,6 @@ class PlaceExplorer {
       '</div>' +
       '<span class="selected-entity-badge">' + this.escapeHtml(typeLabel) + '</span>' +
       '<div class="selected-entity-stat" style="margin-top:0.75rem">' + this.escapeHtml(docText) + '</div>' +
-      authorityHtml +
       '<a href="/nl-' + this.escapeHtml(String(placeId)) + '/" class="selected-entity-link" ' +
       'style="display:block;margin-top:0.5rem">Ver ficha &rarr;</a>';
 
@@ -516,6 +497,10 @@ class PlaceExplorer {
     if (!this.pagefind) return;
     if (!this.resultsListEl) return;
 
+    // Generation counter prevents stale in-flight searches from
+    // calling renderFacets() and resetting checkbox state (D-19)
+    var gen = ++this._searchGen;
+
     // Build Pagefind filters
     var pfFilters = {};
     if (this.state.type.length > 0) pfFilters.place_type = { any: this.state.type };
@@ -534,6 +519,8 @@ class PlaceExplorer {
           sort: this.state.sort === 'name' ? pfSort : undefined
         }
       );
+
+      if (gen !== this._searchGen) return;
 
       this.lastSearch = searchResult;
 
@@ -556,6 +543,7 @@ class PlaceExplorer {
         // Load data for all results to check title against viewport names.
         // Pagefind stubs don't expose URL or title, so we must resolve them.
         var allData = await Promise.all(allResults.map(function(r) { return r.data(); }));
+        if (gen !== this._searchGen) return;
         allData = allData.filter(function(d) { return viewportNames.has(d.meta.title); });
         var total = allData.length;
         var totalPages = Math.ceil(total / this.perPage) || 1;
@@ -569,6 +557,7 @@ class PlaceExplorer {
         var start = (this.state.page - 1) * this.perPage;
         var pageResults = filteredResults.slice(start, start + this.perPage);
         var hits = await Promise.all(pageResults.map(function(r) { return r.data(); }));
+        if (gen !== this._searchGen) return;
       }
 
       // Apply 'linked' sort after loading (Pagefind doesn't support count sort)
@@ -582,8 +571,19 @@ class PlaceExplorer {
         });
       }
 
-      // Map always shows the full coordinate set (not Pagefind-filtered)
-      this.updateMap(this.allPlaces);
+      // Sync map markers with search/filter state (D-08)
+      if (this.state.q || this.state.type.length || this.state.hasCoords !== null || this.state.hasAuthority !== null) {
+        var matchingIds = new Set();
+        for (var ri = 0; ri < allResults.length; ri++) {
+          var url = allResults[ri].url || '';
+          var match = url.match(/\/nl-(\d+)\//);
+          if (match) matchingIds.add(parseInt(match[1], 10));
+        }
+        var filteredPlaces = this.allPlaces.filter(function(p) { return matchingIds.has(p.id); });
+        this.updateMap(filteredPlaces);
+      } else {
+        this.updateMap(this.allPlaces);
+      }
 
       this.renderResultsInfo(total, allResults.length);
       this.renderResults(hits, total);
@@ -687,9 +687,9 @@ class PlaceExplorer {
       titleLink.className = 'result-title';
       titleLink.textContent = placeName;
 
-      // Wire click: also highlight place in map/card
+      // Wire click: select place in map/card instead of navigating (D-15)
       titleLink.addEventListener('click', (e) => {
-        // Let the link navigate naturally; also trigger highlight for map pan
+        e.preventDefault();
         var pName = e.currentTarget.textContent;
         var found = this.allPlaces.find(function(p) { return p.display_name === pName; });
         if (found) this.highlightPlace(found);
