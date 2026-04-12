@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 9: Entity & Place Page Redesign** - Figma-driven detail page redesign, bipartite entity graph, place data integration (completed 2026-04-03)
 - [ ] **Phase 10: Explorer UX Redesign** - Research, scoping, Figma design, and implementation of entity and place explorer interfaces
 - [ ] **Phase 10.1: Infinite Bipartite Graph Explorer** — INSERTED — Replace entity explorer's curated graph with infinite entity→document→entity navigation, graph-dominant layout
-- [ ] **Phase 11: Description Linking** - Link descriptions to entity and place detail pages and explorers
+- [x] **Phase 11: Description Linking** - Link descriptions to entity and place detail pages and explorers (completed 2026-04-12)
 
 ## Phase Details
 
@@ -187,8 +187,8 @@ Plans:
   4. Entity and place names render correctly in context (not just codes)
 **Plans**: 2 plans
 Plans:
-- [ ] 11-01-PLAN.md — Data pipeline: enriched lookups, complete role vocabulary, data loader update
-- [ ] 11-02-PLAN.md — Template: linked entity and place sections on description pages
+- [x] 11-01-PLAN.md — Data pipeline: enriched lookups, complete role vocabulary, data loader update
+- [x] 11-02-PLAN.md — Template: linked entity and place sections on description pages
 **UI hint**: yes
 
 ## Progress
@@ -206,4 +206,4 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1
 | 9. Entity & Place Page Redesign | — | Complete | 2026-04-03 |
 | 10. Explorer UX Redesign | 3/4 | In Progress | |
 | 10.1. Infinite Bipartite Graph Explorer | 3/4 | In Progress|  |
-| 11. Description Linking | 0/2 | Planned | |
+| 11. Description Linking | 2/2 | Complete   | 2026-04-12 |

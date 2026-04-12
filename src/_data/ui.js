@@ -120,7 +120,7 @@ module.exports = {
     defendant: "Demandado",
     plaintiff: "Demandante",
     witness: "Testigo",
-    official: "Funcionario",
+    official: "Oficial",
     scribe: "Escribano",
     notary: "Notario",
     judge: "Juez",
