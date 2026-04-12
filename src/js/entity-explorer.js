@@ -372,9 +372,9 @@ class EntityExplorer {
         });
         // Synthesise Pagefind-style hit objects so renderResultCard works.
         allResults = visible.map(e => ({
-          url: `/entidad/${e.entity_code}/`,
+          url: `/${e.entity_code}/`,
           data: () => Promise.resolve({
-            url: `/entidad/${e.entity_code}/`,
+            url: `/${e.entity_code}/`,
             meta: {
               title: e.label,
               entity_type: e.entity_type,
@@ -428,7 +428,7 @@ class EntityExplorer {
         if (this.viewportFilter && typeof this._visibleCodeSource === 'function') {
           const visibleCodes = this._visibleCodeSource() || new Set();
           allResults = search.results.filter(r => {
-            const m = (r.url || '').match(/\/entidad\/([^/]+)\//);
+            const m = (r.url || '').match(/\/(ne-[^/]+)\//);
             return m && visibleCodes.has(m[1]);
           });
         }
@@ -706,8 +706,8 @@ class EntityExplorer {
     // D-14: clicking an entity in the index loads it in the graph
     item.style.cursor = 'pointer';
     item.addEventListener('click', (e) => {
-      // Extract entity code from the result URL (pattern: /entidad/{code}/)
-      const match = (hit.url || '').match(/\/entidad\/([^/]+)\//);
+      // Extract entity code from the result URL (pattern: /{code}/)
+      const match = (hit.url || '').match(/\/(ne-[^/]+)\//);
       if (match && match[1] && this.onEntitySelected) {
         e.preventDefault();
         this.onEntitySelected(match[1]);
@@ -1167,7 +1167,7 @@ class EntityExplorer {
       footer.className = 'selected-entity-footer';
       const link = document.createElement('a');
       link.className = 'selected-entity-link';
-      link.href = `/entidad/${entityCode}/`;
+      link.href = `/${entityCode}/`;
       link.target = '_blank';
       link.rel = 'noopener';
       link.textContent = 'Ver ficha completa \u2192';
@@ -1177,7 +1177,7 @@ class EntityExplorer {
 
     // Highlight the entity in the result list if present
     const existingItem = this.container.querySelector(
-      `.search-result-item a[href*="/entidad/${entityCode}/"]`
+      `.search-result-item a[href*="/${entityCode}/"]`
     );
     if (existingItem) {
       this.container.querySelectorAll('.search-result-item.graph-focused')

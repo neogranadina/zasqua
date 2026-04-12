@@ -398,7 +398,7 @@ class PlaceExplorer {
     var typeLabel = this.placeTypes[placeType] || placeType;
     var n = place.linked_description_count || 0;
     var docText = n + ' ' + (n === 1 ? 'documento vinculado' : 'documentos vinculados');
-    var slug = name.replace(/[?#]/g, '');
+    var placeId = place.id;
 
     var tgnId = place.tgn_id || '';
     var whgId = place.whg_id || '';
@@ -427,7 +427,7 @@ class PlaceExplorer {
       '<span class="selected-entity-badge">' + this.escapeHtml(typeLabel) + '</span>' +
       '<div class="selected-entity-stat" style="margin-top:0.75rem">' + this.escapeHtml(docText) + '</div>' +
       authorityHtml +
-      '<a href="/lugar/' + this.escapeHtml(slug) + '/" class="selected-entity-link" ' +
+      '<a href="/nl-' + this.escapeHtml(String(placeId)) + '/" class="selected-entity-link" ' +
       'style="display:block;margin-top:0.5rem">Ver ficha &rarr;</a>';
 
     // Close button clears back to stub

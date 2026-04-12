@@ -754,7 +754,7 @@
     var meta = { label: entityCode, entity_type: 'person', linked_count: 0 };
 
     try {
-      var resp = await fetch('/entidad/' + entityCode + '/');
+      var resp = await fetch('/' + entityCode + '/');
       if (resp.ok) {
         var html = await resp.text();
         var titleMatch = html.match(/<title>(.*?)\s*\|/);

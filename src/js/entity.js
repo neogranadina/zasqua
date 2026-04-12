@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     var html = '';
     html += '<div class="graph-tooltip-role">' + escapeHtml(typeLabel[node.entityType] || node.entityType) + '</div>';
-    html += '<div class="graph-tooltip-name"><a href="/entidad/' + escapeHtml(node.id) + '/">' + escapeHtml(node.label) + '</a></div>';
+    html += '<div class="graph-tooltip-name"><a href="/' + escapeHtml(node.id) + '/">' + escapeHtml(node.label) + '</a></div>';
     html += '<div class="graph-tooltip-ref">' + escapeHtml(node.id) + '</div>';
     if (sharedDocs > 0 && node.id !== entityCode) {
       html += '<div class="graph-tooltip-actions">';
@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       var typeWord = (node.entityType === 'person') ? 'persona' : 'entidad';
       html += '<div class="graph-tooltip-actions">';
       html += 'Esta ' + typeWord + ' está conectada a otros ' + otherDocs + ' documento' + (otherDocs !== 1 ? 's' : '') + ' en Zasqua. ';
-      html += '<a href="/entidad/' + escapeHtml(node.id) + '/?vista=red" class="graph-tooltip-btn">Abrir en el explorador de relaciones</a>';
+      html += '<a href="/' + escapeHtml(node.id) + '/?vista=red" class="graph-tooltip-btn">Abrir en el explorador de relaciones</a>';
       html += '</div>';
     }
 
@@ -818,7 +818,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     for (var i = 0; i < newEntities.length; i++) {
       var code = newEntities[i];
       try {
-        var resp = await fetch('/entidad/' + code + '/');
+        var resp = await fetch('/' + code + '/');
         if (!resp.ok) continue;
         var html = await resp.text();
         var titleMatch = html.match(/<title>(.*?)\s*\|/);
