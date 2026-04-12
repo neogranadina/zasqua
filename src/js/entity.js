@@ -39,6 +39,25 @@ var entityColors = {
   family: '#6666BB'
 };
 
+// Role groups for accordion filter (7-group taxonomy, Phase 12.1/13)
+var roleGroups = [
+  { id: 'production', label_es: 'Producción y menciones', members: ['creator', 'author', 'editor', 'publisher', 'mentioned', 'subject', 'official'] },
+  { id: 'correspondence', label_es: 'Correspondencia', members: ['sender', 'recipient'] },
+  { id: 'notarial', label_es: 'Atestación notarial', members: ['scribe', 'witness', 'notary'] },
+  { id: 'legal', label_es: 'Procesos judiciales', members: ['plaintiff', 'defendant', 'petitioner', 'judge', 'appellant', 'fiador', 'apoderado', 'victim'] },
+  { id: 'family', label_es: 'Familia y sucesión', members: ['heir', 'albacea', 'spouse'] },
+  { id: 'transactions', label_es: 'Transacciones', members: ['grantor', 'donor', 'seller', 'buyer', 'mortgagor', 'mortgagee', 'creditor', 'debtor'] },
+  { id: 'visual', label_es: 'Materiales visuales', members: ['photographer', 'artist'] }
+];
+
+// All known grouped role values (for detecting ungrouped/legacy roles)
+var groupedRoles = new Set();
+for (var _gi = 0; _gi < roleGroups.length; _gi++) {
+  for (var _mi = 0; _mi < roleGroups[_gi].members.length; _mi++) {
+    groupedRoles.add(roleGroups[_gi].members[_mi]);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
   var timelineEl = document.getElementById('entity-timeline');
   if (!timelineEl) return;
@@ -163,54 +182,183 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   }
 
-  // --- Role filters (pills) ---
+  // --- Role filters (collapsible 7-group accordion) ---
 
   function buildRoleFilters(allLinks) {
     var filtersEl = document.getElementById('entity-role-filters');
     if (!filtersEl) return;
 
+    // Count roles from all links
     var roleCounts = {};
     for (var i = 0; i < allLinks.length; i++) {
-      var r = allLinks[i].role || 'unknown';
+      var r = (allLinks[i].role || '').toLowerCase();
+      if (!r) continue;
       roleCounts[r] = (roleCounts[r] || 0) + 1;
     }
 
-    var roles = Object.keys(roleCounts).sort(function(a, b) {
-      return roleCounts[b] - roleCounts[a];
+    // Build visible groups (only those with at least one role present in data)
+    var visibleGroups = [];
+    for (var gi = 0; gi < roleGroups.length; gi++) {
+      var group = roleGroups[gi];
+      var members = [];
+      for (var mi = 0; mi < group.members.length; mi++) {
+        var role = group.members[mi];
+        if (roleCounts[role] > 0) {
+          members.push({ role: role, count: roleCounts[role] });
+        }
+      }
+      if (members.length === 0) continue;
+      members.sort(function(a, b) { return b.count - a.count; });
+      var total = 0;
+      for (var ti = 0; ti < members.length; ti++) total += members[ti].count;
+      visibleGroups.push({ id: group.id, label_es: group.label_es, members: members, total: total });
+    }
+
+    // Collect ungrouped roles (present in data but not in any group)
+    var otrosMembers = [];
+    var allRoles = Object.keys(roleCounts);
+    for (var oi = 0; oi < allRoles.length; oi++) {
+      var or_ = allRoles[oi];
+      if (!groupedRoles.has(or_) && roleCounts[or_] > 0) {
+        otrosMembers.push({ role: or_, count: roleCounts[or_] });
+      }
+    }
+    if (otrosMembers.length > 0) {
+      otrosMembers.sort(function(a, b) { return b.count - a.count; });
+      var otrosTotal = 0;
+      for (var oti = 0; oti < otrosMembers.length; oti++) otrosTotal += otrosMembers[oti].count;
+      visibleGroups.push({ id: 'otros', label_es: 'Otros', members: otrosMembers, total: otrosTotal });
+    }
+
+    if (visibleGroups.length === 0) { filtersEl.innerHTML = ''; return; }
+
+    var wrap = document.createElement('div');
+    wrap.className = 'focal-role-facet';
+
+    // Header with title and clear button
+    var header = document.createElement('div');
+    header.className = 'focal-role-facet-header';
+
+    var title = document.createElement('span');
+    title.className = 'focal-role-facet-title';
+    title.textContent = 'Filtrar por rol';
+    header.appendChild(title);
+
+    var clearBtn = document.createElement('button');
+    clearBtn.type = 'button';
+    clearBtn.className = 'focal-role-facet-clear';
+    clearBtn.textContent = 'Limpiar';
+    clearBtn.style.display = activeRoles.size > 0 ? '' : 'none';
+    clearBtn.addEventListener('click', function() {
+      activeRoles = new Set();
+      applyFilters();
+      buildRoleFilters(allLinks);
     });
+    header.appendChild(clearBtn);
+    wrap.appendChild(header);
+
+    // Build each group
+    for (var vgi = 0; vgi < visibleGroups.length; vgi++) {
+      (function(grp) {
+        var groupEl = document.createElement('div');
+        groupEl.className = 'focal-role-group';
+
+        var groupHeader = document.createElement('div');
+        groupHeader.className = 'focal-role-group-header';
+
+        // Group-level checkbox: tri-state (all/some/none)
+        var allChecked = grp.members.every(function(m) { return activeRoles.has(m.role); });
+        var someChecked = grp.members.some(function(m) { return activeRoles.has(m.role); });
+
+        var groupCheckbox = document.createElement('input');
+        groupCheckbox.type = 'checkbox';
+        groupCheckbox.className = 'focal-role-group-checkbox';
+        groupCheckbox.checked = allChecked;
+        groupCheckbox.indeterminate = someChecked && !allChecked;
+        groupCheckbox.addEventListener('click', function(e) { e.stopPropagation(); });
+        groupCheckbox.addEventListener('change', function() {
+          if (groupCheckbox.checked) {
+            for (var ci = 0; ci < grp.members.length; ci++) activeRoles.add(grp.members[ci].role);
+          } else {
+            for (var ci = 0; ci < grp.members.length; ci++) activeRoles.delete(grp.members[ci].role);
+          }
+          applyFilters();
+          buildRoleFilters(allLinks);
+        });
+        groupHeader.appendChild(groupCheckbox);
+
+        var groupLabel = document.createElement('span');
+        groupLabel.className = 'focal-role-group-label';
+        groupLabel.textContent = grp.label_es;
+        groupHeader.appendChild(groupLabel);
+
+        var groupCount = document.createElement('span');
+        groupCount.className = 'focal-role-group-count';
+        groupCount.textContent = '(' + grp.total.toLocaleString('es-CO') + ')';
+        groupHeader.appendChild(groupCount);
+
+        var chevron = document.createElement('span');
+        chevron.className = 'focal-role-group-chevron';
+        // Expand group if any of its members are active
+        var expanded = someChecked;
+        chevron.textContent = expanded ? '\u2212' : '+';
+        groupHeader.appendChild(chevron);
+
+        // Toggle expand/collapse on header click
+        groupHeader.addEventListener('click', function() {
+          var isExpanded = groupEl.classList.toggle('is-expanded');
+          chevron.textContent = isExpanded ? '\u2212' : '+';
+        });
+
+        // All groups collapsed on load, unless a member is active
+        if (expanded) groupEl.classList.add('is-expanded');
+
+        groupEl.appendChild(groupHeader);
+
+        // Member checkboxes
+        var memberList = document.createElement('div');
+        memberList.className = 'focal-role-group-members';
+        for (var mbi = 0; mbi < grp.members.length; mbi++) {
+          (function(m) {
+            var optLabel = document.createElement('label');
+            optLabel.className = 'focal-role-option';
+
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = m.role;
+            cb.checked = activeRoles.has(m.role);
+            cb.addEventListener('change', function() {
+              if (cb.checked) {
+                activeRoles.add(m.role);
+              } else {
+                activeRoles.delete(m.role);
+              }
+              applyFilters();
+              buildRoleFilters(allLinks);
+            });
+            optLabel.appendChild(cb);
+
+            var text = document.createElement('span');
+            text.className = 'focal-role-option-label';
+            text.textContent = roleLabels[m.role] || m.role;
+            optLabel.appendChild(text);
+
+            var cnt = document.createElement('span');
+            cnt.className = 'focal-role-option-count';
+            cnt.textContent = '(' + m.count.toLocaleString('es-CO') + ')';
+            optLabel.appendChild(cnt);
+
+            memberList.appendChild(optLabel);
+          })(grp.members[mbi]);
+        }
+        groupEl.appendChild(memberList);
+
+        wrap.appendChild(groupEl);
+      })(visibleGroups[vgi]);
+    }
 
     filtersEl.innerHTML = '';
-    for (var j = 0; j < roles.length; j++) {
-      var role = roles[j];
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'entity-role-btn';
-      btn.dataset.role = role;
-      btn.textContent = (roleLabels[role] || role) + ' (' + roleCounts[role] + ')';
-      btn.addEventListener('click', function() {
-        var r = this.dataset.role;
-        if (activeRoles.has(r)) {
-          activeRoles.delete(r);
-          this.classList.remove('active');
-        } else {
-          activeRoles.add(r);
-          this.classList.add('active');
-        }
-        applyFilters();
-      });
-      filtersEl.appendChild(btn);
-    }
-
-    // Explorer link inline with pills
-    var introEl = document.getElementById('entity-intro');
-    var code = introEl ? introEl.dataset.entityCode : '';
-    if (code) {
-      var exploreLink = document.createElement('a');
-      exploreLink.className = 'entity-explore-link';
-      exploreLink.href = '/entidades/?q=' + encodeURIComponent(code);
-      exploreLink.textContent = 'Abrir en explorador de entidades';
-      filtersEl.appendChild(exploreLink);
-    }
+    filtersEl.appendChild(wrap);
   }
 
   function applyFilters() {
@@ -254,7 +402,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     var entityTypeEl = document.querySelector('.level-badge');
     var eType = entityTypeEl ? entityTypeEl.textContent.trim().toLowerCase() : 'person';
     var entityNameEl = document.querySelector('.detail-title');
-    var mappedType = eType === 'persona' ? 'person' : eType === 'institución' ? 'corporate_body' : 'person';
+    var TYPE_MAP = { 'persona': 'person', 'institución': 'corporate_body', 'entidad corporativa': 'corporate_body', 'familia': 'family' };
+    var mappedType = TYPE_MAP[eType] || 'person';
 
     graphNodes.set(entityCode, {
       id: entityCode,
