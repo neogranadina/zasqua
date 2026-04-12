@@ -290,33 +290,111 @@ function escapeHtml(str) {
 
 })();
 
-// Map initialisation — separate, runs after main logic
+// Map initialisation — Protomaps terrain-only basemap + click tooltip
 (function() {
   var mapEl = document.getElementById('place-map');
-  if (!mapEl || typeof maplibregl === 'undefined') return;
+  if (!mapEl || typeof maplibregl === 'undefined' || typeof basemaps === 'undefined') return;
   try {
     var lat = parseFloat(mapEl.dataset.lat);
     var lon = parseFloat(mapEl.dataset.lon);
     if (isNaN(lat) || isNaN(lon)) return;
 
+    var apiKey = mapEl.dataset.protomapsKey || '';
+    var placeName = mapEl.dataset.placeName || '';
+    var placeType = mapEl.dataset.placeType || '';
+
+    // Build terrain-only style (D-05, D-06)
+    var REMOVE = new Set(['roads', 'transit', 'buildings', 'pois', 'landuse', 'landcover']);
+    var allLayers = basemaps.layers('protomaps', basemaps.namedFlavor('light'), { lang: 'es' });
+    var terrainLayers = allLayers.filter(function(l) { return !REMOVE.has(l['source-layer']); });
+    var style = {
+      version: 8,
+      glyphs: 'https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf',
+      sprite: 'https://protomaps.github.io/basemaps-assets/sprites/v4/light',
+      sources: {
+        protomaps: {
+          type: 'vector',
+          url: 'https://api.protomaps.com/tiles/v4.json?key=' + apiKey,
+          attribution: '<a href="https://protomaps.com">Protomaps</a> \u00a9 <a href="https://openstreetmap.org">OpenStreetMap</a>'
+        }
+      },
+      layers: terrainLayers
+    };
+
     var map = new maplibregl.Map({
       container: 'place-map',
-      style: 'https://tiles.openfreemap.org/styles/liberty',
+      style: style,
       center: [lon, lat],
       zoom: 7
     });
 
+    // Burgundy dot marker
     var markerEl = document.createElement('div');
     markerEl.style.width = '12px';
     markerEl.style.height = '12px';
     markerEl.style.borderRadius = '50%';
     markerEl.style.backgroundColor = '#8B2942';
     markerEl.style.border = '2px solid #FFFFFF';
+    markerEl.style.cursor = 'pointer';
 
     new maplibregl.Marker({ element: markerEl })
       .setLngLat([lon, lat])
       .addTo(map);
+
+    // Click-to-pin tooltip (D-08, D-09)
+    var activeTooltip = null;
+    var mapContainer = mapEl;
+
+    function dismissTooltip() {
+      if (activeTooltip) { activeTooltip.remove(); activeTooltip = null; }
+    }
+
+    markerEl.addEventListener('click', function(e) {
+      e.stopPropagation();
+      dismissTooltip();
+
+      var tooltip = document.createElement('div');
+      tooltip.className = 'graph-tooltip map-tooltip';
+
+      var closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'map-tooltip-close';
+      closeBtn.setAttribute('aria-label', 'Cerrar');
+      closeBtn.textContent = '\u00D7';
+      closeBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        dismissTooltip();
+      });
+
+      var content = document.createElement('div');
+      content.innerHTML =
+        '<strong style="font-size:0.95rem">' + escapeHtml(placeName) + '</strong>' +
+        '<br><span style="font-size:0.8rem;color:#57534e">' + escapeHtml(placeType) + '</span>';
+
+      tooltip.appendChild(closeBtn);
+      tooltip.appendChild(content);
+
+      // Position tooltip above marker
+      var pt = map.project([lon, lat]);
+      tooltip.style.position = 'absolute';
+      tooltip.style.left = pt.x + 'px';
+      tooltip.style.top = (pt.y - 10) + 'px';
+      tooltip.style.transform = 'translate(-50%, -100%)';
+      tooltip.style.zIndex = '10';
+      mapContainer.style.position = 'relative';
+      mapContainer.appendChild(tooltip);
+      activeTooltip = tooltip;
+
+      // Dismiss on map pan (D-08)
+      map.once('movestart', dismissTooltip);
+    });
+
   } catch (e) {
     console.error('[place] Map init failed:', e);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 })();
