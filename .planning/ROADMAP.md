@@ -194,7 +194,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1 → 10.2 → 11
+Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1 → 10.2 → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -207,3 +207,26 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1
 | 10. Explorer UX Redesign | 3/4 | In Progress | |
 | 10.1. Infinite Bipartite Graph Explorer | 3/4 | In Progress|  |
 | 11. Description Linking | 2/2 | Complete    | 2026-04-12 |
+| 12. Place Explorer & Detail Rework | 0/0 | Not planned | |
+
+### Phase 12: Place explorer and place detail page rework
+
+**Goal:** Fix place explorer and place detail page issues surfaced during Phase 11 visual review. Redesign the place explorer map (clustered markers with document counts), fix broken interactions (filters, timeline toggle, index click behaviour), restyle place index cards to match entity explorer, and redesign the place detail page layout (map + description list instead of map/timeline toggle).
+
+**Issues to address:**
+1. Place explorer: remove splash screen, load with clustered marker map of northern South America
+2. Place explorer: index clicks should centre/select place in map, not navigate away
+3. Place explorer: card styling should match entity explorer (cards with context, sort options)
+4. Place explorer: filter checkboxes uncheck immediately (broken)
+5. Place explorer: replace heatmap with MapLibre GL clustered markers showing document counts
+6. Place detail: timeline toggle broken — can't switch to timeline view
+7. Place detail: redesign layout — map (when available) + description list below, not a toggle
+8. Data quality: places without linked descriptions — shouldn't exist if derived from descriptions
+9. Data quality: geocoding quality issues (e.g. Acapulco linked to village instead of port)
+10. Data quality: "accidentes geográficos" category is incoherent (Andes to haciendas)
+
+**Depends on:** Phase 11
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 12 to break down)
