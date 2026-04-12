@@ -106,13 +106,39 @@ module.exports = {
     viewAllChildren: "Ver los {count} documentos"
   },
 
-  // Entity roles
+  // Entity roles (complete 29-role vocabulary — D-07)
   roles: {
+    // Core roles (existing 5)
     creator: "Productor",
     contributor: "Colaborador",
     publisher: "Editor",
     subject: "Materia",
-    mentioned: "Mencionado"
+    mentioned: "Mencionado",
+    // Extended roles from entity_links.json
+    sender: "Remitente",
+    recipient: "Destinatario",
+    defendant: "Demandado",
+    plaintiff: "Demandante",
+    witness: "Testigo",
+    official: "Funcionario",
+    scribe: "Escribano",
+    notary: "Notario",
+    judge: "Juez",
+    author: "Autor",
+    buyer: "Comprador",
+    seller: "Vendedor",
+    guarantor: "Fiador",
+    petitioner: "Solicitante",
+    appellant: "Apelante",
+    executor: "Albacea",
+    guardian: "Tutor",
+    attorney: "Apoderado",
+    interpreter: "Intérprete",
+    appraiser: "Tasador",
+    lessee: "Arrendatario",
+    lessor: "Arrendador",
+    debtor: "Deudor",
+    creditor: "Acreedor"
   },
 
   // Entity authority records (ISAAR CPF)

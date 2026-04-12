@@ -176,60 +176,85 @@ async function main() {
   console.log(`[precompute-links] Wrote place-index.json with ${placeIndex.length} records`);
 
   // -------------------------------------------------------------------------
-  // 5. Build reverse-lookup files (D-20): reference_code -> [entity/place codes]
+  // 5. Enriched reverse-lookup files (D-09, D-10, D-11)
   // -------------------------------------------------------------------------
 
-  // desc -> entity codes reverse lookup
-  const entityCodesForDesc = new Map();
+  // 5a. Entity enriched reverse lookup
+  // Build entity_code -> { display_name, entity_type } map from entities array
+  const entityByCode = new Map(entities.map(e => [e.entity_code, e]));
+  const descToEntities = new Map();
+
   for (const link of entityLinks) {
     const refCode = link.reference_code;
-    if (!entityCodesForDesc.has(refCode)) {
-      entityCodesForDesc.set(refCode, new Set());
+    const code = link.entity_code;
+    if (!descToEntities.has(refCode)) descToEntities.set(refCode, new Map());
+    const entMap = descToEntities.get(refCode);
+    if (!entMap.has(code)) {
+      const ent = entityByCode.get(code);
+      entMap.set(code, {
+        code,
+        display_name: ent ? ent.display_name : code,
+        entity_type: ent ? ent.entity_type : 'person',
+        roles: [],
+      });
     }
-    entityCodesForDesc.get(refCode).add(link.entity_code);
+    if (link.role) {
+      const entry = entMap.get(code);
+      if (!entry.roles.includes(link.role)) {
+        entry.roles.push(link.role);
+      }
+    }
   }
 
   const descEntityLookup = {};
-  for (const [refCode, codeSet] of entityCodesForDesc) {
-    descEntityLookup[refCode] = Array.from(codeSet);
+  for (const [refCode, entMap] of descToEntities) {
+    descEntityLookup[refCode] = Array.from(entMap.values());
   }
 
   const descEntityLookupPath = path.join(DATA_DIR, 'desc-entity-lookup.json');
   fs.writeFileSync(descEntityLookupPath, JSON.stringify(descEntityLookup));
-  console.log(`[precompute-links] Wrote desc-entity-lookup.json with ${entityCodesForDesc.size} keys`);
+  console.log(`[precompute-links] Wrote enriched desc-entity-lookup.json with ${descToEntities.size} keys`);
 
-  // desc -> place codes reverse lookup
-  const placeCodesForDesc = new Map();
+  // 5b. Place enriched reverse lookup
+  // place_links.place_code === String(places.id)
+  const placeById = new Map(places.map(p => [String(p.id), p]));
+  const descToPlaces = new Map();
+
   for (const link of placeLinks) {
     const code = link.place_code;
     if (code === null || code === undefined) continue;
     const refCode = link.reference_code;
-    if (!placeCodesForDesc.has(refCode)) {
-      placeCodesForDesc.set(refCode, new Set());
+    if (!descToPlaces.has(refCode)) descToPlaces.set(refCode, new Map());
+    const placeMap = descToPlaces.get(refCode);
+    if (!placeMap.has(String(code))) {
+      const pl = placeById.get(String(code));
+      placeMap.set(String(code), {
+        id: String(code),
+        display_name: pl ? pl.display_name : String(code),
+      });
     }
-    placeCodesForDesc.get(refCode).add(code);
   }
 
   const descPlaceLookup = {};
-  for (const [refCode, codeSet] of placeCodesForDesc) {
-    descPlaceLookup[refCode] = Array.from(codeSet);
+  for (const [refCode, placeMap] of descToPlaces) {
+    descPlaceLookup[refCode] = Array.from(placeMap.values());
   }
 
   const descPlaceLookupPath = path.join(DATA_DIR, 'desc-place-lookup.json');
   fs.writeFileSync(descPlaceLookupPath, JSON.stringify(descPlaceLookup));
-  console.log(`[precompute-links] Wrote desc-place-lookup.json with ${placeCodesForDesc.size} keys`);
+  console.log(`[precompute-links] Wrote enriched desc-place-lookup.json with ${descToPlaces.size} keys`);
 
   // -------------------------------------------------------------------------
   // 6. Summary
   // -------------------------------------------------------------------------
 
   console.log(`[precompute-links] Done.`);
-  console.log(`  Entity shards written : ${entityShardCount}`);
-  console.log(`  Place shards written  : ${placeShardCount}`);
-  console.log(`  entity-index records  : ${entityIndex.length}`);
-  console.log(`  place-index records   : ${placeIndex.length}`);
-  console.log(`  Desc-entity lookup keys: ${entityCodesForDesc.size}`);
-  console.log(`  Desc-place lookup keys : ${placeCodesForDesc.size}`);
+  console.log(`  Entity shards written      : ${entityShardCount}`);
+  console.log(`  Place shards written       : ${placeShardCount}`);
+  console.log(`  entity-index records       : ${entityIndex.length}`);
+  console.log(`  place-index records        : ${placeIndex.length}`);
+  console.log(`  desc-entity-lookup keys    : ${descToEntities.size}`);
+  console.log(`  desc-place-lookup keys     : ${descToPlaces.size}`);
 }
 
 main().catch(err => {
