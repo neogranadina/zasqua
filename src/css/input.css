@@ -3812,6 +3812,30 @@
     text-decoration: none;
   }
 
+  /* Map tooltip — click-to-pin on place detail pages */
+  .map-tooltip {
+    pointer-events: auto;
+    padding: 0.5rem 0.75rem;
+    max-width: 220px;
+  }
+
+  .map-tooltip-close {
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: oklch(70.9% 0.011 56.259); /* --color-stone-400 */
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  .map-tooltip-close:hover {
+    color: oklch(37.4% 0.01 67.558); /* --color-stone-700 */
+  }
+
   .graph-mobile-toggle {
     display: none;
   }

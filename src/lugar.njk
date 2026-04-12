@@ -184,7 +184,12 @@ eleventyComputed:
           {# Map view #}
           {% if place.latitude and place.longitude %}
             <div class="place-map-frame" id="place-map-frame">
-              <div class="place-map" id="place-map" data-lat="{{ place.latitude }}" data-lon="{{ place.longitude }}"></div>
+              <div class="place-map" id="place-map"
+                   data-lat="{{ place.latitude }}"
+                   data-lon="{{ place.longitude }}"
+                   data-place-name="{{ place.display_name }}"
+                   data-place-type="{{ ui.place.types[place.place_type] or place.place_type }}"
+                   data-protomaps-key="{{ site.protomaps_key }}"></div>
             </div>
           {% endif %}
 
@@ -206,11 +211,7 @@ eleventyComputed:
   {% if place.latitude and place.longitude %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.css" />
     <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5/dist/maplibre-gl.js"></script>
-    <script type="module">
-      import { Protocol } from 'https://cdn.jsdelivr.net/npm/pmtiles@4/dist/pmtiles.js';
-      const protocol = new Protocol();
-      maplibregl.addProtocol('pmtiles', protocol.tile);
-    </script>
+    <script src="https://unpkg.com/@protomaps/basemaps@5/dist/basemaps.js" crossorigin="anonymous"></script>
   {% endif %}
 {% endblock %}
 
