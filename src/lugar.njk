@@ -146,42 +146,12 @@ eleventyComputed:
 
       </div>
 
-      {# Right column: aside with map/timeline #}
+      {# Right column: aside with map and description list #}
       <div class="desc-aside">
         <div class="detail-section">
           <h3 class="font-semibold text-stone-400">{{ ui.place.linkedDescriptions }}</h3>
 
-          {# Intro sentence with view links #}
-          <p class="entity-intro" id="place-intro"
-             data-place-type="{{ ui.place.types[place.place_type] or place.place_type }}"
-             data-place-id="{{ place.id }}"
-             data-count="{{ place._linked_count }}">
-          </p>
-
-          {# Segmented control for view switching #}
-          {% if place.latitude and place.longitude %}
-            <div class="entity-view-toggle" id="place-view-toggle">
-              <button type="button" class="entity-toggle-btn active" data-view="map">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                Mapa de ubicación
-              </button>
-              <button type="button" class="entity-toggle-btn" data-view="timeline">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Línea de tiempo
-              </button>
-            </div>
-          {% else %}
-            <div class="entity-view-toggle" id="place-view-toggle">
-              <button type="button" class="entity-toggle-btn active" data-view="timeline">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                Línea de tiempo
-              </button>
-            </div>
-          {% endif %}
-
-          <div class="entity-role-filters" id="place-role-filters"></div>
-
-          {# Map view #}
+          {# Map — always visible when coordinates exist #}
           {% if place.latitude and place.longitude %}
             <div class="place-map-frame" id="place-map-frame">
               <div class="place-map" id="place-map"
@@ -191,11 +161,25 @@ eleventyComputed:
                    data-place-type="{{ ui.place.types[place.place_type] or place.place_type }}"
                    data-protomaps-key="{{ site.protomaps_key }}"></div>
             </div>
+          {% else %}
+            <div class="place-no-coords-notice" style="padding:1rem;background:var(--color-stone-100);border-radius:0.5rem;margin-bottom:1rem">
+              <p class="text-sm text-stone-500" style="margin:0">Ubicaci&oacute;n no disponible para este lugar.</p>
+            </div>
           {% endif %}
 
-          {# Timeline view #}
-          <div class="entity-timeline-frame" id="place-timeline-frame" style="display: none">
-            <div class="entity-timeline" id="place-timeline" data-place-id="{{ place.id }}">
+          <div class="entity-role-filters" id="place-role-filters"></div>
+
+          {# Description list with sort toggle #}
+          <div id="place-description-list-wrapper">
+            <div id="place-description-sort" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+              <span class="text-sm font-medium text-stone-700" id="place-desc-count"></span>
+              <div class="sort-controls" style="display:flex;gap:0.5rem;align-items:center">
+                <button type="button" class="sort-btn active" data-sort="chronological">Cronol&oacute;gico</button>
+                <span class="sort-divider">|</span>
+                <button type="button" class="sort-btn" data-sort="alphabetical">Alfab&eacute;tico</button>
+              </div>
+            </div>
+            <div id="place-timeline" data-place-id="{{ place.id }}">
               <p class="text-stone-500 text-sm">{{ ui.general.loading }}</p>
             </div>
           </div>

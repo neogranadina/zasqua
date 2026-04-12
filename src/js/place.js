@@ -10,10 +10,8 @@ var placeRoleLabels = {
   unknown: 'Sin rol'
 };
 
-// Main page logic — shard loading, intro, role filters, timeline, toggle
+// Main page logic — shard loading, role filters, description list with sort
 (async function() {
-  // --- Timeline / shard loading ---
-
   var timelineEl = document.getElementById('place-timeline');
   if (!timelineEl) return;
 
@@ -33,106 +31,27 @@ var placeRoleLabels = {
 
   // State
   var activeRoles = new Set();
-  var currentView = mapEl ? 'map' : 'timeline';
+  var sortMode = 'chronological';
 
-  // If no map, show timeline by default
-  if (!mapEl) {
-    var tlFrame = document.getElementById('place-timeline-frame');
-    if (tlFrame) tlFrame.style.display = '';
+  // Set description count
+  var countEl = document.getElementById('place-desc-count');
+  if (countEl) {
+    countEl.textContent = links.length + ' ' + (links.length === 1 ? 'descripci\u00f3n vinculada' : 'descripciones vinculadas');
   }
 
-  buildIntro(links);
+  // Wire sort buttons
+  var sortBtns = document.querySelectorAll('#place-description-sort .sort-btn');
+  sortBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      sortMode = btn.getAttribute('data-sort');
+      sortBtns.forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderDescriptionList(timelineEl, links, activeRoles, sortMode);
+    });
+  });
+
   buildRoleFilters(links);
-  wireToggleButtons();
-  renderTimeline(timelineEl, links, activeRoles);
-
-  // --- Intro sentence with view links ---
-
-  function buildIntro(allLinks) {
-    var introEl = document.getElementById('place-intro');
-    if (!introEl) return;
-
-    var placeType = (introEl.dataset.placeType || 'lugar').toLowerCase();
-    var id = introEl.dataset.placeId;
-    var count = allLinks.length;
-
-    var text = 'Este ' + escapeHtml(placeType) + ' aparece vinculado a <strong>' +
-      count.toLocaleString('es-CO') + ' descripciones</strong> en el archivo.<br>Ver ';
-
-    introEl.innerHTML = text;
-
-    if (mapEl) {
-      var mapLink = document.createElement('button');
-      mapLink.type = 'button';
-      mapLink.className = 'entity-view-link' + (currentView === 'map' ? ' active' : '');
-      mapLink.textContent = 'en un mapa';
-      mapLink.dataset.view = 'map';
-      mapLink.addEventListener('click', function() { switchView('map'); });
-      introEl.appendChild(mapLink);
-
-      introEl.appendChild(document.createTextNode(', como '));
-    }
-
-    var tlLink = document.createElement('button');
-    tlLink.type = 'button';
-    tlLink.className = 'entity-view-link' + (currentView === 'timeline' ? ' active' : '');
-    tlLink.textContent = 'una línea de tiempo';
-    tlLink.dataset.view = 'timeline';
-    tlLink.addEventListener('click', function() { switchView('timeline'); });
-    introEl.appendChild(tlLink);
-
-    introEl.appendChild(document.createTextNode(' o como '));
-
-    var searchLink = document.createElement('a');
-    searchLink.className = 'entity-view-link';
-    searchLink.href = '/buscar/?lugar=' + encodeURIComponent(id);
-    searchLink.textContent = 'un filtro en el sistema de búsquedas';
-    introEl.appendChild(searchLink);
-
-    introEl.appendChild(document.createTextNode(' de Zasqua.'));
-  }
-
-  // --- Segmented control ---
-
-  function wireToggleButtons() {
-    var toggleEl = document.getElementById('place-view-toggle');
-    if (!toggleEl) return;
-    var btns = toggleEl.querySelectorAll('.entity-toggle-btn');
-    btns.forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        switchView(btn.dataset.view);
-      });
-    });
-  }
-
-  function switchView(view) {
-    if (view === currentView) return;
-    currentView = view;
-
-    // Update prose link styles
-    var viewLinks = document.querySelectorAll('.entity-view-link[data-view]');
-    viewLinks.forEach(function(link) {
-      link.classList.toggle('active', link.dataset.view === view);
-    });
-
-    // Update segmented control styles
-    var toggleBtns = document.querySelectorAll('.entity-toggle-btn[data-view]');
-    toggleBtns.forEach(function(btn) {
-      btn.classList.toggle('active', btn.dataset.view === view);
-    });
-
-    var mapFrame = document.getElementById('place-map-frame');
-    var timelineFrame = document.getElementById('place-timeline-frame');
-
-    if (view === 'map') {
-      if (mapFrame) mapFrame.style.display = '';
-      timelineFrame.style.display = 'none';
-    } else {
-      if (mapFrame) mapFrame.style.display = 'none';
-      timelineFrame.style.display = '';
-      renderTimeline(timelineEl, links, activeRoles);
-    }
-  }
+  renderDescriptionList(timelineEl, links, activeRoles, sortMode);
 
   // --- Role filters (pills) ---
 
@@ -167,7 +86,7 @@ var placeRoleLabels = {
           activeRoles.add(r);
           this.classList.add('active');
         }
-        applyFilters();
+        renderDescriptionList(timelineEl, links, activeRoles, sortMode);
       });
       filtersEl.appendChild(btn);
     }
@@ -180,15 +99,9 @@ var placeRoleLabels = {
     filtersEl.appendChild(exploreLink);
   }
 
-  function applyFilters() {
-    if (currentView === 'timeline') {
-      renderTimeline(timelineEl, links, activeRoles);
-    }
-  }
+  // --- Description list rendering ---
 
-  // --- Timeline rendering ---
-
-function renderTimeline(container, links, activeRoles) {
+function renderDescriptionList(container, links, activeRoles, sortMode) {
   var filtered = activeRoles && activeRoles.size > 0
     ? links.filter(function(l) { return activeRoles.has(l.role || 'unknown'); })
     : links;
@@ -198,29 +111,40 @@ function renderTimeline(container, links, activeRoles) {
     return;
   }
 
-  var dated = [];
-  var undated = [];
-  for (var i = 0; i < filtered.length; i++) {
-    if (filtered[i].date_expression) {
-      dated.push(filtered[i]);
-    } else {
-      undated.push(filtered[i]);
-    }
-  }
-
-  dated.sort(function(a, b) {
-    return a.date_expression.localeCompare(b.date_expression);
-  });
-
-  var all = dated.concat(undated.length > 0 ? [null] : [], undated);
   var html = '';
-  for (var j = 0; j < all.length; j++) {
-    if (all[j] === null) {
-      html += '<div class="timeline-no-date">Sin fecha</div>';
-      continue;
+
+  if (sortMode === 'alphabetical') {
+    // Alphabetical: sort all entries by title, no date grouping
+    var sorted = filtered.slice().sort(function(a, b) {
+      return (a.title || '').localeCompare(b.title || '', 'es');
+    });
+    for (var i = 0; i < sorted.length; i++) {
+      html += renderTimelineEntry(sorted[i], i === sorted.length - 1);
     }
-    var isLast = (j === all.length - 1);
-    html += renderTimelineEntry(all[j], isLast);
+  } else {
+    // Chronological (default): dated first sorted ascending, undated at bottom
+    var dated = [];
+    var undated = [];
+    for (var j = 0; j < filtered.length; j++) {
+      if (filtered[j].date_expression) {
+        dated.push(filtered[j]);
+      } else {
+        undated.push(filtered[j]);
+      }
+    }
+
+    dated.sort(function(a, b) {
+      return a.date_expression.localeCompare(b.date_expression);
+    });
+
+    var all = dated.concat(undated.length > 0 ? [null] : [], undated);
+    for (var k = 0; k < all.length; k++) {
+      if (all[k] === null) {
+        html += '<div class="timeline-no-date">Sin fecha</div>';
+        continue;
+      }
+      html += renderTimelineEntry(all[k], k === all.length - 1);
+    }
   }
 
   container.innerHTML = html;
@@ -261,7 +185,7 @@ function formatDate(dateStr) {
 
   if (dateStr.indexOf(' .. ') !== -1) {
     var parts = dateStr.split(' .. ');
-    return formatDate(parts[0]) + ' – ' + formatDate(parts[1]);
+    return formatDate(parts[0]) + ' \u2013 ' + formatDate(parts[1]);
   }
 
   var match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
