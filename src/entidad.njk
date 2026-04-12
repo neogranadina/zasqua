@@ -138,12 +138,13 @@ eleventyComputed:
             <span class="detail-value detail-value-mono">{{ ent.entity_code }}</span>
           </div>
           <div class="detail-field">
-            <span class="detail-label">Red de entidades</span>
-            <span class="detail-value">
-              <a href="/entidades/?entidad={{ ent.entity_code }}" class="text-[#8B2942] hover:underline">
-                Explorar en la red de entidades &rarr;
-              </a>
-            </span>
+            <a href="/entidades/?entidad={{ ent.entity_code }}"
+               class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-md bg-[#8B2942] text-white hover:bg-[#6f2035] transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                <circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="16"/><circle cx="6" cy="19" r="3"/><circle cx="18" cy="19" r="3"/><line x1="12" y1="16" x2="6" y2="16"/><line x1="12" y1="16" x2="18" y2="16"/>
+              </svg>
+              Ver en explorador
+            </a>
           </div>
         </div>
 
