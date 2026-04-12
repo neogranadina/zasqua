@@ -189,24 +189,30 @@ eleventyComputed:
           </div>
         {% endif %}
 
-        {# Section: Personas y entidades #}
-        {% if desc.creator_display %}
+        {# Section: Personas y entidades (per D-01, D-04, D-05) #}
+        {% if desc._entity_links.length > 0 %}
           <div class="detail-section">
             <h3>{{ ui.description.entitiesHeader }}</h3>
-            <div class="detail-field">
-              <span class="detail-label">{{ ui.roles.creator }}</span>
-              <span class="detail-value">{{ desc.creator_display }}</span>
-            </div>
+            {% for ent in desc._entity_links %}
+              <div class="detail-field">
+                <a href="/entidad/{{ ent.code }}/">{{ ent.display_name }}</a>
+                {% if ent.role_labels.length > 0 %}
+                 &mdash; <em class="text-stone-400">{{ ent.role_labels | join(", ") }}</em>
+                {% endif %}
+              </div>
+            {% endfor %}
           </div>
         {% endif %}
 
-        {# Section: Lugares #}
-        {% if desc.place_display %}
+        {# Section: Lugares (per D-04, D-08) #}
+        {% if desc._place_links.length > 0 %}
           <div class="detail-section">
             <h3>{{ ui.description.placesHeader }}</h3>
-            <div class="detail-field">
-              <span class="detail-value">{{ desc.place_display }}</span>
-            </div>
+            {% for place in desc._place_links %}
+              <div class="detail-field">
+                <a href="/lugar/{{ place.display_name | safeSlug }}/">{{ place.display_name }}</a>
+              </div>
+            {% endfor %}
           </div>
         {% endif %}
 
