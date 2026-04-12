@@ -123,4 +123,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-03 — Phase 9 complete, Phases 10–11 added (explorer redesign + description linking)*
+*Last updated: 2026-04-12 — Phase 10.2 complete (explorer parity: Protomaps basemap, place explorer grid layout, entity detail accordion + focal node colour fix)*
