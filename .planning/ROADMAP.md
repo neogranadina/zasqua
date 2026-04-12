@@ -150,9 +150,9 @@ Plans:
   5. Focal/home node on entity detail page graphs uses the correct entity-type colour (burgundy for person, periwinkle for corporate/family)
   6. Cross-navigation links from entity detail pages deep-link correctly into the entity explorer via `?entidad=ne-XXX` URL param
 **Plans**: 3 plans
-- [ ] 10.2-01-PLAN.md — Place explorer parity + Protomaps CDN fix on the explorer
-- [ ] 10.2-02-PLAN.md — Place detail page map tooltips + Protomaps CDN fix on detail pages
-- [ ] 10.2-03-PLAN.md — Entity detail page polish (7-group role facet, focal node colour, explorer deep links)
+- [x] 10.2-01-PLAN.md — Place explorer parity + Protomaps CDN fix on the explorer
+- [x] 10.2-02-PLAN.md — Place detail page map tooltips + Protomaps CDN fix on detail pages
+- [x] 10.2-03-PLAN.md — Entity detail page polish (7-group role facet, focal node colour, explorer deep links)
 **Deferred / tracked elsewhere**:
 - Linked Places JSON-LD and EAC-CPF XML authority manifest production → backend work in zasqua-backend-dev (or v0.6.0 if v0.5.0 is feature-frozen). Once published, the frontend wire-up is a trivial follow-up — URL references from detail page templates.
 **UI hint**: yes
