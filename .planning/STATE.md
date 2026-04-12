@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v0.5.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Phase 12 context gathered
-last_updated: "2026-04-12T20:03:45.876Z"
+status: Ready to execute
+stopped_at: Completed 12-01-PLAN.md
+last_updated: "2026-04-12T20:50:43.941Z"
 progress:
   total_phases: 11
   completed_phases: 8
-  total_plans: 30
-  completed_plans: 28
-  percent: 93
+  total_plans: 32
+  completed_plans: 29
+  percent: 91
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-03)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Phase 10.2 — explorer-parity
+**Current focus:** Phase 12 — place-explorer-and-place-detail-page-rework
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
+Phase: 12 (place-explorer-and-place-detail-page-rework) — EXECUTING
+Plan: 2 of 2
 Next: Phase 10.2 (explorer-parity) — INSERTED, ready to plan
 
 ## Accumulated Context
@@ -56,6 +56,8 @@ v0.5.0 decisions:
 - [Phase 09]: Explorer graph paused — entity explorer crashes browsers, needs full UX redesign
 - [Phase 10 scoping]: Explorer UX redesign includes research, Figma design, then implementation
 - [Phase 11 scoping]: Description linking deferred until entity data stabilises (zasqua-entities phases 10.1–10.2)
+- [Phase 12]: Detect Protomaps font from basemap layers for cluster count labels
+- [Phase 12]: Extract place IDs from Pagefind stub URLs for map filter sync
 
 ### Pending Todos
 
@@ -74,8 +76,8 @@ v0.5.0 decisions:
 
 ## Session Continuity
 
-Last session: 2026-04-12T20:03:45.871Z
-Stopped at: Phase 12 context gathered
+Last session: 2026-04-12T20:50:43.937Z
+Stopped at: Completed 12-01-PLAN.md
 shakedown narrative, decisions, original-criteria verification table,
 backend open items). Decision: the redesign and infinite-trail work
 stayed in scope of 10.1-04 — no 10.1-05 plan, no separate phase. Three
