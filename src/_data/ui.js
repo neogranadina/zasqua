@@ -211,6 +211,7 @@ module.exports = {
     // Page copy
     breadcrumbParent: "Lugares",
     timelineHeader: "Apariciones en el archivo",
+    map: "Mapa",
     linkedDescriptions: "Descripciones vinculadas",
     linkedDescriptionsLink: "Ver las {count} descripciones vinculadas",
     noLinkedDescriptions: "No se encontraron descripciones vinculadas a este registro.",

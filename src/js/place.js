@@ -59,31 +59,36 @@ var placeRoleLabels = {
     var filtersEl = document.getElementById('place-role-filters');
     if (!filtersEl) return;
 
-    var roleCounts = {};
+    // Group roles by display label so duplicates (e.g. subject/mentioned) merge into one pill
+    var labelGroups = {};
     for (var i = 0; i < allLinks.length; i++) {
       var r = allLinks[i].role || 'unknown';
-      roleCounts[r] = (roleCounts[r] || 0) + 1;
+      var label = placeRoleLabels[r] || r;
+      if (!labelGroups[label]) labelGroups[label] = { roles: [], count: 0 };
+      if (labelGroups[label].roles.indexOf(r) === -1) labelGroups[label].roles.push(r);
+      labelGroups[label].count++;
     }
 
-    var roles = Object.keys(roleCounts).sort(function(a, b) {
-      return roleCounts[b] - roleCounts[a];
+    var labels = Object.keys(labelGroups).sort(function(a, b) {
+      return labelGroups[b].count - labelGroups[a].count;
     });
 
     filtersEl.innerHTML = '';
-    for (var j = 0; j < roles.length; j++) {
-      var role = roles[j];
+    for (var j = 0; j < labels.length; j++) {
+      var group = labelGroups[labels[j]];
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'entity-role-btn';
-      btn.dataset.role = role;
-      btn.textContent = (placeRoleLabels[role] || role) + ' (' + roleCounts[role] + ')';
+      btn.dataset.roles = group.roles.join(',');
+      btn.textContent = labels[j] + ' (' + group.count + ')';
       btn.addEventListener('click', function() {
-        var r = this.dataset.role;
-        if (activeRoles.has(r)) {
-          activeRoles.delete(r);
+        var rs = this.dataset.roles.split(',');
+        var allActive = rs.every(function(r) { return activeRoles.has(r); });
+        if (allActive) {
+          rs.forEach(function(r) { activeRoles.delete(r); });
           this.classList.remove('active');
         } else {
-          activeRoles.add(r);
+          rs.forEach(function(r) { activeRoles.add(r); });
           this.classList.add('active');
         }
         renderDescriptionList(timelineEl, links, activeRoles, sortMode);
@@ -91,12 +96,6 @@ var placeRoleLabels = {
       filtersEl.appendChild(btn);
     }
 
-    // Explorer link inline with pills
-    var exploreLink = document.createElement('a');
-    exploreLink.className = 'entity-explore-link';
-    exploreLink.href = '/lugares/?q=' + encodeURIComponent(placeId);
-    exploreLink.textContent = 'Abrir en explorador de lugares';
-    filtersEl.appendChild(exploreLink);
   }
 
   // --- Description list rendering ---
@@ -119,7 +118,7 @@ function renderDescriptionList(container, links, activeRoles, sortMode) {
       return (a.title || '').localeCompare(b.title || '', 'es');
     });
     for (var i = 0; i < sorted.length; i++) {
-      html += renderTimelineEntry(sorted[i], i === sorted.length - 1);
+      html += renderTimelineEntry(sorted[i], i === sorted.length - 1, true);
     }
   } else {
     // Chronological (default): dated first sorted ascending, undated at bottom
@@ -150,14 +149,16 @@ function renderDescriptionList(container, links, activeRoles, sortMode) {
   container.innerHTML = html;
 }
 
-function renderTimelineEntry(link, isLast) {
+function renderTimelineEntry(link, isLast, hideTrack) {
   var slug = link.reference_code.replace(/[?#]/g, '');
   var html = '<div class="timeline-entry' + (isLast ? ' timeline-entry-last' : '') + '">';
 
-  html += '<div class="timeline-track">';
-  html += '<div class="timeline-dot"><div class="timeline-dot-inner"></div></div>';
-  if (!isLast) html += '<div class="timeline-line"></div>';
-  html += '</div>';
+  if (!hideTrack) {
+    html += '<div class="timeline-track">';
+    html += '<div class="timeline-dot"><div class="timeline-dot-inner"></div></div>';
+    if (!isLast) html += '<div class="timeline-line"></div>';
+    html += '</div>';
+  }
 
   html += '<div class="timeline-card">';
   if (link.date_expression) {

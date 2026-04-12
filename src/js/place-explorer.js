@@ -891,7 +891,7 @@ class PlaceExplorer {
     authLbl.appendChild(authCb);
     var authTxt = document.createElement('span');
     authTxt.className = 'facet-label-text';
-    authTxt.textContent = 'Solo con v\u00ednculos de autoridad';
+    authTxt.textContent = 'Solo con autoridad externa';
     authLbl.appendChild(authTxt);
     var authCnt = document.createElement('span');
     authCnt.className = 'facet-count';

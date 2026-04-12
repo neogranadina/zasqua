@@ -122,7 +122,7 @@ eleventyComputed:
           <h3 class="font-semibold text-stone-400">{{ ui.place.sections.control }}</h3>
           <div class="detail-field">
             <span class="detail-label">{{ ui.place.fields.placeCode }}</span>
-            <span class="detail-value detail-value-mono">{{ place.place_code or place.id }}</span>
+            <span class="detail-value detail-value-mono">{{ place.place_code or ("nl-" + place.id) }}</span>
           </div>
           {% if place.latitude and place.longitude %}
             <div class="detail-field">
@@ -130,6 +130,16 @@ eleventyComputed:
               <span class="detail-value">{{ place.latitude }}, {{ place.longitude }}</span>
             </div>
           {% endif %}
+          <div class="detail-field">
+            <a href="/lugares/?q={{ place.display_name | urlencode }}"
+               class="inline-flex items-center gap-1.5 text-sm font-medium rounded-md transition-colors"
+               style="padding:0.5rem 1rem;background:var(--color-burgundy);color:#fff"
+               onmouseover="this.style.background='var(--color-burgundy-deep)'"
+               onmouseout="this.style.background='var(--color-burgundy)'">
+              <span class="material-symbols-outlined" style="font-size:16px">location_on</span>
+              Ver en explorador
+            </a>
+          </div>
         </div>
 
         {# Section: Reutilizacion #}
@@ -149,10 +159,9 @@ eleventyComputed:
       {# Right column: aside with map and description list #}
       <div class="desc-aside">
         <div class="detail-section">
-          <h3 class="font-semibold text-stone-400">{{ ui.place.linkedDescriptions }}</h3>
-
           {# Map — always visible when coordinates exist #}
           {% if place.latitude and place.longitude %}
+            <h3 class="font-semibold text-stone-400">{{ ui.place.map }}</h3>
             <div class="place-map-frame" id="place-map-frame">
               <div class="place-map" id="place-map"
                    data-lat="{{ place.latitude }}"
@@ -162,10 +171,14 @@ eleventyComputed:
                    data-protomaps-key="{{ site.protomaps_key }}"></div>
             </div>
           {% else %}
-            <div class="place-no-coords-notice" style="padding:1rem;background:var(--color-stone-100);border-radius:0.5rem;margin-bottom:1rem">
-              <p class="text-sm text-stone-500" style="margin:0">Ubicaci&oacute;n no disponible para este lugar.</p>
+            <div class="desc-notice">
+              <span class="material-symbols-outlined desc-notice-icon">location_off</span>
+              <div class="desc-notice-title">{{ ui.place.noCoordinatesTitle }}</div>
+              <p class="desc-notice-text">{{ ui.place.noCoordinatesText }}</p>
             </div>
           {% endif %}
+
+          <h3 class="font-semibold text-stone-400">{{ ui.place.linkedDescriptions }}</h3>
 
           <div class="entity-role-filters" id="place-role-filters"></div>
 
