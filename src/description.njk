@@ -393,7 +393,7 @@ eleventyComputed:
 
 {# OCR text: indexed for search but never displayed #}
 {% if desc.ocr_text %}
-  <div data-pagefind-body data-pagefind-weight="0.5" hidden>{{ desc.ocr_text }}</div>
+  <div data-pagefind-body data-pagefind-weight="0.5" hidden>{{ desc.ocr_text | escapeTemplate | safe }}</div>
 {% endif %}
 
 {% block head %}

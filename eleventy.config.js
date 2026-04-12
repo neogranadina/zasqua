@@ -165,6 +165,21 @@ module.exports = function(eleventyConfig) {
     try { return countryNames.of(code); } catch (e) { return code; }
   });
 
+  eleventyConfig.addFilter("escapeTemplate", function(str) {
+    if (!str) return "";
+    // Escape HTML special chars first, then replace template syntax
+    // so Nunjucks/Liquid layout passes don't re-parse {{ or {%
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/\{\{/g, "&#123;&#123;")
+      .replace(/\}\}/g, "&#125;&#125;")
+      .replace(/\{%/g, "&#123;%")
+      .replace(/%\}/g, "%&#125;");
+  });
+
   eleventyConfig.addFilter("truncate", function(str, length) {
     if (!str) return "";
     if (str.length <= length) return str;
