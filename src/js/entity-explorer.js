@@ -1070,7 +1070,9 @@ class EntityExplorer {
         'primary_function',
         filters.primary_function,
         this.state.primary_function,
-        (value) => value
+        (value) => value,
+        null,
+        10
       ));
     }
 
@@ -1239,11 +1241,13 @@ class EntityExplorer {
     // Facet: primary function
     if (filters.primary_function) {
       sidebar.appendChild(this.renderFacetGroup(
-        'Funcion principal',
+        'Función principal',
         'primary_function',
         filters.primary_function,
         this.state.primary_function,
-        (value) => value  // already in Spanish from backend
+        (value) => value,
+        null,
+        10
       ));
     }
 
@@ -1298,7 +1302,7 @@ class EntityExplorer {
     return wrap;
   }
 
-  renderFacetGroup(title, stateKey, facetData, activeValues, labelFn, sortFn) {
+  renderFacetGroup(title, stateKey, facetData, activeValues, labelFn, sortFn, maxVisible) {
     const group = document.createElement('div');
     group.className = 'facet-group';
 
@@ -1332,10 +1336,13 @@ class EntityExplorer {
     });
 
     const hasActive = activeValues.length > 0;
+    let rendered = 0;
 
     for (const [value, count] of entries) {
       if (hasActive && !activeValues.includes(value)) continue;
       if (count === 0 && !activeValues.includes(value)) continue;
+
+      if (maxVisible && !hasActive && rendered >= maxVisible) break;
 
       const label = document.createElement('label');
       label.className = 'facet-option';
@@ -1360,10 +1367,157 @@ class EntityExplorer {
       label.appendChild(countSpan);
 
       content.appendChild(label);
+      rendered++;
+    }
+
+    // "Ver todos" button when there are more items than maxVisible
+    if (maxVisible && !hasActive && entries.length > maxVisible) {
+      const showAllBtn = document.createElement('button');
+      showAllBtn.type = 'button';
+      showAllBtn.className = 'facet-show-all-btn';
+      showAllBtn.textContent = `Ver todos (${entries.length.toLocaleString('es-CO')})`;
+      showAllBtn.addEventListener('click', () => {
+        this.openFacetModal(title, stateKey, entries, activeValues, labelFn);
+      });
+      content.appendChild(showAllBtn);
     }
 
     group.appendChild(content);
     return group;
+  }
+
+  openFacetModal(title, stateKey, entries, activeValues, labelFn) {
+    // Remove any existing modal
+    var existing = document.getElementById('facet-modal-overlay');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'facet-modal-overlay';
+    overlay.className = 'facet-modal-overlay';
+
+    var modal = document.createElement('div');
+    modal.className = 'facet-modal';
+
+    // Header
+    var header = document.createElement('div');
+    header.className = 'facet-modal-header';
+    var titleEl = document.createElement('h3');
+    titleEl.textContent = title;
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'facet-modal-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    header.appendChild(titleEl);
+    header.appendChild(closeBtn);
+    modal.appendChild(header);
+
+    // Search input
+    var searchInput = document.createElement('input');
+    searchInput.type = 'search';
+    searchInput.className = 'facet-modal-search';
+    searchInput.placeholder = 'Buscar...';
+    modal.appendChild(searchInput);
+
+    // List container
+    var list = document.createElement('div');
+    list.className = 'facet-modal-list';
+
+    var self = this;
+
+    // Sort entries alphabetically by label for the modal
+    var sortedEntries = entries.slice().sort(function(a, b) {
+      return labelFn(a[0]).localeCompare(labelFn(b[0]), 'es');
+    });
+
+    function renderModalEntries(filter) {
+      list.innerHTML = '';
+      var filterLower = (filter || '').toLowerCase();
+      var isFiltering = filterLower.length > 0;
+      var shown = 0;
+      var currentLetter = '';
+
+      for (var i = 0; i < sortedEntries.length; i++) {
+        var value = sortedEntries[i][0];
+        var count = sortedEntries[i][1];
+        if (count === 0) continue;
+        var labelText = labelFn(value);
+        if (isFiltering && labelText.toLowerCase().indexOf(filterLower) === -1) continue;
+
+        // Letter header (skip when searching)
+        if (!isFiltering) {
+          var firstLetter = labelText[0].toUpperCase();
+          if (firstLetter !== currentLetter) {
+            currentLetter = firstLetter;
+            var letterHeader = document.createElement('div');
+            letterHeader.className = 'facet-modal-letter';
+            letterHeader.textContent = currentLetter;
+            list.appendChild(letterHeader);
+          }
+        }
+
+        var label = document.createElement('label');
+        label.className = 'facet-option';
+
+        var checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = value;
+        checkbox.checked = activeValues.includes(value);
+        (function(v, cb) {
+          cb.addEventListener('change', function() {
+            self.handleFilterChange(stateKey, v, cb.checked);
+            if (cb.checked && !activeValues.includes(v)) activeValues.push(v);
+            else if (!cb.checked) {
+              var idx = activeValues.indexOf(v);
+              if (idx !== -1) activeValues.splice(idx, 1);
+            }
+          });
+        })(value, checkbox);
+        label.appendChild(checkbox);
+
+        var text = document.createElement('span');
+        text.className = 'facet-label-text';
+        text.textContent = labelText;
+        label.appendChild(text);
+
+        var countSpan = document.createElement('span');
+        countSpan.className = 'facet-count';
+        countSpan.textContent = '(' + Number(count).toLocaleString('es-CO') + ')';
+        label.appendChild(countSpan);
+
+        list.appendChild(label);
+        shown++;
+      }
+      if (shown === 0) {
+        var empty = document.createElement('p');
+        empty.className = 'facet-modal-empty';
+        empty.textContent = 'No se encontraron resultados';
+        list.appendChild(empty);
+      }
+    }
+
+    renderModalEntries('');
+
+    searchInput.addEventListener('input', function() {
+      renderModalEntries(searchInput.value);
+    });
+
+    modal.appendChild(list);
+    overlay.appendChild(modal);
+
+    // Close on overlay click (outside modal)
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) overlay.remove();
+    });
+
+    // Close on Escape
+    var escHandler = function(e) {
+      if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escHandler); }
+    };
+    document.addEventListener('keydown', escHandler);
+
+    document.body.appendChild(overlay);
+    searchInput.focus();
   }
 
   renderDateTree(yearData, centuryFacet, decadeFacet) {
