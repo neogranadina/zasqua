@@ -2,9 +2,9 @@
  * Place Explorer
  *
  * Pagefind-powered search and faceted filtering for places, with a
- * MapLibre Protomaps terrain-only basemap, paginated results list,
- * sidebar facets, filter pills, URL state sync, sort toggle,
- * selected place card, empty state, and viewport filter toggle.
+ * MapLibre Protomaps terrain-only basemap with clustered markers,
+ * paginated results list, sidebar facets, filter pills, URL state sync,
+ * sort toggle, selected place card, and viewport filter toggle.
  *
  * The template (lugares.njk) provides the full explorer-grid layout.
  * This class populates content INTO the template slots:
@@ -12,7 +12,6 @@
  *   - #sidebar-facets      → facet groups
  *   - #place-explorer      → results info, list, pagination, pills
  *   - #selected-place-card → selected place card (on click)
- *   - #map-empty-state     → hidden once any place is selected
  *   - #viewport-filter-toggle → wired for map-bound filter
  *
  * Map coordinates come from /data/place-index.json (fetched separately).
@@ -85,7 +84,7 @@ class PlaceExplorer {
     this.hideLoadingOverlay();
     this.buildDOM();
     this.initMap();
-    this.initEmptyState();
+    this.initExampleButtons();
     this.initViewportFilter();
 
     // Update place count live from Pagefind index
@@ -221,6 +220,22 @@ class PlaceExplorer {
       };
     }
 
+    // Detect available font from basemap layers for cluster count labels
+    var clusterFont = ['Noto Sans Regular'];
+    if (typeof basemaps !== 'undefined') {
+      try {
+        var allLayers = basemaps.layers('protomaps', basemaps.namedFlavor('light'), { lang: 'es' });
+        for (var li = 0; li < allLayers.length; li++) {
+          var tf = allLayers[li].layout && allLayers[li].layout['text-font'];
+          if (tf && Array.isArray(tf) && tf.length > 0) {
+            clusterFont = tf;
+            break;
+          }
+        }
+      } catch (e) { /* keep default */ }
+    }
+    this._clusterFont = clusterFont;
+
     this.map = new maplibregl.Map({
       container: 'explorer-map',
       style: style,
@@ -228,83 +243,101 @@ class PlaceExplorer {
       zoom: 5
     });
 
-    this.map.fitBounds([[-79.0, -4.2], [-66.9, 13.4]], { padding: 20, animate: false });
+    this.map.fitBounds([[-83.0, -5.0], [-60.0, 15.0]], { padding: 20, animate: false });
 
     this.map.on('load', () => {
       this.mapReady = true;
 
-      // Empty GeoJSON source
+      // GeoJSON source with clustering enabled
       this.map.addSource('places', {
         type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] }
+        data: { type: 'FeatureCollection', features: [] },
+        cluster: true,
+        clusterMaxZoom: 12,
+        clusterRadius: 50
       });
 
-      // Heatmap layer
+      // Cluster circles — size scales with point_count
       this.map.addLayer({
-        id: 'places-heat',
-        type: 'heatmap',
-        source: 'places',
-        maxzoom: 10,
-        paint: {
-          'heatmap-weight': [
-            'interpolate', ['linear'],
-            ['get', 'linked_description_count'],
-            0, 0.3,
-            10, 0.6,
-            100, 1
-          ],
-          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 0.6, 5, 1.2, 9, 2.5],
-          'heatmap-color': [
-            'interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(0,0,0,0)',
-            0.05, 'rgba(219,201,210,0.4)',
-            0.15, 'rgba(190,140,160,0.55)',
-            0.3, 'rgba(168,90,120,0.7)',
-            0.5, 'rgba(139,41,66,0.8)',
-            0.7, 'rgba(110,25,50,0.9)',
-            0.9, 'rgba(74,21,34,0.95)',
-            1, '#2D0A14'
-          ],
-          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 2, 15, 5, 25, 8, 40, 10, 50],
-          'heatmap-opacity': ['interpolate', ['linear'], ['zoom'], 7, 1, 10, 0]
-        }
-      });
-
-      // Circle layer
-      this.map.addLayer({
-        id: 'places-circle',
+        id: 'clusters',
         type: 'circle',
         source: 'places',
-        minzoom: 7,
+        filter: ['has', 'point_count'],
         paint: {
-          'circle-radius': 6,
           'circle-color': '#8B2942',
+          'circle-radius': [
+            'step', ['get', 'point_count'],
+            14,
+            10, 18,
+            50, 22,
+            200, 28
+          ],
+          'circle-opacity': 0.85,
           'circle-stroke-width': 1.5,
-          'circle-stroke-color': '#FFFFFF',
-          'circle-opacity': ['interpolate', ['linear'], ['zoom'], 7, 0, 9, 1]
+          'circle-stroke-color': '#fff'
         }
       });
 
-      // Click on circle: highlight place + populate selected card
-      this.map.on('click', 'places-circle', (e) => {
+      // Cluster count labels
+      this.map.addLayer({
+        id: 'cluster-count',
+        type: 'symbol',
+        source: 'places',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': this._clusterFont,
+          'text-size': 11
+        },
+        paint: {
+          'text-color': '#fff'
+        }
+      });
+
+      // Unclustered individual place markers
+      this.map.addLayer({
+        id: 'unclustered-point',
+        type: 'circle',
+        source: 'places',
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+          'circle-color': '#8B2942',
+          'circle-radius': 6,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#fff'
+        }
+      });
+
+      // Click on cluster: zoom to expand children
+      this.map.on('click', 'clusters', async (e) => {
+        var features = this.map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+        if (!features.length) return;
+        var clusterId = features[0].properties.cluster_id;
+        var zoom = await this.map.getSource('places').getClusterExpansionZoom(clusterId);
+        this.map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom });
+      });
+
+      // Click on unclustered point: select place in sidebar
+      this.map.on('click', 'unclustered-point', (e) => {
         var feat = e.features[0];
         if (!feat) return;
-        var props = feat.properties;
-        // Find full place record from allPlaces for authority links
-        var placeRecord = this.allPlaces.find(function(p) { return String(p.id) === String(props.id); }) || props;
+        var placeRecord = this.allPlaces.find(function(p) {
+          return String(p.id) === String(feat.properties.id);
+        }) || feat.properties;
         this.highlightPlace(placeRecord);
       });
 
-      // Click on heatmap: zoom in
-      this.map.on('click', 'places-heat', (e) => {
-        this.map.easeTo({ center: e.lngLat, zoom: this.map.getZoom() + 2 });
-      });
-
-      // Cursor on circle
-      this.map.on('mouseenter', 'places-circle', () => {
+      // Cursor pointer on interactive layers
+      this.map.on('mouseenter', 'clusters', () => {
         this.map.getCanvas().style.cursor = 'pointer';
       });
-      this.map.on('mouseleave', 'places-circle', () => {
+      this.map.on('mouseleave', 'clusters', () => {
+        this.map.getCanvas().style.cursor = '';
+      });
+      this.map.on('mouseenter', 'unclustered-point', () => {
+        this.map.getCanvas().style.cursor = 'pointer';
+      });
+      this.map.on('mouseleave', 'unclustered-point', () => {
         this.map.getCanvas().style.cursor = '';
       });
 
@@ -313,20 +346,14 @@ class PlaceExplorer {
     });
   }
 
-  // ─── Empty state ────────────────────────────────────────────────────────────
+  // ─── Example place buttons (in header intro text) ───────────────────────────
 
-  initEmptyState() {
-    var emptyState = document.getElementById('map-empty-state');
-    if (!emptyState) return;
-
-    var hasUrlPlace = !!new URLSearchParams(location.search).get('lugar');
-    if (!hasUrlPlace) emptyState.classList.add('is-active');
-
-    emptyState.querySelectorAll('button[data-place]').forEach((btn) => {
+  initExampleButtons() {
+    var buttons = document.querySelectorAll('.explorer-page-intro button[data-place]');
+    buttons.forEach((btn) => {
       btn.addEventListener('click', () => {
         var slug = btn.getAttribute('data-place');
         if (!slug) return;
-        // Look up by normalised display_name slug match
         var found = this.allPlaces.find(function(p) {
           var normalised = p.display_name
             .toLowerCase()
@@ -388,10 +415,6 @@ class PlaceExplorer {
   highlightPlace(place) {
     var card = document.getElementById('selected-place-card');
     if (!card) return;
-
-    // Hide empty state
-    var emptyState = document.getElementById('map-empty-state');
-    if (emptyState) emptyState.classList.remove('is-active');
 
     var name = place.display_name || '';
     var placeType = place.place_type || '';
