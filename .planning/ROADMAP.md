@@ -185,7 +185,10 @@ Plans:
   2. Description pages show clickable links to place detail pages for associated places
   3. Links are generated at build time from desc-entity-lookup.json and desc-place-lookup.json enriched with display names
   4. Entity and place names render correctly in context (not just codes)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 11-01-PLAN.md — Data pipeline: enriched lookups, complete role vocabulary, data loader update
+- [ ] 11-02-PLAN.md — Template: linked entity and place sections on description pages
 **UI hint**: yes
 
 ## Progress
@@ -203,4 +206,4 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1
 | 9. Entity & Place Page Redesign | — | Complete | 2026-04-03 |
 | 10. Explorer UX Redesign | 3/4 | In Progress | |
 | 10.1. Infinite Bipartite Graph Explorer | 3/4 | In Progress|  |
-| 11. Description Linking | — | Not started | |
+| 11. Description Linking | 0/2 | Planned | |
