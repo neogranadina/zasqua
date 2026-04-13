@@ -20,10 +20,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map (completed 2026-03-28)
 - [x] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list (completed 2026-03-28)
 - [x] **Phase 9: Entity & Place Page Redesign** - Figma-driven detail page redesign, bipartite entity graph, place data integration (completed 2026-04-03)
-- [ ] **Phase 10: Explorer UX Redesign** - Research, scoping, Figma design, and implementation of entity and place explorer interfaces
-- [ ] **Phase 10.1: Infinite Bipartite Graph Explorer** — INSERTED — Replace entity explorer's curated graph with infinite entity→document→entity navigation, graph-dominant layout
+- [x] **Phase 10: Explorer UX Redesign** - Research, scoping, Figma design, and implementation of entity and place explorer interfaces (completed 2026-04-12)
+- [x] **Phase 10.1: Infinite Bipartite Graph Explorer** — INSERTED — Replace entity explorer's curated graph with infinite entity→document→entity navigation, graph-dominant layout (completed 2026-04-12)
 - [x] **Phase 11: Description Linking** - Link descriptions to entity and place detail pages and explorers (completed 2026-04-12)
-- [ ] **Phase 12: Place Explorer & Detail Page Rework** - Clustered marker map, filter/interaction fixes, place detail layout redesign
+- [x] **Phase 12: Place Explorer & Detail Page Rework** - Clustered marker map, filter/interaction fixes, place detail layout redesign (completed 2026-04-13)
 
 ## Phase Details
 
@@ -208,7 +208,7 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1
 | 10. Explorer UX Redesign | 3/4 | In Progress | |
 | 10.1. Infinite Bipartite Graph Explorer | 3/4 | In Progress|  |
 | 11. Description Linking | 2/2 | Complete    | 2026-04-12 |
-| 12. Place Explorer & Detail Rework | 1/2 | In Progress|  |
+| 12. Place Explorer & Detail Rework | 2/2 | Complete   | 2026-04-13 |
 
 ### Phase 12: Place explorer and place detail page rework
 
@@ -216,8 +216,8 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1
 
 **Depends on:** Phase 11
 **Requirements:** D-01 through D-23
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 12-01-PLAN.md — Place explorer: clustered map, filter sync, checkbox fix, index click selection, card simplification
-- [ ] 12-02-PLAN.md — Place detail: always-visible map, description list with sort, visual verification
+- [x] 12-02-PLAN.md — Place detail: always-visible map, description list with sort, visual verification
