@@ -205,10 +205,11 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1
 | 7. Place Explorer | 3/3 | Complete | 2026-03-28 |
 | 8. Entity Explorer — List View | 3/3 | Complete | 2026-03-28 |
 | 9. Entity & Place Page Redesign | — | Complete | 2026-04-03 |
-| 10. Explorer UX Redesign | 3/4 | In Progress | |
-| 10.1. Infinite Bipartite Graph Explorer | 3/4 | In Progress|  |
+| 10. Explorer UX Redesign | 4/4 | Complete | 2026-04-12 |
+| 10.1. Infinite Bipartite Graph Explorer | 4/4 | Complete | 2026-04-12 |
+| 10.2. Explorer Parity | 3/3 | Complete | 2026-04-12 |
 | 11. Description Linking | 2/2 | Complete    | 2026-04-12 |
-| 12. Place Explorer & Detail Rework | 2/2 | Complete   | 2026-04-13 |
+| 12. Place Explorer & Detail Rework | 2/2 | Complete    | 2026-04-14 |
 
 ### Phase 12: Place explorer and place detail page rework
 
