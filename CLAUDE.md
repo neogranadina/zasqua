@@ -36,11 +36,13 @@ This is the development repo for Zasqua Frontend. Code developed here is periodi
 - Commit untested features directly to main branch
 - Commit secrets or credentials
 - Generate placeholder or dummy text without asking first
+- **Port or create a file without a narrative header and version footer** — see `../docs/guidelines/code-conventions.md`. Applies to every source file, not just scripts
 
 ## Before starting a new type of task
 
 - Consult the guidelines file first — not existing code examples
-- Guidelines live in `../docs/frontend/guidelines/`
+- Guidelines live in `../docs/frontend/guidelines/` (frontend-specific) and `../docs/guidelines/` (workspace-wide)
+- Before porting or creating any file, check `../docs/guidelines/code-conventions.md` for narrative header requirements
 - When in doubt, ask: "Is there a guidelines file for this?"
 
 ## Stack
