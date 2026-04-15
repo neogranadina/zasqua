@@ -120,6 +120,21 @@ eleventyComputed:
           {% endif %}
         </div>
 
+        {# Section: Cargos y funciones (ISAAR CPF §5.2.3 — D-EXT-1) #}
+        {% if ent.functions and ent.functions.length %}
+          <section id="funciones" class="detail-section">
+            <h3 class="font-semibold text-stone-400">{{ ui.entity.sections.functions }}</h3>
+            <ul class="detail-list text-stone-700">
+              {% for fn in ent.functions %}
+                <li>
+                  {% if fn.function %}{{ fn.function }}{% else %}{{ fn }}{% endif %}
+                  {% if fn.count %} <span class="text-stone-500 text-sm">({{ fn.count }})</span>{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endif %}
+
         {# Section: Historia #}
         {% if ent.history %}
           <div class="detail-section">
@@ -128,6 +143,27 @@ eleventyComputed:
               <span class="detail-value text-stone-700">{{ ent.history }}</span>
             </div>
           </div>
+        {% endif %}
+
+        {# Section: Identificadores externos (D-EXT-1; Wikidata omitted per D-EXT-3) #}
+        {% if ent.dbe_id or ent.viaf_id %}
+          <section id="autoridades" class="detail-section">
+            <h3 class="font-semibold text-stone-400">{{ ui.entity.sections.authorityLinks }}</h3>
+            <ul class="detail-list text-stone-700">
+              {% if ent.dbe_id %}
+                <li>
+                  <a href="https://dbe.rah.es/biografias/{{ ent.dbe_id }}"
+                     target="_blank" rel="noopener">{{ ui.entity.authorityLinks.dbe }}</a>
+                </li>
+              {% endif %}
+              {% if ent.viaf_id %}
+                <li>
+                  <a href="https://viaf.org/viaf/{{ ent.viaf_id }}"
+                     target="_blank" rel="noopener">{{ ui.entity.authorityLinks.viaf }}</a>
+                </li>
+              {% endif %}
+            </ul>
+          </section>
         {% endif %}
 
         {# Section: Control #}

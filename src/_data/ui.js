@@ -153,8 +153,10 @@ module.exports = {
     // Section headers (ISAAR CPF areas — D-27)
     sections: {
       identification: "Identificación",
+      functions: "Cargos y funciones",
       history: "Historia",
       relations: "Relaciones",
+      authorityLinks: "Identificadores externos",
       control: "Control",
       reuse: "Reutilización",
       sources: "Fuentes"
@@ -168,7 +170,15 @@ module.exports = {
       datesOfExistence: "Fechas de existencia",
       primaryFunction: "Función principal",
       nameVariants: "Variantes del nombre",
-      history: "Historia"
+      history: "Historia",
+      roleInDocument: "Función en el documento"
+    },
+    // Empty-state copy
+    noFunctionsRecorded: "Sin cargos registrados",
+    // Authority-link labels (D-EXT-1: DBE + VIAF only; Wikidata omitted per D-EXT-3)
+    authorityLinks: {
+      dbe: "Ver en Diccionario Biográfico Español (DBE)",
+      viaf: "Ver en VIAF"
     },
     // Page copy
     breadcrumbParent: "Entidades",
