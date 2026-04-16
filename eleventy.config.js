@@ -8,16 +8,12 @@ module.exports = function(eleventyConfig) {
   // Tree children JSON (produced by Django export_frontend_data command)
   eleventyConfig.addPassthroughCopy({ "data/children": "data/children" });
 
-  // Entity and place link shards (fetched on demand by detail pages and explorers, per D-08)
+  // Entity and place link shards (fetched on demand by detail pages and explorers)
   eleventyConfig.addPassthroughCopy({ "data/entity-links": "data/entity-links" });
   eleventyConfig.addPassthroughCopy({ "data/place-links": "data/place-links" });
 
-  // Explorer search index files (loaded once by explorer pages, per D-03)
-  // entity index removed: entity pages now indexed via Pagefind (D-15)
+  // Place index (loaded once by the place explorer)
   eleventyConfig.addPassthroughCopy({ "data/place-index.json": "data/place-index.json" });
-
-  // Curated entity graph (loaded by entity explorer graph panel)
-  eleventyConfig.addPassthroughCopy({ "data/curated-entity-graph.json": "data/curated-entity-graph.json" });
 
   // Watch for changes in CSS/JS during dev
   eleventyConfig.addWatchTarget("src/css/");
