@@ -106,7 +106,7 @@ async function main() {
   const placeLinks = JSON.parse(placeLinksRaw);
   console.log(`[precompute-links] place_links.json: ${placeLinks.length} records`);
 
-  // Group by place_code (which may be a numeric ID in older exports)
+  // Group by place_code
   const byPlace = new Map();
   let nullPlaceCount = 0;
   for (const link of placeLinks) {
@@ -116,10 +116,10 @@ async function main() {
       console.warn(`[precompute-links] WARNING: link with null/undefined place_code skipped (reference_code: ${link.reference_code})`);
       continue;
     }
-    if (!byPlace.has(String(code))) {
-      byPlace.set(String(code), []);
+    if (!byPlace.has(code)) {
+      byPlace.set(code, []);
     }
-    byPlace.get(String(code)).push({
+    byPlace.get(code).push({
       reference_code: link.reference_code,
       title: link.title,
       date_expression: link.date_expression,
@@ -131,28 +131,17 @@ async function main() {
     console.warn(`[precompute-links] WARNING: Skipped ${nullPlaceCount} place_links records with null/undefined place_code`);
   }
 
-  // Build numeric ID → place_code map from places.json so we can
-  // write shards keyed by place_code even when place_links.json
-  // still uses numeric IDs.
-  const placesForMap = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'places.json'), 'utf8'));
-  const idToPlaceCode = new Map();
-  for (const p of placesForMap) {
-    idToPlaceCode.set(String(p.id), p.place_code);
-  }
-
-  // Write per-place shards keyed by place_code
+  // Write per-place shards
   const placeShardsDir = path.join(DATA_DIR, 'place-links');
   fs.mkdirSync(placeShardsDir, { recursive: true });
 
   let placeShardCount = 0;
-  const placeKeys = Array.from(byPlace.keys());
-  const placeKeysToWrite = DEV_MODE ? placeKeys.slice(0, DEV_LIMIT) : placeKeys;
+  const placeCodes = Array.from(byPlace.keys());
+  const placeCodesToWrite = DEV_MODE ? placeCodes.slice(0, DEV_LIMIT) : placeCodes;
 
-  for (const key of placeKeysToWrite) {
-    // Resolve numeric IDs to place_code for the shard filename
-    const shardName = idToPlaceCode.get(key) || key;
-    const shardPath = path.join(placeShardsDir, `${shardName}.json`);
-    fs.writeFileSync(shardPath, JSON.stringify(byPlace.get(key)));
+  for (const code of placeCodesToWrite) {
+    const shardPath = path.join(placeShardsDir, `${code}.json`);
+    fs.writeFileSync(shardPath, JSON.stringify(byPlace.get(code)));
     placeShardCount++;
     if (placeShardCount % 5000 === 0) {
       console.log(`[precompute-links] Wrote ${placeShardCount} place-links shards...`);
@@ -181,7 +170,7 @@ async function main() {
     has_tgn: !!p.tgn_id,
     has_whg: !!p.whg_id,
     has_hgis: !!p.hgis_id,
-    linked_description_count: (byPlace.get(String(p.id)) || []).length,
+    linked_description_count: (byPlace.get(p.place_code) || []).length,
   }));
 
   // Exclude coordinate-less singletons from the explorer index —
@@ -241,9 +230,7 @@ async function main() {
   console.log(`[precompute-links] Wrote enriched desc-entity-lookup.json with ${descToEntities.size} keys`);
 
   // 5b. Place enriched reverse lookup
-  // place_links.place_code may be a numeric ID (older exports) or an
-  // nl-* code — resolve to the canonical place_code for template links.
-  const placeById = new Map(places.map(p => [String(p.id), p]));
+  const placeByCode = new Map(places.map(p => [p.place_code, p]));
   const descToPlaces = new Map();
 
   for (const link of placeLinks) {
@@ -252,12 +239,11 @@ async function main() {
     const refCode = link.reference_code;
     if (!descToPlaces.has(refCode)) descToPlaces.set(refCode, new Map());
     const placeMap = descToPlaces.get(refCode);
-    if (!placeMap.has(String(code))) {
-      const pl = placeById.get(String(code));
-      placeMap.set(String(code), {
-        id: String(code),
-        place_code: pl ? pl.place_code : null,
-        display_name: pl ? pl.display_name : String(code),
+    if (!placeMap.has(code)) {
+      const pl = placeByCode.get(code);
+      placeMap.set(code, {
+        place_code: code,
+        display_name: pl ? pl.display_name : code,
       });
     }
   }
