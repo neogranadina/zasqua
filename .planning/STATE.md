@@ -62,15 +62,13 @@ v0.5.0 decisions:
 ### Pending Todos
 
 - Clean up unused precompute-bipartite-graph.js, entity-doc-graph.json, Sigma/graphology refs
-- Update entity data after zasqua-entities phases 10.1–10.2 complete (currently 92K in data, should be 83K)
-- Full site rebuild + deploy (after Phase 10)
-- Close out v0.5.0 (version bump, deploy, changelog, release — after Phase 11)
-- Backend: add place_code field to places export
+- Update entity data after zasqua-entities phases 10.1–10.2 complete (currently 78K in data/, should be 83K)
+- Full site rebuild + deploy (held for zasqua-entities data cleanup)
 - Fix Protomaps CDN basemap on place detail pages (map shows burgundy dot only, no tiles)
 
 ### Blockers/Concerns
 
-- Entity data in data/ is stale (92K, should be 83K) — depends on zasqua-entities
+- Entity data in data/ is stale (78K, should be 83K) — depends on zasqua-entities
 - Protomaps CDN basemap failing on place detail pages (place explorer uses OpenFreeMap which works)
 - Live site: pagefind-entities and pagefind-places both 404 — will appear after next deploy
 
