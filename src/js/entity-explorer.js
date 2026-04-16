@@ -305,10 +305,24 @@ class EntityExplorer {
       if (!this.state.q && hasActiveFilters && !this.skipBrowsePrompt && !onlyViewportActive) {
         const estimated = this.estimateFilterCount();
         if (estimated > 10000) {
+          // Run the search to get scoped facet counts even though we
+          // won't render individual results (too many to scan in WASM).
+          const pfOverload = {};
+          if (this.state.entity_type.length) pfOverload.entity_type = { any: this.state.entity_type };
+          if (this.state.primary_function.length) pfOverload.primary_function = { any: this.state.primary_function };
+          if (this.state.dateFilter && this.state.dateFilter.years.length) {
+            pfOverload.year = { any: this.state.dateFilter.years };
+          }
+          const overloadSearch = await this.pagefind.search(null, {
+            filters: Object.keys(pfOverload).length ? pfOverload : undefined
+          });
+          const scopedOverloadFilters = overloadSearch.filters || this.globalFilters;
+          const sidebarEl = document.getElementById('sidebar-facets');
+          if (sidebarEl) this.renderSidebarFacets(sidebarEl, scopedOverloadFilters);
           this.renderSearchResults({
             hits: [],
-            filters: this.globalFilters,
-            total: estimated,
+            filters: scopedOverloadFilters,
+            total: overloadSearch.results.length,
             page: 1,
             total_pages: 0,
             query: '',
@@ -1064,6 +1078,10 @@ class EntityExplorer {
       ));
     }
 
+    if (filters.year && Object.values(filters.year).some(c => c > 0)) {
+      containerEl.appendChild(this.renderDateTree(filters.year, filters.century || {}, filters.decade || {}));
+    }
+
     if (filters.primary_function) {
       containerEl.appendChild(this.renderFacetGroup(
         'Función principal',
@@ -1074,10 +1092,6 @@ class EntityExplorer {
         null,
         10
       ));
-    }
-
-    if (filters.year && Object.values(filters.year).some(c => c > 0)) {
-      containerEl.appendChild(this.renderDateTree(filters.year, filters.century || {}, filters.decade || {}));
     }
   }
 
@@ -1238,6 +1252,11 @@ class EntityExplorer {
       ));
     }
 
+    // Facet: date drill-down tree
+    if (filters.year && Object.values(filters.year).some(c => c > 0)) {
+      sidebar.appendChild(this.renderDateTree(filters.year, filters.century || {}, filters.decade || {}));
+    }
+
     // Facet: primary function
     if (filters.primary_function) {
       sidebar.appendChild(this.renderFacetGroup(
@@ -1249,11 +1268,6 @@ class EntityExplorer {
         null,
         10
       ));
-    }
-
-    // Facet: date drill-down tree
-    if (filters.year && Object.values(filters.year).some(c => c > 0)) {
-      sidebar.appendChild(this.renderDateTree(filters.year, filters.century || {}, filters.decade || {}));
     }
 
     // Mobile panel bottom close
