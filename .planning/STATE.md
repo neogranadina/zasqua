@@ -65,7 +65,7 @@ v0.5.0 decisions:
 - Update entity data after zasqua-entities phases 10.1–10.2 complete (currently 78K in data/, should be 83K)
 - Full site rebuild + deploy (held for zasqua-entities data cleanup)
 - Fix Protomaps CDN basemap on place detail pages (map shows burgundy dot only, no tiles)
-- Fix build chain data-copying gap: precompute-links.js writes to DATA_DIR but 11ty passthrough copies from data/ in the repo, so fresh indices don't reach _site unless manually copied. Either make the passthrough point at DATA_DIR or have precompute write to data/
+- Fix build chain data-copying gap: precompute-links.js writes to DATA_DIR but 11ty passthrough copies from data/ in the repo. Attempted DATA_DIR-aware passthrough but Eleventy's recursive-copy overflows on 78K entity-links files with remapped paths. For now DATA_DIR defaults to data/ and the paths match. If DATA_DIR is ever overridden, a symlink or pre-build copy step will be needed
 
 ### Blockers/Concerns
 
