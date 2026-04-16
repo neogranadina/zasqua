@@ -3699,20 +3699,6 @@
   .map-tooltip-close:hover {
     color: oklch(37.4% 0.01 67.558);
   }
-  .place-tooltip .maplibregl-popup-content {
-    background: rgba(28, 25, 23, 0.95);
-    color: #fafaf9;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.8125rem;
-    line-height: 1.4;
-    padding: 5px 10px;
-    border-radius: 4px;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-    pointer-events: none;
-  }
-  .place-tooltip .maplibregl-popup-tip {
-    border-top-color: rgba(28, 25, 23, 0.95);
-  }
   .graph-mobile-toggle {
     display: none;
   }
@@ -3748,6 +3734,20 @@
       display: flex;
     }
   }
+}
+.place-tooltip .maplibregl-popup-content {
+  background: rgba(28, 25, 23, 0.95);
+  color: #fafaf9;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  padding: 5px 10px;
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.place-tooltip .maplibregl-popup-tip {
+  border-top-color: rgba(28, 25, 23, 0.95);
 }
 @property --tw-rotate-x {
   syntax: "*";
