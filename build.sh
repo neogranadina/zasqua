@@ -89,7 +89,7 @@ npx pagefind --site _site --output-subdir pagefind-entities \
 
 # Run 3: Place explorer index
 npx pagefind --site _site --output-subdir pagefind-places \
-  --glob "lugar/**/*.html"
+  --glob "nl-*/**/*.html"
 
 echo "=== Build complete ==="
 echo "Pages: $(find _site -name 'index.html' | wc -l)"

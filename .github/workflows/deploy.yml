@@ -116,7 +116,7 @@ jobs:
 
           # Run 3: Place explorer index
           npx pagefind --site _site --output-subdir pagefind-places \
-            --glob "lugar/**/*.html"
+            --glob "nl-*/**/*.html"
 
       - name: Deploy to R2
         env:
