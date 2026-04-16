@@ -85,7 +85,7 @@ npx pagefind --site _site --output-subdir pagefind \
 
 # Run 2: Entity explorer index
 npx pagefind --site _site --output-subdir pagefind-entities \
-  --glob "entidad/**/*.html"
+  --glob "ne-*/**/*.html"
 
 # Run 3: Place explorer index
 npx pagefind --site _site --output-subdir pagefind-places \
