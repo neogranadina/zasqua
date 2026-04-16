@@ -7,5 +7,5 @@ module.exports = {
   buildDate: new Date().toISOString().split('T')[0],
   buildYear: new Date().getFullYear(),
   version: "0.4.0",
-  protomaps_key: process.env.PROTOMAPS_KEY || "YOUR_KEY_HERE"
+  protomaps_key: process.env.PROTOMAPS_KEY || "264dbbf1fa6f497d"
 };
