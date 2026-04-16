@@ -150,7 +150,7 @@ async function main() {
   console.log(`[precompute-links] Wrote ${placeShardCount} place-links shards to ${placeShardsDir}`);
 
   // -------------------------------------------------------------------------
-  // 4. Build place-index.json (D-07 fields — rename latitude/longitude to lat/lon)
+  // 4. Build place-index.json (D-07 fields — direct pass-through of latitude/longitude)
   // -------------------------------------------------------------------------
 
   const placesPath = path.join(DATA_DIR, 'places.json');
@@ -163,9 +163,11 @@ async function main() {
     id: p.id,
     display_name: p.display_name,
     place_type: p.place_type,
-    lat: p.latitude,       // D-07: rename latitude -> lat
-    lon: p.longitude,      // D-07: rename longitude -> lon
+    latitude: p.latitude,
+    longitude: p.longitude,
+    place_code: p.place_code || ('nl-' + p.id),
     has_wikidata: !!p.wikidata_id,
+    has_tgn: !!p.tgn_id,
     has_whg: !!p.whg_id,
     has_hgis: !!p.hgis_id,
     linked_description_count: (byPlace.get(String(p.id)) || []).length,
