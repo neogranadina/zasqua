@@ -45,17 +45,6 @@ echo "Entity shards: $(ls data/entity-links/ | wc -l)"
 echo "Place shards: $(ls data/place-links/ | wc -l)"
 ls -lh data/entity-index.json data/place-index.json
 
-echo "=== Generating PMTiles ==="
-node scripts/places-to-geojson.js
-if command -v tippecanoe &> /dev/null; then
-  tippecanoe -Z0 -z14 --drop-densest-as-needed -l places \
-    -o data/zasqua-places.pmtiles data/places.geojson
-  ls -lh data/zasqua-places.pmtiles
-else
-  echo "Tippecanoe not installed — skipping PMTiles generation"
-  echo "Install with: brew install tippecanoe (macOS) or pip install tippecanoe (Linux)"
-fi
-
 echo "=== Installing npm dependencies ==="
 npm ci
 
