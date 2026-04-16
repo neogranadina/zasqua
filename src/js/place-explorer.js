@@ -241,7 +241,8 @@ class PlaceExplorer {
       container: 'explorer-map',
       style: style,
       center: [-74.0, 5.5],
-      zoom: 5
+      zoom: 5,
+      renderWorldCopies: false
     });
 
     this.map.fitBounds([[-83.0, -5.0], [-60.0, 15.0]], { padding: 20, animate: false });
