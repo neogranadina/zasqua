@@ -74,8 +74,15 @@ v0.5.0 decisions:
 - Protomaps CDN basemap failing on place detail pages (place explorer uses OpenFreeMap which works)
 - Live site: pagefind-entities and pagefind-places both 404 — will appear after next deploy
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260415-q73 | Fix Phase 13 spot-check bugs | 2026-04-16 | bcd7c6d | [260415-q73-fix-phase-13-spot-check-bugs-place-explo](./quick/260415-q73-fix-phase-13-spot-check-bugs-place-explo/) |
+
 ## Session Continuity
 
+Last activity: 2026-04-16 - Completed quick task 260415-q73: Fix Phase 13 spot-check bugs
 Last session: 2026-04-12T20:50:43.937Z
 Stopped at: Completed 12-01-PLAN.md
 shakedown narrative, decisions, original-criteria verification table,
