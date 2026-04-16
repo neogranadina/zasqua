@@ -455,7 +455,7 @@ class PlaceExplorer {
     var n = place.linked_description_count || 0;
     var docText = n + ' ' + (n === 1 ? 'documento vinculado' : 'documentos vinculados');
     var placeId = place.id;
-    var placeCode = place.place_code || ('nl-' + placeId);
+    var placeCode = place.place_code;
 
     card.innerHTML =
       '<div class="selected-entity-header">' +
