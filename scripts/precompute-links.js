@@ -170,7 +170,7 @@ async function main() {
   const places = JSON.parse(placesRaw);
   console.log(`[precompute-links] places.json: ${places.length} records`);
 
-  const placeIndex = places.map(p => ({
+  const placeIndexAll = places.map(p => ({
     id: p.id,
     display_name: p.display_name,
     place_type: p.place_type,
@@ -183,6 +183,18 @@ async function main() {
     has_hgis: !!p.hgis_id,
     linked_description_count: (byPlace.get(String(p.id)) || []).length,
   }));
+
+  // Exclude coordinate-less singletons from the explorer index —
+  // places without coordinates and with at most 1 linked document
+  // add noise to the explorer without providing useful discovery.
+  // The place pages still exist for direct linking.
+  const placeIndex = placeIndexAll.filter(p =>
+    (p.latitude != null && p.longitude != null) || p.linked_description_count > 1
+  );
+  const excluded = placeIndexAll.length - placeIndex.length;
+  if (excluded > 0) {
+    console.log(`[precompute-links] Excluded ${excluded} coordinate-less singletons from place-index.json`);
+  }
 
   const placeIndexPath = path.join(DATA_DIR, 'place-index.json');
   fs.writeFileSync(placeIndexPath, JSON.stringify(placeIndex));
