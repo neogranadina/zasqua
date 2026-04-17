@@ -1,201 +1,77 @@
-# Roadmap: Zasqua Frontend — v0.5.0 Entity & Place Discovery
+# Roadmap: Zasqua Frontend — v1.0.0 Build Pipeline Sustainability
 
 ## Overview
 
-Phases 4–9 built the entity and place discovery infrastructure: build pipeline, PMTiles, detail pages, explorers, and entity/place page redesign. Phases 10–11 complete the milestone with explorer UX redesign and description linking.
+Phases 13–15 migrate the frontend build from Eleventy to Hugo so the site builds reliably at 192K+ pages without hitting memory limits, and remains sustainable as the catalogue grows.
 
-Phase numbering continues from v0.4.0 (which completed at Phase 3).
+Phase numbering continues from v0.5.0 (which completed at Phase 12).
+
+---
+
+## Previous Milestone (v0.5.0)
+
+Phases 4–12 are documented in the v0.5.0 roadmap. All complete. The last phase was Phase 12 (Place Explorer & Detail Page Rework, completed 2026-04-14).
+
+---
 
 ## Phases
 
-**Phase Numbering:**
-- Integer phases (4–9): Planned milestone work
-- Decimal phases (4.1, 4.2): Urgent insertions (marked with INSERTED)
-
-Decimal phases appear between their surrounding integers in numeric order.
-
-- [x] **Phase 4: Build Pipeline & Data Pre-compute** - Separate Eleventy builds, pre-computed JSON shards, CI within timeout (completed 2026-03-26)
-- [x] **Phase 5: PMTiles Infrastructure** - Tippecanoe tile generation, dedicated Cloudflare Worker, range request verification (completed 2026-03-26)
-- [x] **Phase 6: Entity & Place Detail Pages** - ~100K entity and place pages with embedded maps and linked description shards (completed 2026-03-28)
-- [x] **Phase 7: Place Explorer** - Searchable/filterable place index with heatmap map (completed 2026-03-28)
-- [x] **Phase 8: Entity Explorer — List View** - Searchable/filterable entity index with virtual list (completed 2026-03-28)
-- [x] **Phase 9: Entity & Place Page Redesign** - Figma-driven detail page redesign, bipartite entity graph, place data integration (completed 2026-04-03)
-- [x] **Phase 10: Explorer UX Redesign** - Research, scoping, Figma design, and implementation of entity and place explorer interfaces (completed 2026-04-12)
-- [x] **Phase 10.1: Infinite Bipartite Graph Explorer** — INSERTED — Replace entity explorer's curated graph with infinite entity→document→entity navigation, graph-dominant layout (completed 2026-04-12)
-- [x] **Phase 11: Description Linking** - Link descriptions to entity and place detail pages and explorers (completed 2026-04-12)
-- [x] **Phase 12: Place Explorer & Detail Page Rework** - Clustered marker map, filter/interaction fixes, place detail layout redesign (completed 2026-04-13)
+- [ ] **Phase 13: Hugo Foundation** - Hugo project scaffold with content adapters, correct data-loading architecture, Tailwind CSS wired, DEV_LIMIT builds working, and the `generate-content.js` enrichment script producing fully-enriched denormalised JSON in `assets/hugo-data/`
+- [ ] **Phase 14: Template Porting** - All Nunjucks templates ported as Go templates, all 15 custom filters as returning partials or pre-computed fields, Pagefind attributes preserved, full 192K-page build validated
+- [ ] **Phase 15: Deploy Pipeline** - GitHub Actions workflow rewritten for Hugo build chain, Pagefind indices built in parallel, diff-based R2 upload replaces full sync
 
 ## Phase Details
 
-### Phase 4: Build Pipeline & Data Pre-compute
-**Goal**: The build system generates entity and place pages in a separate Eleventy process without OOM, pre-computed JSON shards are correct, and CI completes within the GitHub Actions timeout
-**Depends on**: Nothing (first phase of milestone; builds on the existing v0.4.0 architecture)
-**Requirements**: BUILD-01, BUILD-02, BUILD-03, BUILD-06
+### Phase 13: Hugo Foundation
+**Goal**: A working Hugo project skeleton builds a subset of pages with correct CSS output, and `generate-content.js` produces fully-enriched, denormalised JSON in `assets/hugo-data/` — both the data architecture decisions and the enrichment output format are locked in together before any template work begins
+**Depends on**: Nothing (first phase of milestone)
+**Requirements**: HUGO-01, HUGO-02, HUGO-04, ENRICH-01, ENRICH-02, ENRICH-03, ENRICH-04, ENRICH-05
 **Success Criteria** (what must be TRUE):
-  1. A CI run builds all description pages and all entity/place pages as two parallel Eleventy processes and merges outputs without crashing or exceeding the GitHub Actions memory limit
-  2. Per-entity JSON shards exist in `data/entity-links/` and per-place JSON shards exist in `data/place-links/`, each containing the correct linked descriptions for a spot-checked sample
-  3. A pre-computed entity co-occurrence JSON file exists with configurable minimum edge weight filtering applied
-  4. The full build (descriptions + entity/place + Pagefind + R2 upload) completes within 60 minutes on GitHub Actions
-**Plans**: 2 plans
-Plans:
-- [x] 04-01-PLAN.md — Pre-compute scripts and data loaders
-- [x] 04-02-PLAN.md — Build pipeline wiring (eleventy.config.js, build.sh, deploy.yml)
+  1. Running `DEV_LIMIT=100 hugo --minify` locally produces HTML output for a capped subset of descriptions, entities, and places without error; content adapters (`_content.gotmpl`) in `content/descripcion/`, `content/entidad/`, and `content/lugar/` generate pages via `resources.Get` + `transform.Unmarshal` — no stub markdown files exist on disk
+  2. `hugo.toml` uses `resources.Get` data loading and has `build.writeStats = true`; no large JSON is placed under the `data/` directory; Hugo Extended is confirmed in CI with `hugo version` output containing `+extended`
+  3. `generate-content.js` writes `assets/hugo-data/descriptions.json`, `entities.json`, and `places.json`; record counts match the source exports (spot-checked against known totals: ~106K descriptions, ~83K entities, ~7K places)
+  4. Every description record includes a pre-computed `ancestor_chain` array; every date field includes a pre-computed `date_formatted` string in Colombian Spanish narrative format; entity and place link records include pre-computed `display_name` and `role_label` strings — no formatting logic remains for Go templates to handle
+  5. `DEV_LIMIT` mode truncates all three datasets so a local enrichment + build cycle completes in under 60 seconds
+**Plans**: TBD
 
-### Phase 5: PMTiles Infrastructure
-**Goal**: A dedicated Cloudflare Worker serves PMTiles from R2 with correct Range request handling and CORS headers, verified end-to-end on the production domain
-**Depends on**: Phase 4 (CI pipeline must handle PMTiles upload)
-**Requirements**: BUILD-04, BUILD-05
+### Phase 14: Template Porting
+**Goal**: Every Nunjucks template has a Go equivalent that produces functionally identical HTML output, all 15 custom filters are replaced, and a full 192K-page build completes without error
+**Depends on**: Phase 13 (data architecture and enrichment output format must be locked before template work begins)
+**Requirements**: HUGO-01, HUGO-03, TMPL-01, TMPL-02, TMPL-03, TMPL-04, TMPL-05, TMPL-06, TMPL-07
 **Success Criteria** (what must be TRUE):
-  1. `zasqua-places.pmtiles` is generated by Tippecanoe from place coordinate data and uploaded to R2 via CI
-  2. A dedicated Cloudflare Worker (separate from the site Worker) is deployed and routes requests to `tiles.zasqua.org`
-  3. HTTP 206 (partial content) responses are returned for MapLibre range requests, verified in both Firefox and Safari
-  4. CORS headers on tile responses permit cross-origin requests from zasqua.org
-**Plans**: 2 plans
-Plans:
-- [x] 05-01-PLAN.md — GeoJSON conversion script and Protomaps tiles Worker
-- [x] 05-02-PLAN.md — CI pipeline integration and end-to-end verification
-
-### Phase 6: Entity & Place Detail Pages
-**Goal**: Every entity and place has a publicly accessible detail page with correct metadata, authority links, and linked archival descriptions loaded from pre-built JSON shards
-**Depends on**: Phase 4 (JSON shards), Phase 5 (PMTiles for embedded maps on place pages)
-**Requirements**: PLACE-01, PLACE-02, PLACE-03, PLACE-04, PLACE-05, ENT-01, ENT-02, ENT-03, ENT-04, ENT-05
-**Success Criteria** (what must be TRUE):
-  1. An entity detail page at `/entidad/{code}/` shows the entity's display name, type label in Spanish, structured name fields, date range, and primary function
-  2. An entity detail page shows name variants and biographical note (dates of existence, history) when that data is present in the source record
-  3. An entity detail page loads its linked archival descriptions from a pre-built JSON shard and displays them as a browsable list
-  4. A place detail page at `/lugar/{display_name}/` shows the place name, type label in Spanish, name variants, and an embedded interactive map for places with coordinates
-  5. A place detail page shows only the authority links (Wikidata, WHG, HGIS) that exist for that record — no empty link slots
-  6. A place detail page loads its linked archival descriptions from a pre-built JSON shard and displays them as a browsable list
-**Plans**: 4 plans
-Plans:
-- [x] 06-01-PLAN.md — Data pipeline: reverse lookups, data loader enrichment, Pagefind filters, search.js extension
-- [x] 06-02-PLAN.md — Shared UI assets: ui.js entity/place sections, CSS component classes
-- [x] 06-03-PLAN.md — Entity detail page template and client-side timeline script
-- [ ] 06-04-PLAN.md — Place detail page template with MapLibre map and client-side scripts
+  1. The base layout (`baseof.html`) with header, footer, and breadcrumb partials renders identical structure to the current site — Pagefind `data-pagefind-body`, `data-pagefind-filter`, and `data-pagefind-meta` attributes are present on all page types
+  2. A description detail page shows all ISAD(G) sections, linked entity and place names with role labels, correct Spanish dates, the IIIF viewer embed, Miller columns, and breadcrumb navigation — verified on a spot-checked sample from each of the five repositories
+  3. Entity and place detail pages render correctly: entity shows timeline/graph views, role filter pills, and bipartite graph initialisation; place shows the authority links section, embedded map, and description list
+  4. All 15 Nunjucks filters are replaced — either as returning partials in `layouts/partials/filters/` or as pre-computed fields in the enrichment JSON — no Nunjucks-only logic remains
+  5. A full build (`hugo --minify`) on production-scale data completes without error and all existing published URLs (`/descripcion/`, `/entidad/`, `/lugar/`, `/explorar/`, `/buscar/`, `/repositorio/`) resolve to pages in the Hugo build output — no redirects needed
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 7: Place Explorer
-**Goal**: Users can search and filter the 8,177 places and see matching results on an interactive heatmap map
-**Depends on**: Phase 5 (PMTiles), Phase 6 (place detail pages to link to)
-**Requirements**: PEXP-01, PEXP-02, PEXP-03, PEXP-04
+### Phase 15: Deploy Pipeline
+**Goal**: The full build-and-deploy pipeline runs end-to-end in GitHub Actions with Hugo, three parallel Pagefind indices, and diff-based R2 upload — replacing the current Eleventy pipeline
+**Depends on**: Phase 14 (full Hugo build must be working before CI can be validated end-to-end)
+**Requirements**: CI-01, CI-02, CI-03, CI-04
 **Success Criteria** (what must be TRUE):
-  1. A user on `/explorar/lugares/` can type a place name and see matching results appear without a full-page reload
-  2. A user can filter places by place type, presence of coordinates, and presence of authority links; the results list and map update in sync
-  3. Filtered results are rendered as a heatmap on a MapLibre map using PMTiles tiles; the heatmap updates as filters change
-  4. A results list alongside the map shows place names and types, each linking to the corresponding place detail page
-**Plans**: 3 plans
-Plans:
-- [x] 07-01-PLAN.md — Data pipeline fix (place_code/id), ui.js labels, template shell, CSS classes
-- [x] 07-02-PLAN.md — PlaceExplorer JS class (search, facets, map, results, pagination, URL state)
-- [x] 07-03-PLAN.md — Visual and functional verification checkpoint
-**UI hint**: yes
-
-### Phase 8: Entity Explorer — List View
-**Goal**: Users can search and filter the 92,042 entities and browse a paginated results list without the browser rendering all 92K records to the DOM
-**Depends on**: Phase 6 (entity detail pages to link to)
-**Requirements**: EEXP-01, EEXP-02, EEXP-03
-**Success Criteria** (what must be TRUE):
-  1. A user on `/explorar/entidades/` can type an entity name and see matching results appear without a full-page reload
-  2. A user can filter entities by entity type, primary function, and date range; results update in sync
-  3. The results list uses virtual rendering or pagination — never more than a few hundred DOM nodes regardless of result count; browsing through 92K entity results does not freeze the browser
-**Plans**: 3 plans
-Plans:
-- [x] 08-01-PLAN.md — Pagefind metadata on templates, yearRange filter, CI three-index build
-- [x] 08-02-PLAN.md — Entity explorer page, EntityExplorer JS class, CSS classes
-- [x] 08-03-PLAN.md — Place explorer migration from in-memory JSON to Pagefind
-**UI hint**: yes
-
-### Phase 9: Entity & Place Page Redesign
-**Original goal**: Co-occurrence network graph on the entity explorer page
-**Actual scope**: Expanded to Figma-driven redesign of entity and place detail pages, bipartite entity graph on detail pages, place data integration from zasqua-entities v1.4 audit, and place template parity with entity pages
-**What shipped**:
-  - Entity detail page: 35/65 layout, timeline view with cards/connectors/Spanish dates/reference codes/28 role labels, role filter pills, view toggle (timeline/graph/search) in prose sentence
-  - Entity detail page: ego-network graph (force-graph) with click-to-expand via Pagefind + desc-entity-lookup.json
-  - Place detail page: 35/65 layout, timeline view with segmented toggle (map/timeline), role filter pills, full-width authority rows with codes and external links
-  - Place detail page: Control section (Neogranadina ID), Reutilizacion section, TGN authority pill, country name via Intl.DisplayNames, coordinates as metadata
-  - Place data updated: 7,068 places (from 8,177), TGN links, country codes, audited authorities — all three data files (places.json, place_links.json, place-index.json) uploaded to B2
-  - place.js: IIFE pattern, isolated map init, role labels
-  - formatDate Eleventy filter for Spanish narrative dates
-  - Entity explorer: default count:desc sort
-**Deferred to Phase 10**: Explorer UX overhaul for both entity and place explorers
-**Deferred to Phase 11**: Description-to-entity/place linking on description pages
-**Status**: Complete
-
-### Phase 10: Explorer UX Redesign
-**Goal**: Both entity and place explorer interfaces are redesigned with proper UX research, Figma design, and implementation — usable, performant, and coherent with the detail page designs
-**Depends on**: Phase 9 (detail pages must be stable to link to)
-**Requirements**: EXP-01, EXP-02, EXP-03, EXP-04, EXP-05, EXP-06, EXP-07, EXP-08, EXP-09, EXP-10
-**Success Criteria** (what must be TRUE):
-  1. Entity explorer loads without crashing the browser at 83K+ entities
-  2. Both explorers have a coherent design informed by research into comparable archive discovery interfaces
-  3. Figma designs exist for both explorer pages before implementation begins
-  4. Entity explorer graph panel either works well as a discovery tool or is removed — no broken/half-built panel
-  5. Place explorer reflects updated place data (7,068 places, not 8,177) and renders maps correctly
-  6. Both explorers have mobile-friendly layouts
-**Plans**: 4 plans
-Plans:
-- [x] 10-01-PLAN.md — Figma design review and approval checkpoint
-- [x] 10-02-PLAN.md — Build pipeline: curated graph precompute, map fix, dynamic counts
-- [x] 10-03-PLAN.md — Entity explorer: CuratedEntityGraph class, template updates, deep-linking
-- [ ] 10-04-PLAN.md — Cleanup dead code and visual verification
-**UI hint**: yes
-
-### Phase 10.2: Explorer Parity (INSERTED)
-**Goal**: Bring the place explorer, place detail pages, and entity detail pages to parity with the Phase 10.1 entity explorer redesign — consistent layout, facet behavior, interaction patterns, and visual language across all explorer and detail surfaces
-**Depends on**: Phase 10.1 (design language, layout patterns, reusable JS modules), Phase 9 (entity/place detail page baselines)
-**Success Criteria** (what must be TRUE):
-  1. Place explorer mirrors the entity explorer's 2-row layout (map + selected place card on top, filters + place index below), card-scoped facets, empty state with example places, and viewport filter keyed to map bounds
-  2. Protomaps CDN basemap renders correctly on both the place explorer and place detail pages (currently broken on detail pages — burgundy dot visible but no tiles)
-  3. Place detail pages show hover/click tooltips on map markers
-  4. Entity detail page bipartite graph uses the Phase 12.1/13 7-group role taxonomy as a collapsible facet (not pill buttons)
-  5. Focal/home node on entity detail page graphs uses the correct entity-type colour (burgundy for person, periwinkle for corporate/family)
-  6. Cross-navigation links from entity detail pages deep-link correctly into the entity explorer via `?entidad=ne-XXX` URL param
-**Plans**: 3 plans
-- [x] 10.2-01-PLAN.md — Place explorer parity + Protomaps CDN fix on the explorer
-- [x] 10.2-02-PLAN.md — Place detail page map tooltips + Protomaps CDN fix on detail pages
-- [x] 10.2-03-PLAN.md — Entity detail page polish (7-group role facet, focal node colour, explorer deep links)
-**Deferred / tracked elsewhere**:
-- Linked Places JSON-LD and EAC-CPF XML authority manifest production → backend work in zasqua-backend-dev (or v0.6.0 if v0.5.0 is feature-frozen). Once published, the frontend wire-up is a trivial follow-up — URL references from detail page templates.
-**UI hint**: yes
-
-### Phase 10.1: Infinite Bipartite Graph Explorer (INSERTED)
-**Goal**: Replace the entity explorer's curated 100-node graph with an infinite bipartite graph explorer enabling entity→document→entity chain navigation, with graph-dominant layout
-**Depends on**: Phase 10 (entity explorer template and curated graph exist), Phase 9 (entity.js bipartite graph is the proven pattern)
-**Success Criteria** (what must be TRUE):
-  1. Entity explorer page shows a graph-dominant layout with the graph viewer taking most of the viewport
-  2. On load, one entity and its linked documents appear as bipartite nodes in the graph
-  3. Users can navigate entity→document→entity chains indefinitely by clicking and expanding nodes
-  4. The graph simulation runs smoothly without freezing, jarring jumps, or sudden zooming
-  5. Role filter pills control graph edge visibility (matching entity.js role filter pattern)
-  6. Entity index sidebar allows search/browse of entities with Pagefind facets
-  7. Clicking an entity in the graph updates the sidebar to show that entity in the index
-**Plans**: 4 plans
-Plans:
-- [x] 10.1-01-PLAN.md — Data pipeline alignment, dead code cleanup, viewport-filling template/CSS shell
-- [x] 10.1-02-PLAN.md — InfiniteBipartiteExplorer core graph class (rendering, tooltips, expand, refocus, pruning)
-- [x] 10.1-03-PLAN.md — Sidebar integration: EntityExplorer adaptation and bidirectional graph-sidebar sync
-- [ ] 10.1-04-PLAN.md — Build, visual and functional verification checkpoint
-**UI hint**: yes
-**Canonical refs**: `src/js/entity.js` (bipartite graph pattern), `src/js/entity-explorer.js` (Pagefind entity search)
-
-### Phase 11: Description Linking
-**Goal**: Description pages link to their associated entity and place detail pages, and to the relevant explorer views
-**Depends on**: Phase 10 (explorer URLs must be stable), upstream entity data stabilisation (zasqua-entities phases 10.1–10.2)
-**Success Criteria** (what must be TRUE):
-  1. Description pages show clickable links to entity detail pages for associated entities (creators, contributors, etc.)
-  2. Description pages show clickable links to place detail pages for associated places
-  3. Links are generated at build time from desc-entity-lookup.json and desc-place-lookup.json enriched with display names
-  4. Entity and place names render correctly in context (not just codes)
-**Plans**: 2 plans
-Plans:
-- [x] 11-01-PLAN.md — Data pipeline: enriched lookups, complete role vocabulary, data loader update
-- [x] 11-02-PLAN.md — Template: linked entity and place sections on description pages
-**UI hint**: yes
+  1. A GitHub Actions workflow run using Hugo Extended (not standard), `@tailwindcss/cli` via npm, and Pagefind v1.5.2 completes without error and deploys the site to R2
+  2. Three Pagefind index builds run in parallel CI jobs and produce index bundles under `public/pagefind-descriptions/`, `public/pagefind-entities/`, and `public/pagefind-places/`
+  3. The complete CI pipeline (B2 download + enrich + Hugo build + Pagefind ×3 + R2 upload) finishes within the GitHub Actions 6-hour timeout on the 192K-page production dataset
+  4. The R2 upload script performs a diff against the existing bucket using ETag/MD5 comparison: on a run with no content changes, fewer than 100 files are uploaded; a summary line in CI logs shows counts of uploaded, skipped, and deleted files
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1 → 10.2 → 11 → 12
+Phases execute in numeric order: 13 → 14 → 15
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 13. Hugo Foundation | 0/? | Not started | - |
+| 14. Template Porting | 0/? | Not started | - |
+| 15. Deploy Pipeline | 0/? | Not started | - |
+
+---
+
+## Previous Milestone Phase History (v0.5.0)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -208,17 +84,5 @@ Phases execute in numeric order: 4 → 5 → 6 → 7 → 8 → 9 → 10 → 10.1
 | 10. Explorer UX Redesign | 4/4 | Complete | 2026-04-12 |
 | 10.1. Infinite Bipartite Graph Explorer | 4/4 | Complete | 2026-04-12 |
 | 10.2. Explorer Parity | 3/3 | Complete | 2026-04-12 |
-| 11. Description Linking | 2/2 | Complete    | 2026-04-12 |
-| 12. Place Explorer & Detail Rework | 2/2 | Complete    | 2026-04-14 |
-
-### Phase 12: Place explorer and place detail page rework
-
-**Goal:** Fix place explorer and place detail page issues surfaced during Phase 11 visual review. Redesign the place explorer map (clustered markers with document counts), fix broken interactions (filters, timeline toggle, index click behaviour), restyle place index cards to match entity explorer, and redesign the place detail page layout (map + description list instead of map/timeline toggle).
-
-**Depends on:** Phase 11
-**Requirements:** D-01 through D-23
-**Plans:** 2/2 plans complete
-
-Plans:
-- [x] 12-01-PLAN.md — Place explorer: clustered map, filter sync, checkbox fix, index click selection, card simplification
-- [x] 12-02-PLAN.md — Place detail: always-visible map, description list with sort, visual verification
+| 11. Description Linking | 2/2 | Complete | 2026-04-12 |
+| 12. Place Explorer & Detail Rework | 2/2 | Complete | 2026-04-14 |

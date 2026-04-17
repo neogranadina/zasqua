@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0.0
 milestone_name: Build Pipeline Sustainability
-status: Defining requirements
+status: Roadmap defined
 last_updated: "2026-04-16"
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -19,45 +19,53 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Defining requirements for v1.0.0 Build Pipeline Sustainability
+**Current focus:** Phase 13 — Hugo Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 13 (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-16 — Milestone v1.0.0 started
+Status: Ready to begin Phase 13
+Last activity: 2026-04-16 — Roadmap revised to 3 phases (13–15)
+
+Progress: ░░░░░░░░░░ 0% (0/3 phases complete)
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
-(New milestone — no phases yet)
+v1.0.0 phases 13–15 defined 2026-04-16. Originally 4 phases (13–16); consolidated to 3 by merging old Phase 13 (scaffolding) and Phase 14 (enrichment script) into a single Hugo Foundation phase — enrichment output format depends on data architecture decisions, so both must be done together.
+
+Phase 12 (Place Explorer & Detail Page Rework) was the last phase of v0.5.0 — completed 2026-04-14.
 
 ### Decisions
 
 Carried from v0.5.0:
 
 - Visual identity: Figma Make file (bOunUsW8BHk1eqZrJu7Nxt) is the spec source
-- Tailwind v4 standalone CLI — no npm dependency
 - Porting done in thematic commits — version bump last
 
 v1.0.0 decisions:
 
-- Hugo replaces Eleventy — Eleventy OOMs at 192K pages with 7 GB heap (CI exit code 134)
-- Pagefind addressed after Hugo if still insufficient
-- R2 diff-based upload included in scope
+- Hugo Extended replaces Eleventy — Eleventy OOMs at 192K pages with 7 GB heap (CI exit code 134)
+- Hugo content adapters (`_content.gotmpl`) generate pages from JSON — no stub markdown files
+- Large JSON loaded via `resources.Get` in content adapters, NEVER via `.Site.Data` (OOM risk)
+- Spanish date formatting and number formatting pre-computed in Node.js (`generate-content.js`) — no Hugo equivalent
+- Tailwind CSS v4 must use `@tailwindcss/cli` via npm (Hugo ≥ v0.146.0 PATH security patch blocks standalone binary)
+- `hugo_stats.json` must be excluded from `.gitignore` (Tailwind v4 silently skips it otherwise)
+- Pagefind upgraded to v1.5.2, three indices built in parallel CI jobs (no incremental indexing — not supported)
+- R2 diff upload extends existing Node.js parallel uploader with ETag/MD5 comparison — rclone and r2sync both ruled out
+- DEV_LIMIT environment variable for fast local builds introduced in Phase 13
 
 ### Pending Todos
 
-- Entity data in data/ is stale (78K, should be 83K) — depends on zasqua-entities
-- Protomaps CDN basemap failing on place detail pages
-- Build chain data-copying gap (DATA_DIR vs data/ path issue)
+- Entity data is stale (entities.json has 92K records; canonical count from zasqua-entities Phase 10 is 83K) — will be resolved upstream before or during Phase 13
+- v0.5.1 is blocked from deploying to zasqua.org by CI OOM — this milestone unblocks it
 
 ### Blockers/Concerns
 
-- v0.5.1 deploy to zasqua.org blocked by CI OOM — this milestone's primary motivation
+- None at roadmap start — all critical technical decisions researched and documented
 
 ## Session Continuity
 
-Last activity: 2026-04-16 — Milestone v1.0.0 started
+Last activity: 2026-04-16 — Roadmap revised from 4 phases (13–16) to 3 phases (13–15) for v1.0.0 Build Pipeline Sustainability

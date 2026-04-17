@@ -160,32 +160,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| HUGO-01 | — | Pending |
-| HUGO-02 | — | Pending |
-| HUGO-03 | — | Pending |
-| HUGO-04 | — | Pending |
-| ENRICH-01 | — | Pending |
-| ENRICH-02 | — | Pending |
-| ENRICH-03 | — | Pending |
-| ENRICH-04 | — | Pending |
-| ENRICH-05 | — | Pending |
-| TMPL-01 | — | Pending |
-| TMPL-02 | — | Pending |
-| TMPL-03 | — | Pending |
-| TMPL-04 | — | Pending |
-| TMPL-05 | — | Pending |
-| TMPL-06 | — | Pending |
-| TMPL-07 | — | Pending |
-| CI-01 | — | Pending |
-| CI-02 | — | Pending |
-| CI-03 | — | Pending |
-| CI-04 | — | Pending |
+| HUGO-01 | Phase 13, Phase 14 | Pending |
+| HUGO-02 | Phase 13 | Pending |
+| HUGO-03 | Phase 14 | Pending |
+| HUGO-04 | Phase 13 | Pending |
+| ENRICH-01 | Phase 13 | Pending |
+| ENRICH-02 | Phase 13 | Pending |
+| ENRICH-03 | Phase 13 | Pending |
+| ENRICH-04 | Phase 13 | Pending |
+| ENRICH-05 | Phase 13 | Pending |
+| TMPL-01 | Phase 14 | Pending |
+| TMPL-02 | Phase 14 | Pending |
+| TMPL-03 | Phase 14 | Pending |
+| TMPL-04 | Phase 14 | Pending |
+| TMPL-05 | Phase 14 | Pending |
+| TMPL-06 | Phase 14 | Pending |
+| TMPL-07 | Phase 14 | Pending |
+| CI-01 | Phase 15 | Pending |
+| CI-02 | Phase 15 | Pending |
+| CI-03 | Phase 15 | Pending |
+| CI-04 | Phase 15 | Pending |
 
 **Coverage:**
 - v1.0.0 requirements: 20 total
-- Mapped to phases: 0
-- Unmapped: 20
+- Mapped to phases: 20
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after initial definition*
+*Last updated: 2026-04-16 — traceability updated after roadmap consolidated from 4 phases to 3*
