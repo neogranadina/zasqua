@@ -33,7 +33,7 @@ Phases 4–12 are documented in the v0.5.0 roadmap. All complete. The last phase
   4. Every description record includes a pre-computed `ancestor_chain` array; every date field includes a pre-computed `date_formatted` string in Colombian Spanish narrative format; entity and place link records include pre-computed `display_name` and `role_label` strings — no formatting logic remains for Go templates to handle
   5. `DEV_LIMIT` mode truncates all three datasets so a local enrichment + build cycle completes in under 60 seconds
 **Plans**: 5 plans
-- [ ] 13-01-PLAN.md — Wave 0 environment prep: Hugo install verification, rename data/ → exports/, install vitest, scaffold RED tests for invariants I1–I8
+- [x] 13-01-PLAN.md — Wave 0 environment prep: Hugo install verification, rename data/ → exports/, install vitest, scaffold RED tests for invariants I1–I8
 - [ ] 13-02-PLAN.md — Wave 1 TDD: port formatDateNarrative, numberFormat, ancestor-chain walker, and link enrichment into scripts/generate-content.js; write enriched JSON to assets/hugo-data/ with DEV_LIMIT support
 - [ ] 13-03-PLAN.md — Wave 2: hugo.toml with module mounts, three content adapters (_content.gotmpl), data/ui.yaml port, section listing front matter
 - [ ] 13-04-PLAN.md — Wave 2: layouts (baseof + home + list + three section singles + partials), Tailwind v4 wiring via css.TailwindCSS, relocate src/ assets to Hugo canonical paths
@@ -70,7 +70,7 @@ Phases execute in numeric order: 13 → 14 → 15
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. Hugo Foundation | 0/? | Not started | - |
+| 13. Hugo Foundation | 1/5 | In Progress|  |
 | 14. Template Porting | 0/? | Not started | - |
 | 15. Deploy Pipeline | 0/? | Not started | - |
 
