@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0.0
 milestone_name: milestone
 status: executing
-stopped_at: "Plan 13-03 complete (Hugo scaffold); 3/5 plans done — Plan 13-04 next (templates + Tailwind v4 + static asset relocation)"
-last_updated: "2026-04-17T16:00:00.000Z"
-last_activity: 2026-04-17 -- Plan 13-03 complete (hugo.toml, three content adapters, data/ui.yaml)
+stopped_at: "Plan 13-04 complete (static asset relocation); 4/15 plans done in reshaped Phase 13 — Plan 13-05 next (base layout + global partials)"
+last_updated: "2026-04-17T17:05:00.000Z"
+last_activity: 2026-04-17 -- Plan 13-04 complete (28 static renames + CSS port to assets/css/main.css)
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 5
-  completed_plans: 3
-  percent: 60
+  total_plans: 15
+  completed_plans: 4
+  percent: 27
 ---
 
 # Project State
@@ -25,18 +25,20 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 
 ## Current Position
 
-Phase: 13 (hugo-foundation) — EXECUTING
-Plan: 4 of 5 (Plan 13-03 just completed)
-Status: Executing Phase 13 — Plan 13-04 next (templates + Tailwind v4 + static asset relocation)
-Last activity: 2026-04-17 -- Plan 13-03 complete (hugo.toml, three content adapters, data/ui.yaml); 191,733 pages verified via smoke build
+Phase: 13 (hugo-foundation + full template port) — EXECUTING
+Plan: 5 of 15 (Plan 13-04 just completed)
+Status: Executing Phase 13 — Plan 13-05 next (base layout + global partials: baseof.html, header.html, footer.html, breadcrumb.html, css.html)
+Last activity: 2026-04-17 -- Plan 13-04 complete (28 static renames + CSS port; byte identity verified through Hugo build)
 
-Progress: ██████░░░░ 60% (0/3 phases complete; 3/5 plans complete within Phase 13)
+Progress: ██░░░░░░░░ 27% (0/3 phases complete; 4/15 plans complete within reshaped Phase 13)
 
 ## Accumulated Context
 
 ### Roadmap Evolution
 
 v1.0.0 phases 13–15 defined 2026-04-16. Originally 4 phases (13–16); consolidated to 3 by merging old Phase 13 (scaffolding) and Phase 14 (enrichment script) into a single Hugo Foundation phase — enrichment output format depends on data architecture decisions, so both must be done together.
+
+**2026-04-17 reshape:** Phase 13 expanded from 5 plans to 15 after a failed first attempt at Plan 13-04 produced template stubs rather than faithful ports. Reverted stub commits (`abandoned/phase-13-04-first-attempt` tag preserves them) and re-scoped: Phase 13 now front-loads the full visual+functional Nunjucks → Go template port (previously Phase 14's job). Phase 14 becomes a paranoid visual-diff audit. Phase 15 deploy pipeline unchanged.
 
 Phase 12 (Place Explorer & Detail Page Rework) was the last phase of v0.5.0 — completed 2026-04-14.
 
@@ -72,5 +74,5 @@ v1.0.0 decisions:
 ## Session Continuity
 
 Last session: 2026-04-17
-Stopped at: Plan 13-03 complete (Hugo scaffold) — 3/5 plans done within Phase 13; next is Plan 13-04 (templates + Tailwind v4 + static asset relocation)
-Resume file: .planning/phases/13-hugo-foundation/13-03-SUMMARY.md (forward pointer at bottom names the files Plan 13-04 adds)
+Stopped at: Plan 13-04 complete (assets relocated to static/, CSS ported to assets/css/main.css). 4/15 plans done within reshaped Phase 13. Hugo server may be running on port 1313 — continue there or restart before 13-05 execution.
+Resume file: .planning/phases/13-hugo-foundation/13-04-SUMMARY.md (forward pointer at bottom names the literal asset paths Plan 13-05 can reference in the ported base layout)

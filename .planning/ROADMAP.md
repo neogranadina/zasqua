@@ -16,39 +16,50 @@ Phases 4–12 are documented in the v0.5.0 roadmap. All complete. The last phase
 
 ## Phases
 
-- [ ] **Phase 13: Hugo Foundation** - Hugo project scaffold with content adapters, correct data-loading architecture, Tailwind CSS wired, DEV_LIMIT builds working, and the `generate-content.js` enrichment script producing fully-enriched denormalised JSON in `assets/hugo-data/`
-- [ ] **Phase 14: Template Porting** - All Nunjucks templates ported as Go templates, all 15 custom filters as returning partials or pre-computed fields, Pagefind attributes preserved, full 192K-page build validated
+- [ ] **Phase 13: Hugo Foundation + Full Template Port** - Hugo project scaffold with content adapters, enrichment script, AND a byte-for-byte faithful port of every Eleventy template (base layout, partials, all page types, explorer pages). The local Hugo build produces output visually and functionally indistinguishable from the current Eleventy site.
+- [ ] **Phase 14: Visual + Functional Audit** - Paranoid page-by-page QA pass against the Phase 13 Hugo build. Diff every page type against the live Eleventy baseline, click every interactive element, catch any regression Phase 13 missed. All 15 Nunjucks filters verified replaced, Pagefind attributes audited, production-scale full build validated.
 - [ ] **Phase 15: Deploy Pipeline** - GitHub Actions workflow rewritten for Hugo build chain, Pagefind indices built in parallel, diff-based R2 upload replaces full sync
 
 ## Phase Details
 
-### Phase 13: Hugo Foundation
-**Goal**: A working Hugo project skeleton builds a subset of pages with correct CSS output, and `generate-content.js` produces fully-enriched, denormalised JSON in `assets/hugo-data/` — both the data architecture decisions and the enrichment output format are locked in together before any template work begins
+### Phase 13: Hugo Foundation + Full Template Port
+**Goal**: A working Hugo project skeleton with a byte-for-byte faithful port of every Eleventy template. The local Hugo build produces output visually and functionally indistinguishable from the current Eleventy site for every page type.
 **Depends on**: Nothing (first phase of milestone)
-**Requirements**: HUGO-01, HUGO-02, HUGO-04, ENRICH-01, ENRICH-02, ENRICH-03, ENRICH-04, ENRICH-05
+**Requirements**: HUGO-01, HUGO-02, HUGO-03, HUGO-04, ENRICH-01, ENRICH-02, ENRICH-03, ENRICH-04, ENRICH-05, TMPL-01, TMPL-02, TMPL-03, TMPL-04, TMPL-05, TMPL-06, TMPL-07
 **Success Criteria** (what must be TRUE):
-  1. Running `DEV_LIMIT=100 hugo --minify` locally produces HTML output for a capped subset of descriptions, entities, and places without error; content adapters (`_content.gotmpl`) in `content/descripcion/`, `content/entidad/`, and `content/lugar/` generate pages via `resources.Get` + `transform.Unmarshal` — no stub markdown files exist on disk
-  2. `hugo.toml` uses `resources.Get` data loading and has `build.writeStats = true`; no large JSON is placed under the `data/` directory; Hugo Extended is confirmed in CI with `hugo version` output containing `+extended`
-  3. `generate-content.js` writes `assets/hugo-data/descriptions.json`, `entities.json`, and `places.json`; record counts match the source exports (verified 2026-04-16 against B2 export: 106,529 descriptions, 78,476 entities, 6,722 places)
-  4. Every description record includes a pre-computed `ancestor_chain` array; every date field includes a pre-computed `date_formatted` string in Colombian Spanish narrative format; entity and place link records include pre-computed `display_name` and `role_label` strings — no formatting logic remains for Go templates to handle
-  5. `DEV_LIMIT` mode truncates all three datasets so a local enrichment + build cycle completes in under 60 seconds
-**Plans**: 5 plans
-- [x] 13-01-PLAN.md — Wave 0 environment prep: Hugo install verification, rename data/ → exports/, install vitest, scaffold RED tests for invariants I1–I8
-- [x] 13-02-PLAN.md — Wave 1 TDD: port formatDateNarrative, numberFormat, ancestor-chain walker, and link enrichment into scripts/generate-content.js; write enriched JSON to assets/hugo-data/ with DEV_LIMIT support
-- [ ] 13-03-PLAN.md — Wave 2: hugo.toml with module mounts, three content adapters (_content.gotmpl), data/ui.yaml port, section listing front matter
-- [ ] 13-04-PLAN.md — Wave 2: layouts (baseof + home + list + three section singles + partials), Tailwind v4 wiring via css.TailwindCSS, relocate src/ assets to Hugo canonical paths
-- [ ] 13-05-PLAN.md — Wave 3: rewrite build.sh, delete Eleventy + standalone tailwindcss binary, DEV_LIMIT=100 smoke build, verify all 8 invariants, human checkpoint for visible styling
+  1. Running `DEV_LIMIT=100 hugo --minify` locally produces HTML output for a capped subset of descriptions, entities, places, and repositories without error; content adapters in `content/descripcion/`, `content/entidad/`, and `content/lugar/` generate pages via `resources.Get`/`resources.Match` — no stub markdown files
+  2. `generate-content.js` writes sharded descriptions (fixed record count) + single-file entities + single-file places under `assets/hugo-data/`; record counts match the source exports (106,529 descriptions, 78,476 entities, 6,722 places) when DEV_LIMIT is unset
+  3. Every description record includes pre-computed `ancestor_chain`, `date_formatted`, `entity_links[*].{display_name,role_label}`, `place_links[*].display_name` fields — no formatting logic inside Go templates
+  4. Every Nunjucks template in `src/*.njk`, `src/_layouts/*.njk`, `src/_includes/*.njk`, and `src/explorar/*.njk` has a Go template equivalent. Rendered HTML for equivalent data is visually and functionally indistinguishable from the Eleventy output — same DOM structure, same CSS classes, same copy, same font `<link>`s, same `<script>` tags, same analytics beacons, same interactive behaviours (dropdown nav, hamburger toggle, search form, IIIF/TIFY viewer, entity force-graph, etc.)
+  5. Every URL scheme preserved: descriptions at `/{reference_code}/`, entities at `/{entity_code}/`, places at `/{place_code}/`, repositories at `/{repo_code}/`, explorers at `/explorar/entidades/` and `/explorar/lugares/`, search at `/buscar/`, 404 at `/404.html`
+  6. Eleventy is deleted — `src/`, `eleventy.config.js`, `@11ty/eleventy`, and the standalone `tailwindcss` binary all gone; `build.sh` orchestrates the Hugo pipeline end-to-end
+**Plans**: 15 plans
+- [x] 13-01-PLAN.md — Foundation: Hugo install, `data/` → `exports/` rename, vitest + RED tests for I1–I8
+- [x] 13-02-PLAN.md — Enrichment port: `scripts/generate-content.js` with date/number/ancestor/link modules, sharded description writer
+- [x] 13-03-PLAN.md — Hugo scaffold: `hugo.toml` with module mounts, three content adapters, `data/ui.yaml` ported from `src/_data/ui.js`
+- [ ] 13-04-PLAN.md — Asset relocation: move `src/css/main.css` → `assets/css/main.css` (prepend Tailwind v4 directives), `src/js/` → `assets/js/`, `src/vendor/tify/` → `static/vendor/tify/`, `src/img/` → `static/img/`
+- [ ] 13-05-PLAN.md — Base layout + global partials: port `base.njk` → `baseof.html` (fonts, favicon, analytics), `header.njk` (dropdown + hamburger + search form), `footer.njk`, `breadcrumb.njk`, `css.html` partial. Human checkpoint: chassis A/B vs Eleventy home.
+- [ ] 13-06-PLAN.md — 404 + buscar: port `404.njk` + `buscar.njk`. Human checkpoint: both pages render + search.js mount works.
+- [ ] 13-07-PLAN.md — Home page: port `index.njk` (hero + logo + search form + intro + repo grid with images/overlays/counts). Human checkpoint: A/B vs Eleventy home.
+- [ ] 13-08-PLAN.md — Repository detail: port `repository.njk`. Data-source decision for `/{repo_code}/` pages surfaced in plan. Human checkpoint.
+- [ ] 13-09-PLAN.md — Description detail part 1: skeleton + breadcrumb + all ISAD(G) field sections. Human checkpoint.
+- [ ] 13-10-PLAN.md — Description detail part 2: related entities + places (with role labels, pre-computed). Human checkpoint.
+- [ ] 13-11-PLAN.md — Description detail part 3: IIIF/TIFY viewer + Miller columns + any remaining interactive blocks. Human checkpoint.
+- [ ] 13-12-PLAN.md — Entity detail: port `entidad.njk` (timeline/graph views, role filter pills, bipartite graph init). Reuses existing entity.js force-graph config. Human checkpoint.
+- [ ] 13-13-PLAN.md — Place detail: port `lugar.njk` (authority links, embedded map, description list). Human checkpoint.
+- [ ] 13-14-PLAN.md — Explorer pages: port `src/explorar/entidades.njk` (237 lines) + `src/explorar/lugares.njk` (96 lines). Reuses existing force-graph config. Human checkpoint.
+- [ ] 13-15-PLAN.md — Integration + Eleventy removal: rewrite `build.sh` for the Hugo pipeline, delete `src/` + `eleventy.config.js` + `@11ty/eleventy` + standalone `tailwindcss` binary, run full-corpus build + regression tests. Final human checkpoint before `src/` deletion.
 
-### Phase 14: Template Porting
-**Goal**: Every Nunjucks template has a Go equivalent that produces functionally identical HTML output, all 15 custom filters are replaced, and a full 192K-page build completes without error
-**Depends on**: Phase 13 (data architecture and enrichment output format must be locked before template work begins)
+### Phase 14: Visual + Functional Audit
+**Goal**: Paranoid page-by-page QA pass against the Phase 13 Hugo build. Diff every page type against the live Eleventy baseline captured pre-deletion, click every interactive element, catch any regression Phase 13 missed.
+**Depends on**: Phase 13 (the port must be complete before the audit)
 **Requirements**: HUGO-01, HUGO-03, TMPL-01, TMPL-02, TMPL-03, TMPL-04, TMPL-05, TMPL-06, TMPL-07
 **Success Criteria** (what must be TRUE):
-  1. The base layout (`baseof.html`) with header, footer, and breadcrumb partials renders identical structure to the current site — Pagefind `data-pagefind-body`, `data-pagefind-filter`, and `data-pagefind-meta` attributes are present on all page types
-  2. A description detail page shows all ISAD(G) sections, linked entity and place names with role labels, correct Spanish dates, the IIIF viewer embed, Miller columns, and breadcrumb navigation — verified on a spot-checked sample from each of the five repositories
-  3. Entity and place detail pages render correctly: entity shows timeline/graph views, role filter pills, and bipartite graph initialisation; place shows the authority links section, embedded map, and description list
-  4. All 15 Nunjucks filters are replaced — either as returning partials in `layouts/partials/filters/` or as pre-computed fields in the enrichment JSON — no Nunjucks-only logic remains
-  5. A full build (`hugo --minify`) on production-scale data completes without error and all existing published URLs resolve to pages in the Hugo build output — descriptions at `/{reference_code}/`, entities at `/{entity_code}/` (e.g. `/ne-xxxxxx/`), places at `/{place_code}/` (e.g. `/nl-xxxxxx/`), repositories at `/{repo_code}/`, explorers at `/entidades/` and `/lugares/`, search at `/buscar/` — no redirects needed
+  1. A side-by-side visual diff (Eleventy baseline captured from zasqua.org + Hugo local) is recorded for at least one page of every type: home, 404, buscar, 1 description per repo (5 repos = 5 pages), 1 entity, 1 place, 1 repository, `/explorar/entidades/`, `/explorar/lugares/`. Any divergence is triaged — fixed, accepted with justification, or deferred with a follow-up ticket.
+  2. Pagefind `data-pagefind-body`, `data-pagefind-filter`, and `data-pagefind-meta` attributes are present on every page type that had them in Eleventy
+  3. All 15 Nunjucks custom filters are accounted for — either as returning partials in `layouts/_partials/filters/` or as pre-computed fields in the enrichment JSON — no Nunjucks-only logic remains
+  4. A full build (`hugo --minify`) on production-scale data (106,529 + 78,476 + 6,722 records) completes without error and every existing published URL resolves to a page in the Hugo build output
+  5. Interactive elements all functional: search UI mounts and returns results, header dropdown opens, hamburger toggles, IIIF/TIFY viewer loads deep-zoom images, entity graph renders and expands, place map pans/zooms
 **Plans**: TBD
 **UI hint**: yes
 
@@ -70,8 +81,8 @@ Phases execute in numeric order: 13 → 14 → 15
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 13. Hugo Foundation | 2/5 | In Progress|  |
-| 14. Template Porting | 0/? | Not started | - |
+| 13. Hugo Foundation + Full Template Port | 3/15 | In Progress |  |
+| 14. Visual + Functional Audit | 0/? | Not started | - |
 | 15. Deploy Pipeline | 0/? | Not started | - |
 
 ---
