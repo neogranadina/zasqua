@@ -1,4 +1,30 @@
-@import "tailwindcss" source("..");
+/*
+ * Zasqua — Tailwind v4 entry stylesheet
+ *
+ * This is the single CSS entry point Hugo processes via css.TailwindCSS.
+ * The @import directive pulls Tailwind v4's preflight + utility classes;
+ * the @source directive points Tailwind at hugo_stats.json (written by
+ * Hugo's build.writeStats = true and mounted into the asset pipeline
+ * per hugo.toml) so Tailwind knows which utility classes actually
+ * appear in rendered HTML.
+ *
+ * The design tokens, component classes, and utility overrides below
+ * are ported verbatim from src/css/input.css (the Tailwind v4 source
+ * used by the Eleventy site). The only edit is on line 1: the original
+ * `@import "tailwindcss" source("..");` (filesystem-scan mode, which
+ * worked for Eleventy) is replaced by `@import "tailwindcss";` plus an
+ * `@source "hugo_stats.json";` directive (the Hugo pattern). Everything
+ * else — the @theme block, @layer base, @layer components, every
+ * rule — is byte-identical to src/css/input.css.
+ *
+ * Version: v1.0.0
+ */
+
+@import "tailwindcss";
+
+@source "hugo_stats.json";
+
+/* --- ported verbatim from src/css/input.css below this line --- */
 
 @theme {
   /* Brand colours — per D-08, matching zasqua-catalogacion */
@@ -4009,3 +4035,5 @@
 .place-tooltip .maplibregl-popup-tip {
   border-top-color: rgba(28, 25, 23, 0.95);
 }
+
+/* Version: v1.0.0 */
