@@ -344,7 +344,7 @@
       {{ if or .Params.iiif_manifest_url (not .Params.has_children) }}
         <div class="desc-aside">
           {{ if .Params.iiif_manifest_url }}
-            {{/* IIIF viewer — Plan 13-10 wires the desc-viewer div */}}
+            <div class="desc-viewer" data-manifest="{{ .Params.iiif_manifest_url }}"></div>
           {{ else }}
             <div class="desc-notice">
               <span class="material-symbols-outlined desc-notice-icon">inventory_2</span>
@@ -360,10 +360,41 @@
 
     </div>
 
-    {{/* Children (Miller columns) — Plan 13-10 wires this */}}
+    {{/* Children (Miller columns) — full width, outside the two-column layout */}}
+    {{ if .Params.has_children }}
+      <div class="detail-section" data-pagefind-ignore>
+        <h3>{{ hugo.Data.ui.description.childrenHeader }}</h3>
+        <div class="tree-header">
+          <a href="/buscar/?ancestor={{ .Params.reference_code }}" class="search-collection-link">
+            <span class="material-symbols-outlined">search</span>
+            Buscar en esta unidad
+          </a>
+        </div>
+        <div id="collection-tree"
+             data-parent-id="{{ .Params.id }}"
+             {{ printf `data-level-labels='%s'` (jsonify hugo.Data.ui.levelsPlural) | safeHTMLAttr }}>
+        </div>
+      </div>
+    {{ end }}
 
   </div>
 </div>
 
 {{ end }}
-{{/* Version: v1.0.0 */}}
+
+{{ define "head" }}
+  {{ if .Params.iiif_manifest_url }}
+    <link rel="stylesheet" href="/vendor/tify/tify.css">
+  {{ end }}
+{{ end }}
+
+{{ define "scripts" }}
+  {{ if .Params.iiif_manifest_url }}
+    <script src="/vendor/tify/tify.js"></script>
+  {{ end }}
+  <script src="/js/description.js"></script>
+  {{ if .Params.has_children }}
+    <script src="/js/tree.js"></script>
+  {{ end }}
+{{ end }}
+{{/* Version: v1.0.1 */}}
