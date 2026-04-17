@@ -677,32 +677,37 @@ function enrichPlaceLinks(descReferenceCode, descPlaceLookup) {
 
 **If this table is empty:** — Not empty. Seven of eight are low risk; two (A1, A4) are the real uncertainties. Both are answerable by running the full build in Phase 14, which is why Phase 13's scope is correctly narrow (subset build only).
 
-## Open Questions
+## Open Questions (RESOLVED 2026-04-16 during /gsd-plan-phase 13)
 
 1. **Where do client-runtime data shards live in the new layout?**
    - What we know: client JS fetches from `/data/children/{refcode}.json`, `/data/entity-links/{code}.json`, `/data/place-links/{code}.json`, `/data/entity-index.json`, `/data/place-index.json`, graph JSON, and lookup files. Currently these are in the root-level `data/` directory, served by Eleventy's passthrough copy.
    - What's unclear: with Hugo's `data/` directory collision (Pitfall 1), the simplest fix is renaming the export staging directory. But then `precompute-links.js` writes to `exports/entity-links/` or `raw/entity-links/` — we need those URL-visible at `/data/{type}/{code}.json` for client code. Options: (a) `precompute-links.js` writes directly to `static/data/` (Hugo serves it unchanged); (b) an intermediate copy step from the export dir to `static/data/`; (c) a Hugo `module.mounts` rule from `raw/entity-links/` → `static/data/entity-links/`.
    - Recommendation: **Option (a)** — cleanest; `precompute-links.js` takes an output directory override (env var or CLI flag), Phase 13's `build.sh` sets it to `static/data/`. Requires a one-line change to the script. Keeps `data/` (or renamed `exports/`) purely as the B2-download landing zone.
+   - **RESOLVED:** Option (b) adopted — `build.sh` copies `exports/children/`, `exports/entity-links/`, `exports/place-links/`, and the `*-index.json` lookup files into `static/data/` at build time (see Plan 05 Task 1 and Plan 04 Task 1). This keeps `static/data/` out of git (the source of truth lives in `exports/`, which is already gitignored) while preserving the `/data/{type}/{code}.json` client-fetch URLs. Option (a) was reconsidered but rejected because it entangles `precompute-links.js` with the Hugo directory layout.
 
 2. **Does Phase 13 include the `data/` directory rename, or defer it?**
    - What we know: the collision (Pitfall 1) is not optional — it's a blocker for Phase 13 building at all.
    - What's unclear: the scope of rename impact (`build.sh`, `precompute-links.js`, `scripts/places-to-geojson.js`, `.github/workflows/deploy.yml` — Phase 15 concern but still touched).
    - Recommendation: **Rename in Phase 13**, because without it the `hugo` invocation can't even start. Suggested new name: `exports/` (matches B2 bucket name `zasqua-export`). Touch CI workflow only to update the path references (no logic change).
+   - **RESOLVED:** Yes, rename lands in Phase 13 (approved by user 2026-04-16). Plan 01 Task 2 executes the `git mv data exports` and updates every path literal in `scripts/precompute-links.js`, `scripts/places-to-geojson.js`, and `build.sh`. Hugo's default `dataDir = data` is then reclaimed for `data/ui.yaml` only (ported from `src/_data/ui.js` per D-04 in Plan 03 Task 1).
 
 3. **Entity count: 92K or 83K?**
    - What we know: STATE.md says "Entity data is stale (entities.json has 92K records; canonical count from zasqua-entities Phase 10 is 83K) — will be resolved upstream before or during Phase 13." REQUIREMENTS.md HUGO-01 says "78K entities." Phase 13 success criterion 3 says "~83K entities."
    - What's unclear: which number is canonical at Phase 13 start, and whether a refreshed B2 export is a precondition for the plan.
    - Recommendation: planner checks with the user at plan kickoff; the record-count verification step in `generate-content.js` (specific numbers logged to stdout) makes this self-documenting at build time regardless.
+   - **RESOLVED:** Canonical counts verified 2026-04-16 against the current B2 export: **106,529 descriptions / 78,476 entities / 6,722 places**. STATE.md and ROADMAP.md updated to match. Plan 02 test fixtures and the `enriched-counts.test.js` invariant use these exact numbers.
 
 4. **Does the smoke-test template include the TIFY viewer and map?**
    - What we know: D-03 says Phase 13 "validates end-to-end that the Hugo Pipes CSS pipeline, vendored TIFY passthrough, and static image serving all work." CONTEXT.md specifics say "Don't port the full description.njk — just prove the pipeline with a stub that shows title, reference_code, ancestor chain, and date_formatted."
    - What's unclear: does "TIFY passthrough" need a link to TIFY in the smoke-test HTML, or just `static/vendor/tify/` being served at `/vendor/tify/tify.js`?
    - Recommendation: the latter — add a `curl -fsSL https://<devserver>/vendor/tify/tify.js > /dev/null` check in the plan's verification rather than embedding the viewer in the smoke-test template. Cheaper, same signal.
+   - **RESOLVED:** Curl check only for Phase 13. Plan 05 Task 3 verifies that `/vendor/tify/tify.js` returns HTTP 200 via `curl` against the local `hugo server`. Full TIFY viewer embed (with actual IIIF manifest loading) is Phase 14 work.
 
 5. **Does `data/ui.yaml` live at project root (Hugo's `dataDir`) or under a renamed directory?**
    - What we know: D-04 moves `ui.js` to `data/ui.yaml`. Pitfall 1 says Hugo's default `dataDir = "data"` collides with the export directory.
    - What's unclear: if we rename the export dir to `exports/`, then `data/ui.yaml` is fine and uncollided. If we override `dataDir` instead, `ui.yaml` goes to wherever that is.
    - Recommendation: rename export → `exports/`, keep `data/ui.yaml` at `dataDir = data` (Hugo default). This is the cleanest semantics — "data" is where Hugo lookup tables live; "exports" is where B2 downloads land.
+   - **RESOLVED:** Keep at Hugo default `dataDir = data`, so `data/ui.yaml` after renaming the export directory to `exports/`. The `data/` vs `exports/` split works because Hugo only treats small config-like data under `data/` as build inputs (accessible via `.Site.Data.ui`), while large archival JSON lives in `exports/` and reaches Hugo via `assets/hugo-data/` (populated by `scripts/generate-content.js`) — no collision, no performance risk.
 
 ## Environment Availability
 
