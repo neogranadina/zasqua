@@ -32,7 +32,12 @@ Phases 4–12 are documented in the v0.5.0 roadmap. All complete. The last phase
   3. `generate-content.js` writes `assets/hugo-data/descriptions.json`, `entities.json`, and `places.json`; record counts match the source exports (verified 2026-04-16 against B2 export: 106,529 descriptions, 78,476 entities, 6,722 places)
   4. Every description record includes a pre-computed `ancestor_chain` array; every date field includes a pre-computed `date_formatted` string in Colombian Spanish narrative format; entity and place link records include pre-computed `display_name` and `role_label` strings — no formatting logic remains for Go templates to handle
   5. `DEV_LIMIT` mode truncates all three datasets so a local enrichment + build cycle completes in under 60 seconds
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 13-01-PLAN.md — Wave 0 environment prep: Hugo install verification, rename data/ → exports/, install vitest, scaffold RED tests for invariants I1–I8
+- [ ] 13-02-PLAN.md — Wave 1 TDD: port formatDateNarrative, numberFormat, ancestor-chain walker, and link enrichment into scripts/generate-content.js; write enriched JSON to assets/hugo-data/ with DEV_LIMIT support
+- [ ] 13-03-PLAN.md — Wave 2: hugo.toml with module mounts, three content adapters (_content.gotmpl), data/ui.yaml port, section listing front matter
+- [ ] 13-04-PLAN.md — Wave 2: layouts (baseof + home + list + three section singles + partials), Tailwind v4 wiring via css.TailwindCSS, relocate src/ assets to Hugo canonical paths
+- [ ] 13-05-PLAN.md — Wave 3: rewrite build.sh, delete Eleventy + standalone tailwindcss binary, DEV_LIMIT=100 smoke build, verify all 8 invariants, human checkpoint for visible styling
 
 ### Phase 14: Template Porting
 **Goal**: Every Nunjucks template has a Go equivalent that produces functionally identical HTML output, all 15 custom filters are replaced, and a full 192K-page build completes without error
