@@ -52,6 +52,7 @@
 
   {{ range $data }}
     {{ $params := dict
+        "id" .id
         "reference_code" .reference_code
         "parent_reference_code" .parent_reference_code
         "repository_code" .repository_code

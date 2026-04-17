@@ -1,0 +1,369 @@
+{{/*
+  Zasqua description detail template (core)
+
+  Port of src/description.njk (413 lines). Renders the visible content
+  of the page — breadcrumb, header, two-column layout with the ISAD(G)
+  metadata sections on the left and the desc-notice (not-digitised)
+  fallback on the right when there's no IIIF manifest.
+
+  Deferred to later plans:
+  - Plan 13-10: IIIF viewer (desc-viewer div) in the aside when
+    iiif_manifest_url is set; Miller columns children tree when
+    has_children; head block (tify.css) + scripts block (tify.js +
+    description.js + tree.js).
+  - Plan 13-11: Pagefind metadata hidden div at the top + OCR text
+    hidden block at the bottom.
+
+  Data contract: content/descripcion/_content.gotmpl passes every
+  ISAD(G) field and the pre-computed ancestor_chain / date_formatted /
+  entity_links / place_links via .Params.
+
+  Divergences from Eleventy (all functional-identity preserving):
+  - formatDate filter -> .Params.date_formatted (pre-computed by 13-02)
+  - splitPipe filter -> Hugo's `split X "|"` + len check
+  - safeSlug filter -> identity (ref codes are already URL-safe)
+
+  Version: v1.0.0
+*/}}
+{{ define "title" }}{{ .Title }} | {{ site.Title }}{{ end }}
+{{ define "main" }}
+
+{{ $repo := .Params.repository }}
+{{ $levelLabel := index hugo.Data.ui.levels .Params.description_level }}
+{{ if not $levelLabel }}{{ $levelLabel = .Params.description_level }}{{ end }}
+
+{{/* Breadcrumb */}}
+<nav class="breadcrumb" aria-label="Breadcrumb" data-pagefind-ignore>
+  <div class="container">
+    <a href="/">{{ hugo.Data.ui.breadcrumb.home }}</a>
+    {{ range .Params.ancestor_chain }}
+      <span class="breadcrumb-separator">&rsaquo;</span>
+      <a href="/{{ .reference_code }}/">{{ .title }}</a>
+    {{ end }}
+    <span class="breadcrumb-separator">&rsaquo;</span>
+    <span>{{ .Title }}</span>
+  </div>
+</nav>
+
+{{/* Header */}}
+<div class="detail-header" data-pagefind-body>
+  <div class="container">
+    <h1 class="detail-title font-sans font-semibold text-stone-900">{{ .Title }}</h1>
+    <div class="detail-meta text-sm text-stone-500">
+      <span class="level-badge">{{ $levelLabel }}</span>
+      {{ with .Params.date_formatted }} &middot; {{ . }}{{ end }}
+      &middot; <span class="detail-value-mono">{{ .Params.reference_code }}</span>
+    </div>
+  </div>
+</div>
+
+{{/* Two-column layout */}}
+<div class="detail-content">
+  <div class="container">
+    <div class="desc-layout">
+
+      {{/* Left column: metadata */}}
+      <div class="desc-metadata" data-pagefind-body>
+
+        {{/* Section: Descripcion */}}
+        <div class="detail-section">
+          <h3 class="font-semibold text-stone-400">{{ hugo.Data.ui.description.metadataHeader }}</h3>
+
+          {{ with $repo }}
+            <div class="detail-field">
+              <span class="detail-label font-semibold text-stone-900">{{ hugo.Data.ui.fields.repository }}</span>
+              <span class="detail-value text-stone-700"><a href="/{{ .code }}/" class="text-burgundy hover:text-burgundy-light">{{ .name }}</a></span>
+            </div>
+          {{ end }}
+
+          {{ with .Params.date_formatted }}
+            <div class="detail-field">
+              <span class="detail-label">{{ hugo.Data.ui.fields.date }}</span>
+              <span class="detail-value">{{ . }}</span>
+            </div>
+          {{ end }}
+
+          <div class="detail-field">
+            <span class="detail-label">{{ hugo.Data.ui.fields.referenceCode }}</span>
+            <span class="detail-value detail-value-mono">{{ .Params.reference_code }}</span>
+          </div>
+
+          {{ with .Params.scope_content }}
+            <div class="detail-field">
+              <span class="detail-label">{{ hugo.Data.ui.fields.scopeContent }}</span>
+              {{ $scParts := split . "|" }}
+              {{ if gt (len $scParts) 1 }}
+                <ul class="detail-value detail-list">
+                  {{ range $scParts }}<li>{{ . }}</li>{{ end }}
+                </ul>
+              {{ else }}
+                <span class="detail-value">{{ . }}</span>
+              {{ end }}
+            </div>
+          {{ end }}
+
+          {{ with .Params.extent }}
+            <div class="detail-field">
+              <span class="detail-label">{{ hugo.Data.ui.fields.extent }}</span>
+              {{ $extParts := split . "|" }}
+              {{ if gt (len $extParts) 1 }}
+                <ul class="detail-value detail-list">
+                  {{ range $extParts }}<li>{{ . }}</li>{{ end }}
+                </ul>
+              {{ else }}
+                <span class="detail-value">{{ . }}</span>
+              {{ end }}
+            </div>
+          {{ end }}
+
+          {{ with .Params.arrangement }}
+            <div class="detail-field">
+              <span class="detail-label">{{ hugo.Data.ui.fields.arrangement }}</span>
+              <span class="detail-value">{{ . }}</span>
+            </div>
+          {{ end }}
+        </div>
+
+        {{/* Section: Informacion bibliografica */}}
+        {{ if or .Params.publication_title .Params.imprint .Params.edition_statement .Params.series_statement .Params.uniform_title .Params.section_title .Params.pages }}
+          <div class="detail-section">
+            <h3>{{ hugo.Data.ui.description.bibliographicHeader }}</h3>
+
+            {{ with .Params.publication_title }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.publicationTitle }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+
+            {{ with .Params.series_statement }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.seriesStatement }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+
+            {{ with .Params.uniform_title }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.uniformTitle }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+
+            {{ with .Params.section_title }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.sectionTitle }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+
+            {{ with .Params.edition_statement }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.editionStatement }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+
+            {{ with .Params.imprint }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.imprint }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+
+            {{ with .Params.pages }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.pages }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+          </div>
+        {{ end }}
+
+        {{/* Section: Personas y entidades */}}
+        {{ if and .Params.entity_links (gt (len .Params.entity_links) 0) }}
+          <div class="detail-section">
+            <h3>{{ hugo.Data.ui.description.entitiesHeader }}</h3>
+            {{ range .Params.entity_links }}
+              <div class="detail-field">
+                <a href="/{{ .code }}/">{{ .display_name }}</a>
+                {{ if and .role_labels (gt (len .role_labels) 0) }}
+                 &mdash; <em class="text-stone-400">{{ delimit .role_labels ", " }}</em>
+                {{ end }}
+              </div>
+            {{ end }}
+          </div>
+        {{ end }}
+
+        {{/* Section: Lugares */}}
+        {{ if and .Params.place_links (gt (len .Params.place_links) 0) }}
+          <div class="detail-section">
+            <h3>{{ hugo.Data.ui.description.placesHeader }}</h3>
+            {{ range .Params.place_links }}
+              <div class="detail-field">
+                <a href="/{{ .place_code }}/">{{ .display_name }}</a>
+              </div>
+            {{ end }}
+          </div>
+        {{ end }}
+
+        {{/* Section: Condiciones de acceso */}}
+        <div class="detail-section">
+          <h3>{{ hugo.Data.ui.description.accessConditionsHeader }}</h3>
+
+          {{ with .Params.access_conditions }}
+            <div class="detail-field">
+              <span class="detail-label">{{ hugo.Data.ui.fields.accessConditions }}</span>
+              <span class="detail-value">{{ . }}</span>
+            </div>
+          {{ end }}
+
+          <div class="detail-field">
+            <span class="detail-label">{{ hugo.Data.ui.fields.reproductionConditions }}</span>
+            <div class="detail-value">
+              <div class="repro-subsection">
+                <strong class="repro-subheading">Catálogos y descripciones</strong>
+                <span>Los catálogos y descripciones de Zasqua son de libre acceso.</span>
+              </div>
+              {{ with .Params.reproduction_conditions }}
+                <div class="repro-subsection">
+                  <strong class="repro-subheading">Documentos originales</strong>
+                  <span>{{ . }}</span>
+                </div>
+              {{ end }}
+              {{ if and .Params.iiif_manifest_url $repo }}
+                <div class="repro-subsection">
+                  <strong class="repro-subheading">Imágenes</strong>
+                  <span>{{ $repo.image_reproduction_text }}</span>
+                </div>
+              {{ end }}
+            </div>
+          </div>
+
+          {{ with .Params.language }}
+            <div class="detail-field">
+              <span class="detail-label">{{ hugo.Data.ui.fields.language }}</span>
+              <span class="detail-value">{{ . }}</span>
+            </div>
+          {{ end }}
+        </div>
+
+        {{/* Section: Materiales relacionados */}}
+        {{ if or .Params.location_of_originals .Params.location_of_copies .Params.related_materials }}
+          <div class="detail-section">
+            <h3>{{ hugo.Data.ui.description.relatedMaterialsHeader }}</h3>
+
+            {{ with .Params.location_of_originals }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.locationOfOriginals }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+
+            {{ with .Params.location_of_copies }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.locationOfCopies }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+
+            {{ with .Params.related_materials }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.relatedMaterials }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+          </div>
+        {{ end }}
+
+        {{/* Section: Notas */}}
+        {{ if or .Params.notes .Params.finding_aids }}
+          <div class="detail-section">
+            <h3>{{ hugo.Data.ui.description.notesHeader }}</h3>
+
+            {{ with .Params.notes }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.notes }}</span>
+                {{ $notesParts := split . "|" }}
+                {{ if gt (len $notesParts) 1 }}
+                  <ul class="detail-value detail-list">
+                    {{ range $notesParts }}<li>{{ . }}</li>{{ end }}
+                  </ul>
+                {{ else }}
+                  <span class="detail-value">{{ . }}</span>
+                {{ end }}
+              </div>
+            {{ end }}
+
+            {{ with .Params.finding_aids }}
+              <div class="detail-field">
+                <span class="detail-label">{{ hugo.Data.ui.fields.findingAids }}</span>
+                <span class="detail-value">{{ . }}</span>
+              </div>
+            {{ end }}
+          </div>
+        {{ end }}
+
+        {{/* Section: Reutilizacion */}}
+        <div class="detail-section">
+          <h3>{{ hugo.Data.ui.description.reuseHeader }}</h3>
+          {{ if .Params.iiif_manifest_url }}
+            <p class="reuse-blurb">Zasqua se inspira en los <a href="https://journal.code4lib.org/articles/13427" target="_blank" rel="noopener">principios FAIR</a> para hacer sus colecciones más abiertas y reutilizables. Utiliza el estándar <a href="https://www.loc.gov/standards/mets/" target="_blank" rel="noopener">METS</a> para publicar metadatos e <a href="https://iiif.io" target="_blank" rel="noopener">IIIF</a> para publicar imágenes. Copia la dirección del manifiesto IIIF a continuación para abrir o integrar este documento en otro visor o plataforma compatible, como <a href="https://telar.org" target="_blank" rel="noopener">Telar</a>.</p>
+          {{ else }}
+            <p class="reuse-blurb">Zasqua se inspira en los <a href="https://journal.code4lib.org/articles/13427" target="_blank" rel="noopener">principios FAIR</a> para hacer sus colecciones más abiertas y reutilizables. Utiliza el estándar <a href="https://www.loc.gov/standards/mets/" target="_blank" rel="noopener">METS</a> para publicar metadatos.</p>
+          {{ end }}
+          {{ with .Params.mets_url }}
+            <div class="reuse-manifest">
+              <strong class="reuse-manifest-label">{{ hugo.Data.ui.description.metsLabel }}</strong>
+              <div class="reuse-manifest-row">
+                <code class="reuse-manifest-url">{{ . }}</code>
+                <button class="reuse-copy-btn" data-copy-url="{{ . }}">
+                  <span class="material-symbols-outlined">content_copy</span>
+                  Copiar
+                </button>
+              </div>
+            </div>
+          {{ end }}
+          {{ with .Params.iiif_manifest_url }}
+            <div class="reuse-manifest">
+              <strong class="reuse-manifest-label">{{ hugo.Data.ui.description.iiifLabel }}</strong>
+              <div class="reuse-manifest-row">
+                <code class="reuse-manifest-url">{{ . }}</code>
+                <button class="reuse-copy-btn" data-copy-url="{{ . }}">
+                  <span class="material-symbols-outlined">content_copy</span>
+                  Copiar
+                </button>
+              </div>
+            </div>
+          {{ end }}
+        </div>
+
+      </div>
+
+      {{/* Right column: aside */}}
+      {{ if or .Params.iiif_manifest_url (not .Params.has_children) }}
+        <div class="desc-aside">
+          {{ if .Params.iiif_manifest_url }}
+            {{/* IIIF viewer — Plan 13-10 wires the desc-viewer div */}}
+          {{ else }}
+            <div class="desc-notice">
+              <span class="material-symbols-outlined desc-notice-icon">inventory_2</span>
+              <div class="desc-notice-title">{{ hugo.Data.ui.description.notDigitised }}</div>
+              <p class="desc-notice-text">{{ hugo.Data.ui.description.notDigitisedText }}</p>
+              {{ with $repo }}
+                <p class="desc-notice-repo">{{ .name }}{{ with .city }}, {{ . }}{{ end }}</p>
+              {{ end }}
+            </div>
+          {{ end }}
+        </div>
+      {{ end }}
+
+    </div>
+
+    {{/* Children (Miller columns) — Plan 13-10 wires this */}}
+
+  </div>
+</div>
+
+{{ end }}
+{{/* Version: v1.0.0 */}}
