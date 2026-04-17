@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-17T15:29:16.502Z",
+  "phase": "13",
+  "phase_name": "hugo-foundation",
+  "phase_dir": ".planning/phases/13-hugo-foundation",
+  "plan": "13-03",
+  "task": 0,
+  "total_tasks": 2,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": "13-01", "name": "Phase 13 foundation (Hugo install, exports/ rename, vitest, RED tests)", "status": "done", "commit": "068ce03"},
+    {"id": "13-02", "name": "Port Eleventy enrichment to scripts/generate-content.js (sharded output)", "status": "done", "commit": "742694f"}
+  ],
+  "remaining_tasks": [
+    {"id": "13-03", "name": "Hugo scaffold: hugo.toml, content adapters (iterate shards), data/ui.yaml", "status": "not_started"},
+    {"id": "13-04", "name": "Templates + Tailwind v4 wiring + static asset relocation", "status": "not_started"},
+    {"id": "13-05", "name": "Integration + Eleventy removal (checkpoint before final cutover)", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Checkpoint at Plan 13-05 Task 1 (visual confirmation of DEV_LIMIT=100 smoke build)", "context": "autonomous: false — human eyeballs pages before phase declared done", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "Shard descriptions by FIXED record count (SHARD_SIZE=20,000) — not by repository_code", "rationale": "Per-repo sharding works on current corpus (max shard 302 MB) but is data-dependent; fixed-count shards are bounded by design regardless of repo distribution", "phase": "13"},
+    {"decision": "Use entity-index.json/place-index.json for _linked_count instead of reading 84K shard files", "rationale": "Matches existing Eleventy loader logic; single file read vs ~84,000 I/Os per run", "phase": "13"},
+    {"decision": "Enrichment modules use CommonJS (module.exports/require)", "rationale": "package.json has no \"type\": \"module\"; coexists cleanly with precompute-links.js and the still-present src/_data/*.js loaders. Vitest bridges CJS→ESM for test imports", "phase": "13"},
+    {"decision": "Streaming JSON writer in generate-content.js", "rationale": "V8's 512 MiB max string length means JSON.stringify on the full descriptions array throws RangeError; stream record-by-record instead", "phase": "13"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Read .planning/phases/13-hugo-foundation/13-02-SUMMARY.md (the forward-pointer block tells Plan 13-03 exactly how to consume the sharded descriptions), then begin Plan 13-03 Task 1 (hugo.toml + section front matter)",
+  "context_notes": "Plan 13-02 exposed a real architectural constraint (V8 512 MiB string limit) that must be respected through Plan 13-05. The output shape is now locked: sharded descriptions + descriptions-index.json, single-file entities/places. Plan 13-03's Hugo adapter MUST iterate assets/hugo-data/descriptions/*.json (glob the directory, filenames are opaque indices like 000.json). Adapter must NOT assume any single-file descriptions.json exists."
+}
