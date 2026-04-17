@@ -59,7 +59,7 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ## Context
 
-- **Codebase:** Eleventy 3, Nunjucks, Tailwind CSS v4 (standalone CLI), Pagefind, TIFY, vanilla JS — migrating to Hugo in v0.6.0
+- **Codebase:** Eleventy 3, Nunjucks, Tailwind CSS v4 (standalone CLI), Pagefind, TIFY, vanilla JS — migrating to Hugo in v1.0.0
 - **Shipped:** v0.5.1 (2026-04-16) — entity/place discovery, explorers, description linking. Deploy to zasqua.org blocked by CI OOM
 - **Data:** 106K description pages, 7,068 places (2,237 with coordinates), 83,412 entities (pending further cleanup in zasqua-entities phases 10.1–10.2), 292K entity-description links, 194K place-description links
 - **Infrastructure:** Cloudflare R2 (`zasqua-site` bucket), Cloudflare Worker, GitHub Actions CI/CD
@@ -71,7 +71,7 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 - **No runtime server** — everything is static, pre-built
 - **Client-side search only** — Pagefind indexes at build time
-- **Build time** — Eleventy OOMs at 192K pages with 7 GB heap on GitHub Actions (exit code 134). Hugo migration planned for v0.6.0
+- **Build time** — Eleventy OOMs at 192K pages with 7 GB heap on GitHub Actions (exit code 134). Hugo migration planned for v1.0.0
 - **Build architecture** — Hugo replaces Eleventy; data enrichment moves to pre-build Node.js scripts, content stubs generated for Hugo
 - **File count** — exceeds Cloudflare Pages' 100K limit, hence R2 + Worker
 
@@ -84,10 +84,10 @@ Open-access discovery interface for digitised historical archives — fast, cach
 | Miller columns over accordion | Better for deep hierarchies | Good — lazy-loaded, scales well |
 | R2 + Worker over Netlify | No file count limits, faster deploys | Good — 10 min deploys vs 2+ hours |
 | Parallel upload over rclone | rclone bottlenecked at 30ms/file RTT | Good — 345 files/s |
-| Tailwind v4 standalone CLI over npm | No npm dependency, single binary | Good — fast compilation, no build chain complexity |
-| Eleventy → Hugo migration | Eleventy OOMs at 192K pages; Hugo handles 500K in <1 GB | Pending — v0.6.0 |
+| Tailwind v4 standalone CLI over npm | No npm dependency, single binary | Revisit — Hugo PATH security patch (v0.146.0) requires npm; switching to `@tailwindcss/cli` via npm in v1.0.0 |
+| Eleventy → Hugo migration | Eleventy OOMs at 192K pages; Hugo handles 500K in <1 GB | Pending — v1.0.0 |
 
-## Current Milestone: v0.6.0 Build Pipeline Sustainability
+## Current Milestone: v1.0.0 Build Pipeline Sustainability
 
 **Goal:** Migrate the frontend build from Eleventy to Hugo so the site builds reliably at 192K+ pages without hitting memory or time limits, and remains sustainable as the catalogue grows towards 500K pages.
 
@@ -119,4 +119,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 — Milestone v0.6.0 started (Build Pipeline Sustainability)*
+*Last updated: 2026-04-16 — Milestone v1.0.0 started (Build Pipeline Sustainability)*

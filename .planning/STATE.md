@@ -1,6 +1,6 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.6.0
+milestone: v1.0.0
 milestone_name: Build Pipeline Sustainability
 status: Defining requirements
 last_updated: "2026-04-16"
@@ -19,14 +19,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** Open-access discovery interface for digitised historical archives — fast, cacheable, no runtime server dependency.
-**Current focus:** Defining requirements for v0.6.0 Build Pipeline Sustainability
+**Current focus:** Defining requirements for v1.0.0 Build Pipeline Sustainability
 
 ## Current Position
 
 Phase: Not started (defining requirements)
 Plan: —
 Status: Defining requirements
-Last activity: 2026-04-16 — Milestone v0.6.0 started
+Last activity: 2026-04-16 — Milestone v1.0.0 started
 
 ## Accumulated Context
 
@@ -42,7 +42,7 @@ Carried from v0.5.0:
 - Tailwind v4 standalone CLI — no npm dependency
 - Porting done in thematic commits — version bump last
 
-v0.6.0 decisions:
+v1.0.0 decisions:
 
 - Hugo replaces Eleventy — Eleventy OOMs at 192K pages with 7 GB heap (CI exit code 134)
 - Pagefind addressed after Hugo if still insufficient
@@ -60,4 +60,4 @@ v0.6.0 decisions:
 
 ## Session Continuity
 
-Last activity: 2026-04-16 — Milestone v0.6.0 started
+Last activity: 2026-04-16 — Milestone v1.0.0 started
