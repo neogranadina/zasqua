@@ -3,14 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-17T07:00:13.666Z"
-last_activity: 2026-04-17 -- Phase 13 execution started
+stopped_at: "Plan 13-03 complete (Hugo scaffold); 3/5 plans done — Plan 13-04 next (templates + Tailwind v4 + static asset relocation)"
+last_updated: "2026-04-17T16:00:00.000Z"
+last_activity: 2026-04-17 -- Plan 13-03 complete (hugo.toml, three content adapters, data/ui.yaml)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
-  percent: 0
+  completed_plans: 3
+  percent: 60
 ---
 
 # Project State
@@ -25,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Current Position
 
 Phase: 13 (hugo-foundation) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 13
-Last activity: 2026-04-17 -- Phase 13 execution started
+Plan: 4 of 5 (Plan 13-03 just completed)
+Status: Executing Phase 13 — Plan 13-04 next (templates + Tailwind v4 + static asset relocation)
+Last activity: 2026-04-17 -- Plan 13-03 complete (hugo.toml, three content adapters, data/ui.yaml); 191,733 pages verified via smoke build
 
-Progress: ░░░░░░░░░░ 0% (0/3 phases complete)
+Progress: ██████░░░░ 60% (0/3 phases complete; 3/5 plans complete within Phase 13)
 
 ## Accumulated Context
 
@@ -51,9 +52,10 @@ v1.0.0 decisions:
 - Hugo Extended replaces Eleventy — Eleventy OOMs at 192K pages with 7 GB heap (CI exit code 134)
 - Hugo content adapters (`_content.gotmpl`) generate pages from JSON — no stub markdown files
 - Large JSON loaded via `resources.Get` in content adapters, NEVER via `.Site.Data` (OOM risk)
+- Descriptions adapter uses `resources.Match` over sharded files (`assets/hugo-data/descriptions/*.json`) — a unified file would exceed V8's 512 MiB max-string-length ceiling
 - Spanish date formatting and number formatting pre-computed in Node.js (`generate-content.js`) — no Hugo equivalent
 - Tailwind CSS v4 must use `@tailwindcss/cli` via npm (Hugo ≥ v0.146.0 PATH security patch blocks standalone binary)
-- `hugo_stats.json` must be excluded from `.gitignore` (Tailwind v4 silently skips it otherwise)
+- `hugo_stats.json` bridged to Tailwind v4 via a `module.mounts` entry (`assets/notwatching/hugo_stats.json`) — overrides D-22's "just keep it out of .gitignore" stance; the mount is robust against future devs reflexively gitignoring it
 - Pagefind upgraded to v1.5.2, three indices built in parallel CI jobs (no incremental indexing — not supported)
 - R2 diff upload extends existing Node.js parallel uploader with ETag/MD5 comparison — rclone and r2sync both ruled out
 - DEV_LIMIT environment variable for fast local builds introduced in Phase 13
@@ -69,4 +71,6 @@ v1.0.0 decisions:
 
 ## Session Continuity
 
-Last activity: 2026-04-16 — Roadmap revised from 4 phases (13–16) to 3 phases (13–15) for v1.0.0 Build Pipeline Sustainability
+Last session: 2026-04-17
+Stopped at: Plan 13-03 complete (Hugo scaffold) — 3/5 plans done within Phase 13; next is Plan 13-04 (templates + Tailwind v4 + static asset relocation)
+Resume file: .planning/phases/13-hugo-foundation/13-03-SUMMARY.md (forward pointer at bottom names the files Plan 13-04 adds)
