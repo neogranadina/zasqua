@@ -1,365 +1,417 @@
 # Architecture Research
 
-**Domain:** Static archival discovery site — entity/place discovery features on Eleventy + Pagefind + Cloudflare R2
-**Researched:** 2026-03-26
-**Confidence:** HIGH (core integration patterns verified against official docs and existing codebase)
+**Domain:** Static archival discovery site — Hugo migration from Eleventy (v0.6.0)
+**Researched:** 2026-04-16
+**Confidence:** HIGH for Hugo core patterns (official docs verified); MEDIUM for large-scale content adapter performance at 192K pages (benchmark data only verified to 100K); HIGH for Pagefind integration (unchanged); HIGH for R2/Worker deployment (unchanged)
 
 ---
 
-## Current Architecture (Baseline)
+## Current Architecture (Eleventy — What Exists Now)
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        BUILD PIPELINE                           │
-│  B2 (zasqua-export) → data/ → Eleventy → _site/ → Pagefind     │
-│  descriptions.json (106K pages)                                 │
-│  repositories.json                                              │
-│  children/ (tree JSON)                                          │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │ upload-to-r2.py (100 threads)
-┌───────────────────────────────▼─────────────────────────────────┐
-│                   Cloudflare R2 (zasqua-site)                   │
-│  HTML pages  │  Pagefind index  │  static assets  │  tree JSON  │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-┌───────────────────────────────▼─────────────────────────────────┐
-│              Cloudflare Worker (routing + edge cache)           │
-│  path → R2 key resolution, Cache-Control headers                │
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                          zasqua.org
+B2 (zasqua-export)
+  ├── descriptions.json (106K descriptions)
+  ├── repositories.json
+  ├── children/ (tree JSON shards)
+  ├── entities.json (31 MB, 92K records)
+  ├── places.json (7K records)
+  ├── entity_links.json (292K links)
+  └── place_links.json (194K links)
+        │
+        ▼ b2 sync (GitHub Actions)
+data/
+        │
+        ▼ node scripts/precompute-links.js
+data/entity-links/{code}.json   (per-entity shards)
+data/place-links/{code}.json    (per-place shards)
+data/entity-index.json
+data/place-index.json
+data/desc-entity-lookup.json
+data/desc-place-lookup.json
+        │
+        ├─── Tailwind standalone CLI → src/css/main.css
+        │
+        ▼ npx eleventy (Node, single process, 7 GB heap)
+_site/ (192K HTML pages)
+  ├── 106K description pages   (description.njk paginates descriptions array)
+  ├── 78K entity pages         (entidad.njk paginates entities array)
+  ├── 7K place pages           (lugar.njk paginates places array)
+  ├── explorers, search, static pages
+  ├── data/children/           (passthrough)
+  ├── data/entity-links/       (passthrough)
+  ├── data/place-links/        (passthrough)
+  ├── data/entity-index.json   (passthrough)
+  └── data/place-index.json    (passthrough)
+        │
+        ├─── npx pagefind (3 index runs)
+        │
+        ▼ python3 scripts/upload-to-r2.py (100 threads)
+Cloudflare R2 (zasqua-site)
+        │
+        ▼ Cloudflare Worker
+zasqua.org
 ```
 
-**Key facts from codebase:**
-- `description.njk` paginates over `descriptions` array from `src/_data/descriptions.js`
-- `entities.js` and `places.js` currently return `[]` — deliberately unused
-- `data-pagefind-meta`, `data-pagefind-filter`, `data-pagefind-sort` already in use on description pages (hidden `<div>`)
-- Worker routes all paths to R2 keys, adding `index.html` suffix for directory paths
-- Upload script handles `.pmtiles` extension already (maps to `application/octet-stream`)
+**Why this breaks:** Eleventy OOMs (exit code 134) at 192K pages even with 7 GB heap on GitHub Actions. The Node.js single-process model keeps all pagination data — descriptions array (106K records), entities array (92K records), places array (7K records) — plus all computed ancestor chains and entity/place lookups in memory simultaneously during template rendering. The heap limit is architectural, not tunable.
 
 ---
 
-## Target Architecture (v0.5.0)
+## Target Architecture (Hugo — What We Are Building)
 
 ```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                           BUILD PIPELINE                                   │
-│                                                                            │
-│  B2 (zasqua-export)                                                        │
-│    descriptions.json  →  descriptions build  (106K pages, ~14 min)        │
-│    repositories.json  →  (shared)                                          │
-│    entities.json      →  entity/place build  (~100K pages)                 │
-│    places.json        →                                                    │
-│    entity_links.json  →  pre-compute aggregates (Node script)              │
-│    place_links.json   →                                                    │
-│                                                                            │
-│  Option A: Single Eleventy build (simplest, longest)                       │
-│  Option B: Two parallel Eleventy instances → merge _site/ before Pagefind  │
-│                                                                            │
-│  Pagefind indexes merged _site/                                            │
-│  Tippecanoe converts places GeoJSON → zasqua-places.pmtiles                │
-└─────────────────────────────────────────────────────────────────────────────┘
-                          │                       │
-          upload-to-r2.py (HTML+Pagefind)   upload PMTiles separately
-                          │                       │
-┌─────────────────────────▼───────────────────────▼───────────────────────────┐
-│                      Cloudflare R2 (zasqua-site)                            │
-│                                                                             │
-│  HTML pages                     Pagefind index                             │
-│    /descripcion/{ref}/          /_site/pagefind/                            │
-│    /lugar/{name}/               Aggregates (pre-built JSON)                 │
-│    /entidad/{code}/             /data/entity-links/{code}.json              │
-│    /explorar/lugares/           /data/place-links/{name}.json               │
-│    /explorar/entidades/                                                     │
-│                                                                             │
-│  PMTiles (separate R2 object, NOT in _site/)                               │
-│    zasqua-places.pmtiles                                                   │
-└─────────────────────────────────────────────────────────────────────────────┘
-                          │                       │
-              Cloudflare Worker              PMTiles Worker
-              (existing routing)             (range request proxy)
-                          │                       │
-                          └──────────┬────────────┘
-                                zasqua.org
+B2 (zasqua-export)  [unchanged data source]
+  ├── descriptions.json
+  ├── repositories.json
+  ├── children/
+  ├── entities.json
+  ├── places.json
+  ├── entity_links.json
+  └── place_links.json
+        │
+        ▼ b2 sync (GitHub Actions)  [unchanged step]
+data/
+        │
+        ▼ node scripts/precompute-links.js    [unchanged script]
+        ▼ node scripts/generate-content.js    [NEW — replaces Eleventy data layer]
+data/entity-links/, data/place-links/        [unchanged shards]
+data/entity-index.json, data/place-index.json  [unchanged]
+content/                                     [NEW — Hugo content tree]
+  ├── descripcion/
+  │   └── _content.gotmpl                    (content adapter — 106K description pages)
+  ├── ne/
+  │   └── _content.gotmpl                    (content adapter — 78K entity pages)
+  └── nl/
+      └── _content.gotmpl                    (content adapter — 7K place pages)
+        │
+        ├─── Tailwind standalone CLI → static/css/main.css  [moved, logic unchanged]
+        │
+        ▼ hugo (Go binary, ~1 GB RAM)
+public/ (192K HTML pages)
+  ├── description pages, entity pages, place pages
+  ├── static assets (CSS, JS, vendor, img)
+  ├── data/ (entity-links/, place-links/, index files — copied via staticDir)
+  └── pagefind indices (written after Hugo build)
+        │
+        ├─── npx pagefind (3 index runs)  [unchanged step]
+        │
+        ▼ python3 scripts/upload-to-r2.py  [unchanged script]
+Cloudflare R2 (zasqua-site)  [unchanged]
+        │
+        ▼ Cloudflare Worker  [unchanged]
+zasqua.org
 ```
+
+---
+
+## Core Concept: How Hugo Generates Pages from Data
+
+Hugo cannot paginate over a JS data array the way Eleventy does. The equivalent mechanism is **content adapters** (`_content.gotmpl`), introduced in Hugo v0.126.0 (May 2024) and stable in all current releases.
+
+A content adapter is a Go template file placed in the `content/` directory. It runs at build time and calls `$.AddPage` for each record in a data source. Hugo then renders each added page through the normal layout system — the same Go templates (`layouts/`) that render Markdown content files.
+
+**How the data gets into content adapters:**
+
+Data files accessed by content adapters must live in the `assets/` directory and be read with `resources.Get | transform.Unmarshal`. This is distinct from Hugo's `data/` directory, which is loaded into memory for the entire build and is better suited to small reference data accessed repeatedly across many templates.
+
+For large arrays (descriptions.json at ~370 MB total across all files), use `resources.Get` from `assets/`. Hugo reads and unmarshals the file once per content adapter that references it, then garbage-collects it after the adapter runs — this is the source of Hugo's lower memory ceiling compared to Eleventy.
+
+**Verified performance (MEDIUM confidence — extrapolated from 100K benchmarks):**
+- 20K pages from a 49 MB JSON: ~5–20 seconds depending on hardware
+- 100K pages (4× dataset): linear scaling confirmed in Hugo forum benchmarks
+- Estimated 192K pages: 10–40 seconds on GitHub Actions ubuntu-latest (2 vCPUs)
+- Hugo uses all available CPU cores for rendering — Eleventy uses one
+
+Source: [Hugo forum content adapters performance thread](https://discourse.gohugo.io/t/content-adapters-examples-and-performance/49830), [Hugo 0.126.x launch post](https://www.brycewray.com/posts/2024/05/hugo-0-126-x-speedy-pages-data/)
 
 ---
 
 ## Component Responsibilities
 
-| Component | Responsibility | New or Modified |
-|-----------|----------------|-----------------|
-| `src/_data/entities.js` | Load `entities.json` from `data/` | Modified — activate |
-| `src/_data/places.js` | Load `places.json` from `data/` | Modified — activate |
-| `src/_data/entity_links.js` | Load pre-computed entity→description map | New |
-| `src/_data/place_links.js` | Load pre-computed place→description map | New |
-| `src/entidad.njk` | Paginate over entities, one page per entity | New template |
-| `src/lugar.njk` | Paginate over places, one page per place | New template |
-| `src/explorar/entidades.njk` | Entity explorer page (search + graph) | New template |
-| `src/explorar/lugares.njk` | Place explorer page (search + heatmap) | New template |
-| `scripts/precompute-links.js` | Compute entity/place→description aggregates at build time | New script |
-| `scripts/generate-pmtiles.sh` | Convert places GeoJSON to PMTiles via Tippecanoe | New script |
-| `worker/worker.js` | Add PMTiles routing with range request support | Modified |
-| `scripts/upload-to-r2.py` | Add `.pmtiles` MIME type (already `application/octet-stream`) | No change |
-| `build.sh` / `deploy.yml` | Download entity/place JSON, run precompute, run Tippecanoe | Modified |
-| `eleventy.config.js` | Passthrough `data/entity-links/` and `data/place-links/` | Modified |
+### New Components
+
+| Component | Responsibility | Notes |
+|-----------|----------------|-------|
+| `scripts/generate-content.js` | Reads JSON exports, writes enriched JSON shards into `assets/hugo-data/`. Replaces the enrichment currently done in Eleventy's `_data/*.js` files. | Node.js script; runs before Hugo |
+| `content/descripcion/_content.gotmpl` | Hugo content adapter — reads `assets/hugo-data/descriptions.json`, calls `$.AddPage` for each record (106K pages) | Replaces `description.njk` pagination |
+| `content/ne/_content.gotmpl` | Hugo content adapter — reads `assets/hugo-data/entities.json`, calls `$.AddPage` for each record (78K pages) | Replaces `entidad.njk` pagination |
+| `content/nl/_content.gotmpl` | Hugo content adapter — reads `assets/hugo-data/places.json`, calls `$.AddPage` for each record (7K pages) | Replaces `lugar.njk` pagination |
+| `layouts/descripcion/single.html` | Go template — renders one description page | Port of `description.njk` |
+| `layouts/ne/single.html` | Go template — renders one entity page | Port of `entidad.njk` |
+| `layouts/nl/single.html` | Go template — renders one place page | Port of `lugar.njk` |
+| `layouts/_default/baseof.html` | Base layout (HTML shell, head, body) | Port of `base.njk` |
+| `layouts/partials/header.html` | Site header partial | Port of `header.njk` |
+| `layouts/partials/footer.html` | Site footer partial | Port of `footer.njk` |
+| `layouts/partials/breadcrumb.html` | Breadcrumb partial | Port of `breadcrumb.njk` |
+| `hugo.toml` | Hugo configuration (publishDir, staticDir, output formats) | Replaces `eleventy.config.js` |
+
+### Modified Components
+
+| Component | What Changes | What Stays the Same |
+|-----------|--------------|---------------------|
+| `scripts/precompute-links.js` | No change to logic; output paths stay the same | Already produces `data/entity-links/`, `data/place-links/`, `data/entity-index.json`, `data/place-index.json` |
+| `scripts/generate-content.js` | **New script** absorbs the enrichment logic currently spread across `src/_data/descriptions.js`, `entities.js`, `places.js` | The enrichment steps themselves (ancestor chains, repo lookup, entity/place code attachment) are the same — just moved from Eleventy's data pipeline to a pre-build Node.js step |
+| `build.sh` / `.github/workflows/deploy.yml` | Add `hugo` install step; replace `npx eleventy` call with `hugo`; remove `NODE_OPTIONS` heap override; add `generate-content.js` call | B2 download, precompute-links, Pagefind indexing, R2 upload all unchanged |
+| `static/` | Contains `css/`, `js/`, `img/`, `vendor/`, `data/children/` | Files that were Eleventy passthrough copies become Hugo static files — same result, different mechanism |
+| `src/css/`, `src/js/`, `src/img/`, `src/vendor/` | **Moved** to `static/` (or kept in place via `staticDir` config if preferred) | No content changes |
+
+### Unchanged Components
+
+| Component | Why Unchanged |
+|-----------|---------------|
+| `scripts/precompute-links.js` | Pure Node.js, framework-agnostic — produces JSON shards consumed at runtime by client-side JS |
+| `scripts/upload-to-r2.py` | Uploads `_site/` (or `public/`) to R2 — only the output directory name changes |
+| `worker/worker.js` | Cloudflare Worker routing logic is independent of build tool |
+| All `src/js/*.js` (8K lines vanilla JS) | Framework-agnostic — copy as-is to `static/js/` |
+| `src/vendor/` | Self-hosted libraries (MapLibre, pmtiles, Sigma.js) — copy as-is to `static/vendor/` |
+| Pagefind indexing (3 runs) | Pagefind is post-build: it scans the output directory after Hugo generates HTML. The `data-pagefind-*` attributes are emitted by Go templates exactly as they were by Nunjucks |
+| Backblaze B2 data source | JSON export format unchanged |
+| Cloudflare R2 + Worker hosting | Deployment target unchanged |
 
 ---
 
-## Pattern 1: Pre-Computing Aggregates at Build Time
+## Integration Points
 
-**What:** Before Eleventy runs, a Node script reads `entities.json`, `places.json`, and two relationship files (`entity_links.json`, `place_links.json` exported from Django) and writes per-entity and per-place JSON files into `data/entity-links/` and `data/place-links/`. Each file is `{code}.json` containing the list of linked description reference codes, titles, and dates.
+### Integration Point 1: Pre-Build Data Enrichment (New Script)
 
-**When to use:** The relationship data (308K entity→description links, 85K place→description links) is too large to load into every Eleventy template as a global data file. Per-entity/place shards are the right shape.
+**What changes:** In Eleventy, enrichment happened inside `src/_data/descriptions.js` — it loaded JSON, computed ancestor chains, attached repo objects, and attached entity/place lookup codes. All of this ran inside Eleventy's data cascade at build time.
 
-**Trade-offs:** Adds a pre-build step (~30–60s for 400K links). Results are passthrough-copied to `_site/data/entity-links/` and served as static JSON — fetched client-side on entity/place detail pages. Keeps Eleventy templates simple and avoids loading 308K links into Node memory as a single global data object.
+In Hugo, the data cascade does not exist. Content adapters read raw JSON and pass fields as `params` to `$.AddPage`. Therefore, enrichment must happen **before** Hugo runs, in a new `scripts/generate-content.js` Node.js script.
 
-**Implementation note:** The `descriptions.js` data file already does a similar in-memory aggregation pass (ancestors, repo lookup) over 106K records. The entity-links precompute is better handled as a separate script so it doesn't bloat the data layer further.
+**What generate-content.js must produce:**
 
-**Example flow:**
 ```
-scripts/precompute-links.js
-  reads: data/entity_links.json   [{entity_code, reference_code, title, date_start}]
-  reads: data/place_links.json    [{place_code, reference_code, title, date_start}]
-  writes: data/entity-links/{code}.json  (one per entity, array of desc stubs)
-  writes: data/place-links/{name}.json   (one per place, array of desc stubs)
-
-eleventy.config.js:
-  addPassthroughCopy({ "data/entity-links": "data/entity-links" })
-  addPassthroughCopy({ "data/place-links": "data/place-links" })
+assets/
+└── hugo-data/
+    ├── descriptions.json   enriched: ancestors[], _repo{}, _entity_codes[], _place_codes[] attached per record
+    ├── entities.json       enriched: _linked_count, roles[] attached per record
+    └── places.json         enriched: _linked_count attached per record
 ```
 
-The entity/place detail pages fetch their own shard via `fetch('/data/entity-links/{code}.json')` on page load — no build-time inclusion needed.
+These files are read by the content adapters via `resources.Get "hugo-data/descriptions.json" | transform.Unmarshal`.
+
+**Why assets/ not data/:** Hugo's `data/` directory loads all files into memory for the whole build and keeps them there. For a 370 MB combined JSON payload, this would be counterproductive. `assets/` with `resources.Get` reads the file once per content adapter, then releases it. Source: [Hugo data sources docs](https://gohugo.io/content-management/data-sources/), Hugo forum discussion on memory-efficient access.
+
+**Build order dependency:**
+1. `b2 sync` — downloads raw JSON from B2
+2. `node scripts/precompute-links.js` — produces entity-links/, place-links/, entity-index.json, place-index.json, desc-entity-lookup.json, desc-place-lookup.json
+3. `node scripts/generate-content.js` — reads all of the above plus raw JSON exports; produces enriched `assets/hugo-data/` files
+4. `./tailwindcss -i ... -o static/css/main.css` — CSS compilation (order-independent of Hugo)
+5. `hugo` — reads `assets/hugo-data/`, generates `public/`
+6. `npx pagefind` (3 runs) — indexes `public/`
+7. `python3 scripts/upload-to-r2.py public/ zasqua-site`
+
+### Integration Point 2: Content Adapters (Replaces Eleventy Pagination)
+
+**What changes:** Eleventy's `pagination:` front matter block iterated over a global data array and generated one page per record. In Hugo, this is replaced by a `_content.gotmpl` content adapter per content section.
+
+**Eleventy pattern (being replaced):**
+```yaml
+# description.njk front matter
+pagination:
+  data: descriptions
+  size: 1
+  alias: desc
+permalink: "/{{ desc.reference_code | safeSlug }}/"
+```
+
+**Hugo equivalent:**
+```gotmpl
+{{/* content/descripcion/_content.gotmpl */}}
+{{ $data := resources.Get "hugo-data/descriptions.json" | transform.Unmarshal }}
+{{ range $data }}
+  {{ $params := dict
+    "reference_code" .reference_code
+    "title"          .title
+    "repository_code" .repository_code
+    "description_level" .description_level
+    "date_expression" .date_expression
+    "date_start"     .date_start
+    "ancestors"      ._ancestors
+    "repo"           ._repo
+    "entity_codes"   ._entity_codes
+    "place_codes"    ._place_codes
+    "has_digital"    .has_digital
+  }}
+  {{ $.AddPage (dict
+    "kind"   "page"
+    "path"   .reference_code
+    "title"  .title
+    "params" $params
+  ) }}
+{{ end }}
+```
+
+The layout at `layouts/descripcion/single.html` then accesses all fields via `.Params.ancestors`, `.Params.repo`, etc.
+
+**Path structure:** The content adapter's `path` is relative to the adapter's location in `content/`. An adapter at `content/descripcion/_content.gotmpl` with `"path" .reference_code` produces URLs like `/descripcion/CO-ANH-01-001/`. If existing URLs use the reference code directly at root (e.g. `/CO-ANH-01-001/`), the adapter must be placed at `content/_content.gotmpl` and use `"path" .reference_code` — or a redirect layer must be added. **This is a critical URL compatibility decision** (see build order note below).
+
+### Integration Point 3: Go Templates (Replaces Nunjucks)
+
+**What changes:** All 13 Nunjucks templates rewritten as Hugo Go templates. The data shape passed to templates is identical — only the template syntax changes.
+
+**Filter equivalences:**
+
+| Eleventy filter | Hugo equivalent | Confidence |
+|-----------------|-----------------|------------|
+| `\| limit(n)` | `\| first n` (via `slice 0 n`) | HIGH |
+| `\| splitPipe` | `split "\|"` | HIGH |
+| `\| safeSlug` | custom partial returning `replaceRE "[?#]" "" .` | HIGH |
+| `\| formatDate` (Spanish months) | custom partial — no native Spanish month support in `time.Format`; must use a lookup map partial | MEDIUM — verified `time.Format` uses Go locale; Spanish requires manual implementation |
+| `\| numberFormat` | `printf "%'.f" .` or custom partial | MEDIUM — Go's `printf` does not use period as thousands separator by default; need `strings.Replace` |
+| `\| sortByOrder` | custom partial with `index` and slice operations | HIGH |
+| `\| filterByRepo` | `where .Params.repository_code "==" $code` | HIGH |
+| `\| extractYear` | `printf "%.4s" .` or `time.AsTime` | HIGH |
+| `\| yearRange` | custom partial with `seq` and `range` | HIGH |
+| `\| centuryRange` | custom partial | HIGH |
+| `\| decadeRange` | custom partial | HIGH |
+| `\| countryName` | no built-in — requires a static data lookup map | MEDIUM |
+| `\| escapeTemplate` | `htmlEscape` + `replace` | HIGH |
+| `\| truncate` | `truncate n "..."` | HIGH |
+
+Hugo does not support custom filter functions in the Nunjucks sense. The equivalent is a **returning partial** — a partial template that accepts arguments via `dict` and uses `return` to pass back a value. This is valid Hugo since v0.91 (the `return` statement in partials). All the custom filters above translate to returning partials in `layouts/partials/filters/`.
+
+### Integration Point 4: Static Assets and Passthrough Copies
+
+**What changes:** Eleventy's `addPassthroughCopy` calls become Hugo's `static/` directory. Hugo copies everything in `static/` to `public/` verbatim, preserving paths.
+
+| Eleventy passthrough | Hugo equivalent |
+|----------------------|-----------------|
+| `addPassthroughCopy("src/css")` | Place compiled CSS in `static/css/` |
+| `addPassthroughCopy("src/js")` | Place JS files in `static/js/` |
+| `addPassthroughCopy("src/img")` | Place images in `static/img/` |
+| `addPassthroughCopy("src/vendor")` | Place vendor files in `static/vendor/` |
+| `addPassthroughCopy({ "data/children": "data/children" })` | Place children JSON in `static/data/children/` |
+| `addPassthroughCopy({ "data/entity-links": "data/entity-links" })` | Place link shards in `static/data/entity-links/` |
+| `addPassthroughCopy({ "data/place-links": "data/place-links" })` | Place link shards in `static/data/place-links/` |
+| `addPassthroughCopy({ "data/place-index.json": "data/place-index.json" })` | Place in `static/data/place-index.json` |
+
+For the entity-links and place-links shards (tens of thousands of small JSON files), the simplest approach is to symlink or copy them into `static/data/` as part of the pre-build pipeline. The `generate-content.js` script or a separate shell step can handle this.
+
+**Alternative:** Configure `staticDir` in `hugo.toml` to include the `data/` directory at the project root, pointing Hugo's static file copy directly at the generated shards without moving files. This requires careful configuration to avoid copying source JSON exports into the site.
+
+### Integration Point 5: Pagefind (Unchanged Mechanism, Different Output Directory)
+
+**What stays identical:**
+- All `data-pagefind-filter`, `data-pagefind-meta`, `data-pagefind-sort` attributes are emitted by Go templates exactly as they were by Nunjucks — Pagefind does not care which tool generated the HTML
+- Three Pagefind index runs (descriptions, entities, places) with the same glob patterns and output subdirectories
+- The `--glob "ne-*/**/*.html"` and `--glob "nl-*/**/*.html"` patterns work as-is if Hugo places entity pages at `/ne-*/` and place pages at `/nl-*/`
+
+**What changes:**
+- Pagefind runs over `public/` instead of `_site/`
+- If content adapter paths are scoped under a section directory (e.g. `content/descripcion/`), description pages land at `/descripcion/{ref}/` — update Pagefind glob patterns accordingly, or use the `data-pagefind-entity-page` / `data-pagefind-place-page` attribute exclusion approach already in use
+
+**Critical Pagefind detail:** The existing description index run uses `--exclude-selectors "[data-pagefind-entity-page],[data-pagefind-place-page]"` to exclude entity and place pages from the description index. This relies on entity/place templates emitting those `data-*` attributes. This logic is unchanged — it moves from Nunjucks attributes to Go template attributes.
+
+### Integration Point 6: GitHub Actions Workflow
+
+**What changes in deploy.yml:**
+
+Remove:
+```yaml
+- name: Setup Node (for Eleventy)
+  # still needed for precompute scripts and Pagefind
+- name: Build site with Eleventy
+  env:
+    NODE_OPTIONS: --max-old-space-size=7168  # REMOVED — Hugo has no heap limit concern
+  run: npx eleventy
+```
+
+Add:
+```yaml
+- name: Setup Hugo
+  uses: peaceiris/actions-hugo@v3
+  with:
+    hugo-version: '0.147.0'   # pin to a current stable version
+
+- name: Generate enriched content files
+  run: node scripts/generate-content.js
+
+- name: Build site with Hugo
+  env:
+    SITE_URL: https://zasqua.org
+  run: |
+    hugo --minify
+    echo "Pages: $(find public -name 'index.html' | wc -l)"
+    echo "Site size: $(du -sh public | cut -f1)"
+```
+
+Node.js must remain in the workflow for `precompute-links.js`, `generate-content.js`, and `npx pagefind`. The `NODE_OPTIONS` heap override is removed — it was only needed for Eleventy.
+
+**Upload step change:** `upload-to-r2.py` receives `public` as the source directory instead of `_site`.
 
 ---
 
-## Pattern 2: Pagefind Metadata for Driving Visualizations
-
-**What:** Pagefind's `data-pagefind-meta` attribute captures arbitrary string values per page and returns them in the JS API result object as `result.meta`. These can be lat/lon strings, entity types, place types — any value that needs to accompany a search result without being part of the visible body text.
-
-**Verified capabilities (HIGH confidence):**
-- `pagefind.search(null, { filters: { entity_type: "persona" } })` — filter without text query
-- `await result.data()` returns `{ url, excerpt, meta: { lat: "4.6097", lon: "-74.0817", ... } }`
-- Meta values are strings; parse to float client-side for mapping
-- `data-pagefind-meta` elements can be hidden (in a `display:none` div, as already done for description pages)
-
-**Entity/place page Pagefind metadata to add:**
-```html
-{# lugar.njk — hidden metadata for Pagefind #}
-<div style="display:none">
-  <span data-pagefind-filter="place_type">{{ place.place_type }}</span>
-  <span data-pagefind-filter="fclass">{{ place.fclass }}</span>
-  <span data-pagefind-meta="lat">{{ place.lat }}</span>
-  <span data-pagefind-meta="lon">{{ place.lon }}</span>
-  <span data-pagefind-meta="place_code">{{ place.place_code }}</span>
-  <span data-pagefind-meta="display_name">{{ place.display_name }}</span>
-  <span data-pagefind-meta="description_count">{{ place._description_count }}</span>
-</div>
-
-{# entidad.njk #}
-<div style="display:none">
-  <span data-pagefind-filter="entity_type">{{ entity.entity_type }}</span>
-  <span data-pagefind-meta="entity_code">{{ entity.entity_code }}</span>
-  <span data-pagefind-meta="display_name">{{ entity.display_name }}</span>
-  <span data-pagefind-meta="date_earliest">{{ entity.date_earliest }}</span>
-  <span data-pagefind-meta="description_count">{{ entity._description_count }}</span>
-</div>
-```
-
-**How heatmap data flows from Pagefind to MapLibre:**
-```
-User applies filter (e.g. place_type = "ciudad")
-  → pagefind.search(null, { filters: { place_type: "ciudad" } })
-  → iterate results, call result.data() for each
-  → collect { lat, lon, description_count } from meta
-  → build GeoJSON FeatureCollection from collected points
-  → map.getSource('places-heat').setData(geojson)
-  → MapLibre re-renders heatmap layer
-```
-
-**Performance consideration:** With ~8K place pages, `pagefind.search(null)` returning all places and loading each `result.data()` will make ~8K async calls. Pagefind lazy-loads result data, so this is batched internally. For the explorer page, load all place metadata once on init and cache client-side — do not re-query Pagefind on every filter change. Pre-fetch and store as a JS array, then filter in-memory.
-
----
-
-## Pattern 3: Build Architecture — Two Parallel Eleventy Instances
-
-**What:** Run the existing descriptions build and the new entity/place build as two separate `eleventy` processes with different `--input` and `--output` flags, merge their outputs into a single `_site/`, then run Pagefind once over the merged output.
-
-**Why not a single monolithic build:** Adding 100K pages to an already 14-minute build risks doubling build time. Node's single-threaded template rendering is the bottleneck. Two parallel processes use both CPU cores available in GitHub Actions (ubuntu-latest has 2 vCPUs).
-
-**Eleventy multi-instance approach:**
-```bash
-# Run both builds in parallel using separate configs
-NODE_OPTIONS="--max-old-space-size=4096" npx eleventy \
-  --config=eleventy.descriptions.config.js \
-  --output=_site-desc &
-PID1=$!
-
-NODE_OPTIONS="--max-old-space-size=3072" npx eleventy \
-  --config=eleventy.entities.config.js \
-  --output=_site-entities &
-PID2=$!
-
-wait $PID1 $PID2
-
-# Merge outputs (entities/places go into _site/)
-cp -r _site-entities/* _site-desc/
-
-# Run Pagefind over merged output
-npx pagefind --site _site-desc
-```
-
-**Trade-offs of parallel vs single build:**
-- Parallel: more complex CI config, two config files, ~50% time saving, higher peak memory
-- Single: simpler, but may push build past 30 min (GitHub Actions default timeout)
-- The `eleventy.config.js` `--input` / `--output` flags allow fully separate configs without code duplication — shared filters can be imported from a common module
-
-**Recommendation:** Start with a single build (Option A) to validate correctness. Profile build time. Switch to parallel (Option B) only if the single build exceeds ~25 minutes.
-
----
-
-## Pattern 4: PMTiles on R2 — Worker Required for Range Requests
-
-**What:** PMTiles is a single binary file containing all zoom levels of vector tiles. MapLibre GL JS fetches specific tile data via HTTP range requests (`Range: bytes=X-Y`). Cloudflare R2 does support HTTP 206 partial content responses natively (confirmed in release notes, November 2022). However, R2 public buckets do not expose CORS headers by default, and the existing Worker does not forward range requests or set the required headers.
-
-**Recommendation: Add PMTiles routing to the existing Worker** rather than deploying a separate Worker.
-
-```javascript
-// worker/worker.js — add PMTiles handling
-
-// PMTiles range request handler
-if (key.endsWith('.pmtiles')) {
-  const rangeHeader = request.headers.get('Range');
-  const object = await env.SITE.get(key, {
-    range: rangeHeader ? parseRange(rangeHeader) : undefined,
-  });
-  if (!object) return new Response('Not Found', { status: 404 });
-
-  const headers = new Headers();
-  headers.set('content-type', 'application/octet-stream');
-  headers.set('accept-ranges', 'bytes');
-  headers.set('access-control-allow-origin', '*');
-  headers.set('access-control-allow-headers', 'range, if-match');
-  headers.set('access-control-expose-headers', 'content-range, etag');
-  headers.set('cache-control', 'public, max-age=604800');
-
-  if (rangeHeader && object.range) {
-    headers.set('content-range',
-      `bytes ${object.range.offset}-${object.range.offset + object.range.length - 1}/${object.size}`);
-    return new Response(object.body, { status: 206, headers });
-  }
-  return new Response(object.body, { headers });
-}
-```
-
-**CORS requirements for PMTiles from R2:**
-- `Access-Control-Allow-Origin: *`
-- `Access-Control-Allow-Headers: range, if-match`
-- `Access-Control-Expose-Headers: content-range, etag`
-- `Accept-Ranges: bytes`
-
-These must be set on the response — not configurable via R2 bucket CORS UI when using a Worker (the Worker controls response headers directly).
-
-**PMTiles file generation:**
-```bash
-# Install Tippecanoe (v2.17+ supports PMTiles output directly)
-# Input: GeoJSON from Django backend export or generated from places.json
-
-# Convert places.json to GeoJSON first (Node script)
-node scripts/places-to-geojson.js data/places.json data/places.geojson
-
-# Generate PMTiles
-tippecanoe \
-  -z14 -Z0 \
-  --projection=EPSG:4326 \
-  -o data/zasqua-places.pmtiles \
-  -l places \
-  --coalesce-densest-as-needed \
-  data/places.geojson
-
-# Upload separately (not via upload-to-r2.py which uploads _site/)
-aws s3 cp data/zasqua-places.pmtiles s3://zasqua-site/zasqua-places.pmtiles \
-  --endpoint-url "$R2_ENDPOINT"
-```
-
-**Zoom level recommendation:** `z0–z14` covers world overview to city block. For 5,574 coordinate points spread across Latin America, `z0–z12` is sufficient and produces a smaller file (~5–15 MB estimated).
-
----
-
-## Pattern 5: Network Graph — Pre-Computed Adjacency Data
-
-**What:** For the entity explorer network graph, pre-compute a co-occurrence adjacency list: pairs of entities that appear together in the same description, weighted by co-occurrence count. Output as a static JSON file served from `_site/data/entity-cooccurrence.json`.
-
-**Build-time computation:**
-```
-scripts/precompute-cooccurrence.js
-  reads: data/entity_links.json
-  groups links by reference_code → {reference_code: [entity_code, ...]}
-  for each description with ≥2 entities:
-    emit edge (A, B, weight++) for all pairs
-  writes: data/entity-cooccurrence.json
-    { nodes: [{id, label, type, count}], edges: [{source, target, weight}] }
-```
-
-**Scale consideration:** 92K entities × 308K links. A fully dense graph would be enormous. Cap edges: only emit edges where co-occurrence weight ≥ 3, and limit to top-N entities by description count for the initial view. The explorer graph shows a neighbourhood view (entities related to the current filter/search), not the full graph. Full graph data can be streamed on demand.
-
-**Graph rendering library — recommendation: Sigma.js v3**
-- WebGL rendering handles thousands of nodes without freezing
-- No React dependency — vanilla JS compatible
-- Official graphology library for graph data structures, separate from rendering
-- D3-force is an alternative but SVG-based and slower at >500 nodes
-
-**Data flow for entity explorer:**
-```
-Page load:
-  fetch /data/entity-cooccurrence.json → build graphology Graph instance
-  pagefind.search(null) → load all entity metadata → cache as entityIndex Map
-
-User searches "Bogotá merchants":
-  pagefind.search("Bogotá merchants", { filters: { entity_type: "persona" } })
-  → result entity codes → extract subgraph from full graph
-  → sigma.setGraph(subgraph) → re-render
-
-User clicks entity node:
-  navigate to /entidad/{code}/ → entity detail page
-```
-
----
-
-## Recommended Project Structure Changes
+## Recommended Project Structure
 
 ```
-src/
-├── _data/
-│   ├── descriptions.js      # unchanged
-│   ├── entities.js          # activate: load entities.json
-│   ├── places.js            # activate: load places.json
-│   ├── entity_links.js      # new: load precomputed counts for template rendering
-│   └── place_links.js       # new: load precomputed counts for template rendering
-├── entidad.njk              # new: entity detail page template
-├── lugar.njk                # new: place detail page template
-├── explorar/
-│   ├── entidades.njk        # new: entity explorer (search + network graph)
-│   └── lugares.njk          # new: place explorer (search + heatmap)
-├── js/
-│   ├── entity-explorer.js   # new: Pagefind API + Sigma.js graph rendering
-│   └── place-explorer.js    # new: Pagefind API + MapLibre heatmap
-└── vendor/
-    ├── maplibre-gl.js        # new: MapLibre GL JS (self-hosted)
-    ├── maplibre-gl.css       # new
-    └── sigma.min.js          # new: Sigma.js v3 (self-hosted)
-
-scripts/
-├── precompute-links.js       # new: entity/place → description aggregates
-├── precompute-cooccurrence.js # new: entity co-occurrence adjacency
-├── places-to-geojson.js      # new: places.json → GeoJSON for Tippecanoe
-├── generate-pmtiles.sh       # new: Tippecanoe invocation
-├── upload-to-r2.py           # unchanged
-└── check-css-tokens.sh       # unchanged
-
-worker/
-└── worker.js                 # modified: PMTiles range request routing
+zasqua-frontend-dev/
+├── hugo.toml                    # Hugo configuration
+├── assets/
+│   └── hugo-data/               # Written by generate-content.js at build time
+│       ├── descriptions.json    # Enriched descriptions (106K records)
+│       ├── entities.json        # Enriched entities (78K records)
+│       └── places.json          # Enriched places (7K records)
+├── content/
+│   ├── _content.gotmpl          # Optional: non-section root pages (index, search, etc.)
+│   ├── descripcion/
+│   │   └── _content.gotmpl      # Content adapter: 106K description pages
+│   ├── ne/                      # Entity pages — matches existing ne-* URL prefix
+│   │   └── _content.gotmpl      # Content adapter: 78K entity pages
+│   ├── nl/                      # Place pages — matches existing nl-* URL prefix
+│   │   └── _content.gotmpl      # Content adapter: 7K place pages
+│   ├── buscar.md                # Search page (standalone content file)
+│   ├── explorar/
+│   │   ├── entidades.md         # Entity explorer page
+│   │   └── lugares.md           # Place explorer page
+│   └── index.md                 # Homepage
+├── layouts/
+│   ├── _default/
+│   │   └── baseof.html          # Base layout (port of base.njk)
+│   ├── descripcion/
+│   │   └── single.html          # Description page layout (port of description.njk)
+│   ├── ne/
+│   │   └── single.html          # Entity page layout (port of entidad.njk)
+│   ├── nl/
+│   │   └── single.html          # Place page layout (port of lugar.njk)
+│   └── partials/
+│       ├── header.html          # Port of header.njk
+│       ├── footer.html          # Port of footer.njk
+│       ├── breadcrumb.html      # Port of breadcrumb.njk
+│       └── filters/             # Returning partials replacing Nunjucks custom filters
+│           ├── format-date.html # Spanish date formatting
+│           ├── number-format.html
+│           └── year-range.html  # (and centuryRange, decadeRange)
+├── static/
+│   ├── css/                     # main.css (compiled by Tailwind before Hugo runs)
+│   ├── js/                      # All 8K lines of vanilla JS — copy as-is
+│   ├── img/
+│   ├── vendor/                  # MapLibre, pmtiles, Sigma.js
+│   └── data/
+│       ├── children/            # Tree JSON shards (moved from data/ at build time)
+│       ├── entity-links/        # Per-entity link shards (moved from data/ at build time)
+│       ├── place-links/         # Per-place link shards (moved from data/ at build time)
+│       ├── entity-index.json
+│       └── place-index.json
+├── data/                        # Raw data downloaded from B2 (gitignored)
+│   ├── descriptions.json
+│   ├── entities.json
+│   ├── places.json
+│   ├── entity_links.json
+│   └── place_links.json
+├── scripts/
+│   ├── precompute-links.js      # Unchanged
+│   ├── generate-content.js      # NEW: produces assets/hugo-data/
+│   ├── upload-to-r2.py          # Unchanged (receives "public" as source arg)
+│   └── places-to-geojson.js     # Unchanged
+└── .github/workflows/
+    └── deploy.yml               # Modified: add Hugo setup, remove NODE_OPTIONS
 ```
+
+**Structure rationale:**
+- `assets/hugo-data/` is gitignored and generated at build time. Hugo's `resources.Get` reads from `assets/` — this is the correct location for data consumed by content adapters.
+- `content/ne/` and `content/nl/` match the existing URL prefixes for entity (`ne-*`) and place (`nl-*`) pages, preserving existing URLs without redirects.
+- `static/data/` receives the passthrough files that were previously handled by Eleventy's `addPassthroughCopy`. These are either symlinked or copied from `data/` at build time.
+- `layouts/partials/filters/` separates reusable computation partials from structural partials.
 
 ---
 
@@ -369,213 +421,183 @@ worker/
 
 ```
 B2 zasqua-export
-  ├── descriptions.json ──────────────────┐
-  ├── repositories.json ──────────────────┤
-  ├── entities.json ──────────────────────┤
-  ├── places.json ────────────────────────┤
-  ├── entity_links.json ─── precompute ───┤
-  └── place_links.json ──── precompute ───┤
-                                          │
-                            Eleventy      │
-                            (all data) ───┴──► _site/
-                                                ├── 106K description pages
-                                                ├── ~8K place pages
-                                                ├── ~92K entity pages
-                                                ├── /explorar/lugares/
-                                                ├── /explorar/entidades/
-                                                ├── /data/entity-links/
-                                                ├── /data/place-links/
-                                                └── /data/entity-cooccurrence.json
-
-Pagefind ────────────────────────────────────► _site/pagefind/
-
-Tippecanoe ──────────────────────────────────► zasqua-places.pmtiles (uploaded separately)
+    ↓ b2 sync
+data/ (raw JSON exports)
+    ↓ node scripts/precompute-links.js
+data/entity-links/{code}.json   (shards)
+data/place-links/{code}.json
+data/entity-index.json
+data/place-index.json
+data/desc-entity-lookup.json
+data/desc-place-lookup.json
+    ↓ node scripts/generate-content.js
+assets/hugo-data/descriptions.json   (enriched: ancestors, repo, entity_codes, place_codes)
+assets/hugo-data/entities.json        (enriched: _linked_count, roles)
+assets/hugo-data/places.json          (enriched: _linked_count)
+    ↓ [copy step: data/ shards → static/data/]
+static/data/entity-links/
+static/data/place-links/
+static/data/entity-index.json
+static/data/place-index.json
+    ↓ ./tailwindcss -i ... -o static/css/main.css
+    ↓ hugo --minify
+public/ (192K HTML pages + static assets)
+    ↓ npx pagefind (3 runs)
+public/pagefind/          (description search index)
+public/pagefind-entities/ (entity search index)
+public/pagefind-places/   (place search index)
+    ↓ python3 scripts/upload-to-r2.py public/ zasqua-site
+Cloudflare R2
+    ↓ Cloudflare Worker
+zasqua.org
 ```
 
-### Runtime Data Flow — Place Explorer
+### Key Data Flow: generate-content.js
+
+This script is the critical new component. It absorbs all enrichment logic that was previously inside Eleventy's `_data/*.js` files:
 
 ```
-User visits /explorar/lugares/
-  ↓
-place-explorer.js loads:
-  1. await pagefind.options({ baseUrl: '/', bundlePath: '/pagefind/' })
-  2. await pagefind.preload()  ← pre-warm index
-  3. pagefind.search(null)     ← all place pages
-     → iterate results → collect meta { lat, lon, place_code, display_name }
-     → build in-memory placeIndex [{lat, lon, code, name, count}]
-     → build initial GeoJSON → MapLibre heatmap layer
+Inputs:
+  data/descriptions.json        (raw, 106K records)
+  data/repositories.json        (raw, ~5 records)
+  data/entities.json            (raw, 78K records)
+  data/places.json              (raw, 7K records)
+  data/entity-index.json        (from precompute-links)
+  data/desc-entity-lookup.json  (from precompute-links)
+  data/desc-place-lookup.json   (from precompute-links)
 
-User applies filter (place_type = "ciudad"):
-  4. pagefind.search(null, { filters: { place_type: "ciudad" } })
-     → filtered result set → rebuild GeoJSON → update heatmap source
+Processing:
+  - Build repo lookup map (code → repo object)
+  - Build description ref lookup map (reference_code → description)
+  - For each description: compute ancestor chain, attach _repo, attach _entity_codes, attach _place_codes
+  - For each entity: attach _linked_count from entity-index.json, attach roles[]
+  - For each place: attach _linked_count from entity-index equivalent
 
-User clicks map point:
-  5. navigate to /lugar/{name}/
+Outputs:
+  assets/hugo-data/descriptions.json   (~370 MB; write with streaming if memory is a concern)
+  assets/hugo-data/entities.json       (~35 MB)
+  assets/hugo-data/places.json         (~5 MB)
 ```
 
-### Runtime Data Flow — Entity Detail Page
-
-```
-User visits /entidad/{code}/
-  ↓
-Page renders: static entity metadata (name, dates, type, function, variants)
-  ↓
-entity-detail.js loads:
-  1. fetch('/data/entity-links/{code}.json')
-     → array of { reference_code, title, date_start, repository_code }
-  2. render linked descriptions list (paginated client-side if >20)
-```
-
----
-
-## Integration Points
-
-### New vs Modified Components
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| `src/_data/entities.js` | Modified | Change `return []` to load `entities.json` |
-| `src/_data/places.js` | Modified | Change `return []` to load `places.json` |
-| `eleventy.config.js` | Modified | Add passthrough for `data/entity-links/`, `data/place-links/`, `data/entity-cooccurrence.json` |
-| `worker/worker.js` | Modified | Add PMTiles range request handler, CORS headers |
-| `build.sh` | Modified | Download entity/place JSON + links, run precompute scripts, run Tippecanoe |
-| `.github/workflows/deploy.yml` | Modified | Same changes as build.sh, add Tippecanoe install step |
-| `scripts/precompute-links.js` | New | ~300 lines Node.js |
-| `scripts/precompute-cooccurrence.js` | New | ~150 lines Node.js |
-| `scripts/places-to-geojson.js` | New | ~50 lines Node.js |
-| `scripts/generate-pmtiles.sh` | New | Tippecanoe wrapper |
-| `src/entidad.njk` | New | Pagination template, 92K pages |
-| `src/lugar.njk` | New | Pagination template, 8K pages |
-| `src/explorar/entidades.njk` | New | Single explorer page |
-| `src/explorar/lugares.njk` | New | Single explorer page |
-| `src/js/entity-explorer.js` | New | Pagefind API + Sigma.js |
-| `src/js/place-explorer.js` | New | Pagefind API + MapLibre GL JS |
-| `src/vendor/maplibre-gl.*` | New | Self-hosted, no CDN dependency |
-| `src/vendor/sigma.min.js` | New | Self-hosted |
-
-### External Service Integration
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| Cloudflare R2 | PMTiles stored as object, Worker serves with range requests | CORS headers set in Worker, not bucket policy |
-| MapLibre GL JS | Client-side, loads PMTiles via `pmtiles://` protocol | Requires `maplibre-gl-pmtiles` or PMTiles JS library |
-| PMTiles JS library | Browser, handles range requests to Worker endpoint | `npm install pmtiles` or self-hosted bundle |
-| Tippecanoe | CI/CD only — generates PMTiles at build time | Install in GitHub Actions runner (`apt-get install tippecanoe` on ubuntu) |
-| Sigma.js + Graphology | Client-side only, loads pre-built adjacency JSON | Self-hosted, vanilla JS compatible |
-
-### MapLibre + PMTiles Integration Note (MEDIUM confidence)
-
-MapLibre GL JS does not natively speak the PMTiles binary format. The PMTiles JavaScript library (`pmtiles` package) provides a protocol handler that intercepts `pmtiles://` URLs and issues range requests. This must be registered before MapLibre initializes:
-
-```javascript
-import { Protocol } from 'pmtiles';
-const protocol = new Protocol();
-maplibregl.addProtocol('pmtiles', protocol.tile.bind(protocol));
-
-const map = new maplibregl.Map({
-  style: {
-    sources: {
-      places: {
-        type: 'vector',
-        url: 'pmtiles:///zasqua-places.pmtiles',
-      }
-    }
-  }
-});
-```
-
-If bundling is not available (no npm toolchain), the PMTiles library must be self-hosted as a pre-built bundle alongside the MapLibre vendor files.
+**Memory note:** The enrichment step loads all descriptions into memory simultaneously to build the ref→description lookup map for ancestor chains. This is the same constraint that exists in the current `descriptions.js`. If memory becomes a concern at larger scales, ancestor chains can be precomputed in a separate pass and stored as a lookup file, avoiding the need to hold all descriptions in memory during the main enrichment loop.
 
 ---
 
 ## Suggested Build Order
 
-Build each component in dependency order — foundational data layer first, then templates, then visualisation.
+The migration has two parallel work streams: (A) the pre-build pipeline and (B) the Hugo templates. Stream A must be working before Stream B can be fully validated against real data.
+
+### Stream A — Pre-Build Pipeline
 
 | Step | What | Dependency |
 |------|------|------------|
-| 1 | Activate `entities.js` and `places.js` data files | None |
-| 2 | Write `precompute-links.js`, run it against real data | entities.json + place/entity links JSON from backend |
-| 3 | Add entity/place JSON downloads to `build.sh` / `deploy.yml` | Backend export updated |
-| 4 | Create `entidad.njk` and `lugar.njk` templates with Pagefind metadata | Steps 1–3 |
-| 5 | Verify entity + place pages build correctly (single build, DEV_LIMIT) | Step 4 |
-| 6 | Add entity/place passthrough for aggregate JSON files | Step 2 |
-| 7 | Validate full build time — decide single vs parallel | Step 5 |
-| 8 | Build `explorar/lugares.njk` static shell + `place-explorer.js` | Steps 4–6 |
-| 9 | Integrate MapLibre GL JS + PMTiles library (vendor, no npm build) | Step 8 |
-| 10 | Modify Worker for PMTiles range request routing | Step 9 |
-| 11 | Write `places-to-geojson.js` + `generate-pmtiles.sh`, test Tippecanoe locally | Step 9 |
-| 12 | Add PMTiles upload step to CI, verify range requests work end-to-end | Steps 10–11 |
-| 13 | Write `precompute-cooccurrence.js`, verify scale (capped graph) | entities.json + entity_links.json |
-| 14 | Build `explorar/entidades.njk` shell + `entity-explorer.js` with Sigma.js | Step 13 |
-| 15 | Full integration test: search filters → graph/map updates | Steps 12–14 |
+| A1 | Create `scripts/generate-content.js` — skeleton that reads raw JSON and writes `assets/hugo-data/` with minimal enrichment (no ancestor chains yet) | None |
+| A2 | Verify `assets/hugo-data/` files are produced correctly with DEV_LIMIT mode | A1 |
+| A3 | Port ancestor chain computation from `descriptions.js` into `generate-content.js` | A1 |
+| A4 | Port entity `_linked_count` and `roles` attachment from `entities.js` into `generate-content.js` | A1, precompute-links already done |
+| A5 | Port place `_linked_count` attachment from `places.js` | A1 |
+| A6 | Add copy step: `data/entity-links/` and `data/place-links/` → `static/data/` | precompute-links already done |
+| A7 | Validate full output with production data — check counts, ancestor chains, entity codes | A3–A6 |
 
----
+### Stream B — Hugo Templates
 
-## Scaling Considerations
+| Step | What | Dependency |
+|------|------|------------|
+| B1 | Create `hugo.toml` with minimal config — publishDir, staticDir, language settings | None |
+| B2 | Port `base.njk` → `layouts/_default/baseof.html` | B1 |
+| B3 | Port `header.njk`, `footer.njk`, `breadcrumb.njk` → `layouts/partials/` | B2 |
+| B4 | Create content adapter `content/descripcion/_content.gotmpl` with a subset of fields (title, reference_code, params) | B1, A2 |
+| B5 | Create `layouts/descripcion/single.html` — port `description.njk` without Pagefind metadata first | B3, B4 |
+| B6 | Validate description pages render correctly against DEV_LIMIT data | B5, A2 |
+| B7 | Add all Pagefind metadata (`data-pagefind-filter`, `data-pagefind-meta`, `data-pagefind-sort`) to description layout | B6 |
+| B8 | Create returning partials for custom filters (formatDate Spanish months, numberFormat, yearRange, centuryRange, decadeRange) | B3 |
+| B9 | Port entity content adapter and layout (`ne/_content.gotmpl`, `layouts/ne/single.html`) | B8, A4 |
+| B10 | Port place content adapter and layout (`nl/_content.gotmpl`, `layouts/nl/single.html`) | B8, A5 |
+| B11 | Port standalone pages: index, buscar, explorar/entidades, explorar/lugares, 404 | B3 |
+| B12 | Full build with production data — verify all 192K pages, check build time and memory | A7, B10 |
+| B13 | Validate Pagefind: run all 3 index passes, verify search and facets work | B12 |
 
-| Concern | Now (106K) | After v0.5.0 (~206K) | Mitigation |
-|---------|------------|----------------------|------------|
-| Eleventy build time | ~14 min | ~25–30 min (single build) | Parallel build option if needed |
-| Node heap | 6 GB allocated | May exceed if all data loaded at once | Keep entity/place data files lean; precompute aggregates separately |
-| Pagefind index size | ~30 MB (estimate) | ~60 MB | Pagefind handles this well; index is chunked for lazy loading |
-| PMTiles file | Not present | ~5–15 MB for 5,574 points | One-time upload; cached at CDN edge |
-| R2 file count | ~106K files | ~306K files | Still well within R2 limits (no cap); upload script unchanged |
-| Entity co-occurrence JSON | Not present | Could be large if uncapped | Cap edges by weight ≥ 3; estimated ~5–20 MB at this threshold |
-| Client-side Pagefind query | ~106K indexed | ~206K indexed | Pre-load place metadata once on explorer init; filter in-memory |
+### Stream C — CI/CD Update
+
+| Step | What | Dependency |
+|------|------|------------|
+| C1 | Update `deploy.yml`: add Hugo setup, add `generate-content.js` call, replace `npx eleventy` with `hugo`, change upload source to `public/` | B12 |
+| C2 | Remove `NODE_OPTIONS` heap override from CI | C1 |
+| C3 | Validate full CI run end-to-end | C1, C2 |
 
 ---
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Loading All Relationship Data as a Global Eleventy Data File
+### Anti-Pattern 1: Using Hugo's data/ Directory for Large JSON Arrays
 
-**What people do:** Put `entity_links.json` (308K records) in `src/_data/` so templates can do `{{ entity_links | filterByEntity(entity.entity_code) }}`
+**What people do:** Place `descriptions.json` in Hugo's `data/` directory and access it via `site.Data.descriptions` in content adapters.
 
-**Why it's wrong:** Eleventy loads all global data files into memory before building. 308K records × ~100 bytes each ≈ 30 MB kept in Node heap per template evaluation pass. Combined with `entities.json` (29.9 MB) and `descriptions.json`, this will OOM the build or dramatically slow it.
+**Why it's wrong:** Hugo loads all files in `data/` into memory at build start and keeps them there for the entire build. A 370 MB combined payload (descriptions + entities + places + links) held in memory for 192K template renders will not OOM Hugo the way it OOMs Eleventy, but it is wasteful and may cause unexpected memory pressure on the GitHub Actions runner.
 
-**Do this instead:** Run `precompute-links.js` before Eleventy. Serve per-entity/place JSON shards as static files. Fetch client-side on detail pages.
+**Do this instead:** Place JSON files in `assets/hugo-data/` and read them in content adapters with `resources.Get "hugo-data/descriptions.json" | transform.Unmarshal`. Hugo reads and parses the file once for the content adapter, then the data is scoped to that template execution.
 
-### Anti-Pattern 2: Querying Pagefind on Every Filter Change for Explorer Pages
+### Anti-Pattern 2: Putting Enrichment Logic in Content Adapters
 
-**What people do:** Call `pagefind.search(null, { filters: currentFilters })` on every checkbox toggle to get updated lat/lon for the map.
+**What people do:** In the content adapter template, iterate over descriptions and compute ancestor chains using Go template `{{ range }}` — e.g. repeatedly scanning the full descriptions slice to find parents for each record.
 
-**Why it's wrong:** Each `search()` call triggers network requests to the Pagefind index chunks. At 8K places, calling `result.data()` on all results on every filter change makes the map feel sluggish.
+**Why it's wrong:** Go templates are not optimised for O(n²) operations. Computing ancestor chains (which requires a lookup by reference_code for up to 6 hops per description) across 106K records inside a Go template loop will be extremely slow — potentially worse than Eleventy.
 
-**Do this instead:** Load all place metadata into a JS Map on page init (one-time Pagefind scan). Filter the in-memory Map client-side. Only call Pagefind for text search queries.
+**Do this instead:** Pre-compute all enrichment in `generate-content.js` before Hugo runs. Content adapters should read already-enriched data and pass fields to `$.AddPage` without any computation. Templates read and render; scripts compute.
 
-### Anti-Pattern 3: Serving PMTiles Through the Existing Worker Without Range Request Support
+### Anti-Pattern 3: Losing Existing URLs
 
-**What people do:** Upload the `.pmtiles` file to R2 and assume the existing Worker will serve it like any other file.
+**What people do:** Place all content adapters at `content/_content.gotmpl` and use `"path" (printf "descripcion/%s" .reference_code)` to scope description pages under `/descripcion/`.
 
-**Why it's wrong:** The existing Worker calls `env.SITE.get(key)` and returns the full body. For a 15 MB PMTiles file, this returns the entire file on every tile request — defeating the purpose of the format. MapLibre issues Range requests expecting HTTP 206 responses with byte slices.
+**Why it's wrong:** The existing site has ~106K indexed description pages at `/{reference_code}/` (e.g. `/CO-ANH-01-001/`). Changing the URL structure breaks every existing link, Pagefind index entry, and search engine result.
 
-**Do this instead:** Add an explicit PMTiles branch in the Worker that reads the `Range` header and passes it to `env.SITE.get(key, { range: { offset, length } })`. Return HTTP 206 with proper `Content-Range` and `Accept-Ranges` headers.
+**Do this instead:** Mirror the existing URL structure. An adapter at `content/descripcion/_content.gotmpl` produces paths under `/descripcion/` — if descriptions currently live at the root, the adapter must be `content/_content.gotmpl` with `"path" .reference_code`. Verify existing URL patterns before placing adapters.
 
-### Anti-Pattern 4: Running Pagefind Before Merging Build Outputs
+### Anti-Pattern 4: Running Pagefind on Hugo's Public Directory with Wrong Glob Patterns
 
-**What people do (with parallel builds):** Index each Eleventy output separately with Pagefind and use multisite merge in the browser.
+**What people do:** Copy the existing Pagefind commands unchanged, pointing `--glob "ne-*/**/*.html"` at `public/`.
 
-**Why it's wrong:** Browser-side multisite merge requires CORS config, doubles network requests for index chunks, and doesn't support cross-index filtering. The combined index (single Pagefind run over merged `_site/`) gives better performance and unified filter counts.
+**Why it may break:** If content adapters are placed at `content/ne/_content.gotmpl`, entity pages land at `public/ne/{code}/index.html`, not `public/ne-abc123/index.html`. The glob `ne-*/**/*.html` may or may not match depending on whether entity codes begin with `ne-`.
 
-**Do this instead:** Merge `_site-desc/` and `_site-entities/` into a single directory, then run `npx pagefind --site _site` once over the merged result.
+**Do this instead:** Verify the actual output URL structure from Hugo before writing Pagefind glob patterns. Hugo entity pages at `content/ne/` with `path: ent.entity_code` will land at `/ne/{entity_code}/`. If entity codes are `ne-abc123`, the glob works. If they are just `abc123`, update the glob to `ne/**/*.html`.
+
+### Anti-Pattern 5: Conflating assets/ with static/
+
+**What people do:** Place the generated `hugo-data/*.json` files in `static/` or `data/` and try to read them in content adapters with `resources.Get`.
+
+**Why it's wrong:** `resources.Get` reads from `assets/` only. Files in `static/` are copied verbatim to `public/` but are not accessible as Hugo resources. Files in `data/` are accessible via `site.Data` but not via `resources.Get`.
+
+**Do this instead:** Generated content files → `assets/hugo-data/`. Client-side JSON files served to the browser (link shards, index files) → `static/data/`.
+
+---
+
+## Scaling Considerations
+
+| Concern | Eleventy (current) | Hugo (target) | Notes |
+|---------|-------------------|---------------|-------|
+| Peak memory | 7 GB heap, OOMs at 192K pages | ~1 GB estimated | Hugo compiles Go; content adapters scope data per section |
+| Build time (CI) | OOM before completion | ~30–90 seconds estimated | Linear scaling benchmarked to 100K; 192K extrapolated |
+| generate-content.js memory | N/A | ~2–4 GB (same constraints as Eleventy's _data/) | Node still holds all descriptions in memory for ancestor chains |
+| Pagefind index time | ~3 × full site scan | Unchanged | 3 separate Pagefind runs; post-Hugo, same as before |
+| R2 upload time | ~10 min (345 files/s) | Unchanged | Output file count and structure largely unchanged |
+| Future growth to 500K pages | Would require major pipeline changes | Hugo designed for this scale | Hugo's own benchmark site runs 600K pages |
 
 ---
 
 ## Sources
 
-- Pagefind JS API — metadata: https://pagefind.app/docs/js-api-metadata/
-- Pagefind JS API — filtering (null query): https://pagefind.app/docs/js-api-filtering/
-- Pagefind multisite search (browser-only merge): https://pagefind.app/docs/multisite/
-- Pagefind custom metadata attributes: https://pagefind.app/docs/metadata/
-- PMTiles cloud storage (R2 recommended, range requests): https://docs.protomaps.com/pmtiles/cloud-storage
-- Protomaps Cloudflare deploy guide (Worker required): https://docs.protomaps.com/deploy/cloudflare
-- Cloudflare R2 HTTP 206 support (November 2022): https://developers.cloudflare.com/r2/platform/release-notes/
-- Tippecanoe PMTiles output (v2.17+): https://docs.protomaps.com/pmtiles/create
-- MapLibre GL JS heatmap from GeoJSON: https://maplibre.org/maplibre-gl-js/docs/examples/create-a-heatmap-layer/
-- Sigma.js WebGL graph rendering: https://www.sigmajs.org/
-- Eleventy parallel build issue (no native support): https://github.com/11ty/eleventy/issues/1001
+- [Hugo content adapters — official docs](https://gohugo.io/content-management/content-adapters/) — `$.AddPage` syntax, local file reading, `path` semantics — HIGH confidence
+- [Hugo data sources — official docs](https://gohugo.io/content-management/data-sources/) — `data/` vs `assets/` vs `resources.Get` memory semantics — HIGH confidence
+- [Hugo 0.126.x content adapters launch post](https://www.brycewray.com/posts/2024/05/hugo-0-126-x-speedy-pages-data/) — performance benchmarks, 20K pages / 49 MB JSON — MEDIUM confidence (third-party)
+- [Hugo forum: content adapters examples and performance](https://discourse.gohugo.io/t/content-adapters-examples-and-performance/49830) — 100K page linear scaling benchmark — MEDIUM confidence (community-verified, not official)
+- [Hugo forum: content adapters with local data](https://discourse.gohugo.io/t/content-adapters-using-local-data/50317) — `assets/` vs `data/` recommendation — MEDIUM confidence
+- [Hugo directory structure](https://gohugo.io/getting-started/directory-structure/) — `static/`, `assets/`, `content/`, `layouts/` roles — HIGH confidence
+- [Hugo time.Format](https://gohugo.io/functions/time/format/) — Spanish month names require manual partial; not natively locale-switchable within `time.Format` for custom month strings — HIGH confidence
+- [peaceiris/actions-hugo GitHub Action](https://github.com/peaceiris/actions-hugo) — Hugo setup in GitHub Actions — HIGH confidence
+- Pagefind post-build integration — unchanged from existing architecture; Pagefind is framework-agnostic
+- Cloudflare R2 + Worker deployment — unchanged from existing architecture
 
 ---
-*Architecture research for: Zasqua Frontend v0.5.0 — entity/place discovery integration*
-*Researched: 2026-03-26*
+
+*Architecture research for: Zasqua Frontend v0.6.0 — Hugo migration and build pipeline sustainability*
+*Researched: 2026-04-16*

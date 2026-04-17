@@ -1,252 +1,171 @@
 # Project Research Summary
 
-**Project:** Zasqua Frontend v0.5.0 — entity/place discovery
-**Domain:** Static archival discovery site — spatial heatmap, network graph, entity/place detail pages
-**Researched:** 2026-03-26
-**Confidence:** HIGH (stack, architecture, pitfalls); MEDIUM (features)
+**Project:** Zasqua Frontend v0.6.0 — Hugo migration
+**Domain:** Large-scale static site build engine migration (Eleventy → Hugo, 192K-page archival site)
+**Researched:** 2026-04-16
+**Confidence:** HIGH
 
 ## Executive Summary
 
-Zasqua Frontend v0.5.0 adds four interrelated features to an existing 106K-page static site: individual detail pages for 92,042 entities and 8,177 places, a place explorer with spatial heatmap, and an entity explorer with network graph. The recommended approach is fully static — no runtime server, no API calls at discovery time — using MapLibre GL JS for maps, PMTiles on R2 for tile delivery, and Sigma.js for graph rendering, all loaded via CDN or self-hosted bundles consistent with the existing vanilla-JS-no-bundler architecture. The single most important architectural decision is to run entity/place page generation as a separate Eleventy build in parallel with the existing description build, then merge outputs before Pagefind indexing. This prevents Node.js heap exhaustion (the current build already consumes ~6 GB heap for 106K pages; adding 100K more to the same process will OOM on GitHub Actions runners) and keeps CI time at roughly 16 minutes instead of 28–30.
+Zasqua Frontend v0.6.0 is a forced migration: Eleventy OOMs on GitHub Actions at 192K pages even with a 7 GB heap (exit code 134). The Node.js single-process model cannot paginate three large JSON arrays (descriptions 106K, entities 78K, places 7K) plus their enrichment data simultaneously. Hugo is the correct replacement — its content adapter mechanism (introduced v0.126.0, stable in all current releases) generates pages directly from JSON without stub files, renders in parallel across all CPU cores, and uses on-demand resource loading that caps memory well under the GitHub Actions runner limit. Community benchmarks confirm linear scaling to 100K pages and the Hugo forum documents dozens of sites at this scale. This is a well-understood migration path.
 
-The build-time data pipeline is the foundation everything else depends on. A pre-compute script must aggregate the 308K entity-description links and 85K place-description links into per-entity and per-place JSON shards before Eleventy runs. The entity co-occurrence graph for the entity explorer must also be pre-computed and pre-laid out (ForceAtlas2 in Node.js) before the browser sees any data — force layout in the browser at 1,000+ nodes is unacceptable. PMTiles requires a dedicated Cloudflare Worker, not the existing site Worker, because Range request pass-through and CORS headers must be set at the Worker level rather than the R2 bucket when a custom domain is in use.
+The recommended approach treats the migration as three parallel work streams: (A) a new Node.js enrichment script (`generate-content.js`) that absorbs all data-preparation logic previously embedded in Eleventy's data cascade and writes denormalised JSON to `assets/hugo-data/`; (B) Go template ports of the 13 Nunjucks templates with returning partials replacing all 15 custom Eleventy filters; and (C) CI/CD updates removing the Node.js heap override and replacing the Eleventy build step with Hugo. The Pagefind search indices, Tailwind CSS compilation, and Cloudflare R2 upload are all downstream of the build and remain largely unchanged. The diff-based R2 upload enhancement (ETag/MD5 comparison) can be developed independently and reduces deploy time from ~10 minutes to under 2 minutes on typical content builds.
 
-The recommended MVP for v0.5.0 is: pre-built aggregates, place detail pages, entity detail pages, place explorer with heatmap map, entity explorer with list view (graph deferred to v0.5.x after validating data quality). The full network graph is a P2 feature — valuable but risky to commit to before the co-occurrence data has been inspected at scale. Wikidata/SNAC enrichment and time sliders are explicitly out of scope (P3) due to static-site constraints and sparse date data.
-
----
+The primary risks are data architecture decisions that must be locked in before any template work begins. Using Hugo's `data/` directory for the 370 MB combined JSON corpus would be an OOM risk; loading via `resources.Get` in content adapters avoids this. Content adapters cannot access `.Site.Pages` at all — all cross-referencing between descriptions, entities, and places must be pre-computed in `generate-content.js`. Go template variable scoping inside `with`/`range` blocks will be the main friction during template porting, particularly in the 413-line description template. None of these risks are blockers; all have clear, documented mitigations.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack (Eleventy 3, Nunjucks, Tailwind CSS v4 standalone CLI, Pagefind 1.4.0, vanilla JS, Cloudflare R2 + Worker, GitHub Actions) is confirmed and unchanged. Three new libraries are added for this milestone only on pages that need them — no global load, no build chain.
+Hugo v0.160.1 replaces Eleventy as the SSG. It must be the Extended edition (for Hugo Pipes / `css.TailwindCSS`). Tailwind CSS must be installed via npm (`@tailwindcss/cli`) rather than the standalone binary — Hugo ≥ v0.146.0 cannot find binaries outside `node_modules/.bin` due to a Go upstream security change. Pagefind upgrades from v1.4.0 to v1.5.2 bring ~45% smaller index chunks and ~2× faster indexing with no API changes. The R2 upload script extends the existing Node.js parallel uploader with ETag/MD5 diff logic; rclone and r2sync are both unsuitable.
 
-**Core new technologies:**
-- **MapLibre GL JS 5.x** — interactive maps (place detail embedded map, place explorer heatmap) — open-source WebGL renderer, native heatmap layer, PMTiles protocol support via plugin; open-source Mapbox fork with BSD licence
-- **pmtiles 4.4.0** — PMTiles protocol handler for MapLibre — registers `pmtiles://` custom protocol via `maplibregl.addProtocol`; no tile server needed; HTTP range requests against R2
-- **Sigma.js 3.0.2 + graphology 0.25.4** — WebGL network graph rendering — handles tens of thousands of nodes; vanilla JS via UMD bundle; pre-computed layout from graphology at build time
-- **Tippecanoe 2.17+** — build-time GeoJSON-to-PMTiles conversion — native binary, installed on CI runner; not a JS package
-
-All JS libraries load via jsDelivr CDN (or self-hosted vendor copies) on their respective pages only. No npm packages are added. See `.planning/research/STACK.md` for version compatibility matrix and CDN snippet patterns.
+**Core technologies:**
+- **Hugo v0.160.1 Extended:** Replaces Eleventy — content adapters generate 192K pages in ~1 GB RAM vs Eleventy's 7 GB OOM
+- **Hugo content adapters (`_content.gotmpl`):** Key mechanism; one per section (`descripcion/`, `ne/`, `nl/`); reads JSON via `resources.Get`
+- **`@tailwindcss/cli` via npm:** Tailwind v4 CSS compilation; must be in `node_modules/.bin/` for Hugo to find it (Hugo ≥ v0.146.0 PATH regression)
+- **Pagefind v1.5.2:** Three independent search indices (descriptions, entities, places); post-build step; ~2× faster indexing than v1.4.0
+- **`@aws-sdk/client-s3` (existing):** Extended with `ListObjectsV2` + ETag comparison for diff-based R2 upload
 
 ### Expected Features
 
-**Must have — table stakes (v0.5.0):**
-- Pre-built description aggregates (entity→description, place→description) — foundational; unblocks all four features
-- Build architecture decision and separate Eleventy builds — must precede any entity/place template work
-- Place detail pages: name, type, variants, authority links (Wikidata, WHG, HGIS), admin context, linked descriptions
-- Entity detail pages: structured name, dates, function, biographical note, name variants, linked descriptions
-- Place explorer: searchable/filterable index + heatmap map (MapLibre + PMTiles)
-- Entity explorer: searchable/filterable index with list view
-- PMTiles on R2 with dedicated Cloudflare Worker
+All six capabilities are P1 — each is required for the migration to be functional and the site to deploy correctly.
 
-**Should have — differentiators (v0.5.x, add after v0.5.0 validation):**
-- Entity network graph on entity explorer — Sigma.js, pre-computed ForceAtlas2 layout, ego-network on click
-- Repository breakdown on entity/place detail pages
-- Colonial administrative division facet on place explorer
-- Top co-occurring entities list on entity detail pages
+**Must have (table stakes):**
+- Content adapters for all three page types — generates the site; unblocks all other work
+- Go template partials replicating all 15 Nunjucks filters — zero regressions in rendered output
+- Tailwind v4 compilation wired through `css.TailwindCSS` with `hugo_stats.json` — visual parity
+- Three Pagefind index builds in CI with `data-pagefind-body`/`data-pagefind-ignore` in all layouts — search parity
+- Diff-based R2 upload replacing full sync — CI sustainability (current full upload ~10 minutes)
 
-**Defer to v0.6+:**
-- Build-time Wikidata enrichment baked into pages (requires adding QIDs to data model)
-- SNAC/VIAF authority links on entity pages (requires identifier matching pipeline)
-- Time slider on place explorer (data precision insufficient — colonial archives use decade-level dates)
-- Dot/cluster toggle on place explorer map
+**Should have (post-migration stability):**
+- Template metrics profiling pass (`--templateMetrics`) — identify hot partials once stable
+- Dry-run deploy mode for the diff uploader — validate logic against production before relying on it
+- `partialCached` applied to shared partials — measurable build-time improvement at 192K pages
 
-**Anti-features to avoid entirely:**
-- Live Wikidata/Wikipedia panels at page load (breaks static constraint)
-- Full network graph for a single entity on its detail page (load the full edge dataset per page is unmanageable)
-- Full 92K-node graph rendered at once (unusable hairball; always scope to threshold)
-- Force-directed layout computed in the browser (blocks main thread above ~500 nodes)
-- Drawing/bounding-box search on map (high complexity, low benefit at 8K places)
-
-See `.planning/research/FEATURES.md` for full prioritisation matrix and DH project comparison table.
+**Defer (future):**
+- Multisite Pagefind index merging — only relevant if cross-content-type unified search is required
+- Hugo native `hugo deploy` with R2 — Cloudflare R2 not officially documented as an endpoint target
 
 ### Architecture Approach
 
-The target architecture adds two parallel Eleventy builds (descriptions and entities/places), merges their `_site` outputs, then runs Pagefind once over the merged output and uploads to R2 via the existing upload script. PMTiles is served via a separate dedicated Cloudflare Worker bound to `tiles.zasqua.org`. Entity and place detail pages serve their linked-description data by fetching pre-computed per-entity/place JSON shards client-side rather than embedding 400K link records into Eleventy templates.
+The migration replaces only the build engine and template layer. Data source (B2), hosting (R2 + Worker), CI runner (GitHub Actions), client-side JS (vanilla, 8K lines), Pagefind, and Tailwind are all unchanged. The critical new component is `scripts/generate-content.js` — a Node.js script absorbing all enrichment logic previously in Eleventy's `_data/*.js` files, writing fully denormalised JSON to `assets/hugo-data/`. Hugo content adapters read these files and call `$.AddPage` per record. The build order is strictly sequential: B2 sync → `precompute-links.js` → `generate-content.js` → Tailwind CSS → `hugo` → Pagefind ×3 → R2 upload.
 
 **Major components:**
-1. **`scripts/precompute-links.js`** — reads entity/place link JSONs from backend, writes per-entity and per-place JSON shards to `data/entity-links/` and `data/place-links/`; runs before Eleventy
-2. **`scripts/precompute-cooccurrence.js`** — builds co-occurrence adjacency list (capped at weight ≥ 3); runs before entity explorer build
-3. **`src/entidad.njk` / `src/lugar.njk`** — Eleventy pagination templates generating ~92K entity and ~8K place pages; include Pagefind metadata attributes for lat/lon, type, and count
-4. **`src/explorar/entidades.njk` / `src/explorar/lugares.njk`** — single-page explorers driven by Pagefind JS API (place metadata cached in-memory on init) and by MapLibre/Sigma visualizations
-5. **`src/js/place-explorer.js`** — Pagefind JS API + MapLibre heatmap; loads place metadata once on init, filters in-memory, feeds GeoJSON to MapLibre source
-6. **`src/js/entity-explorer.js`** — Pagefind JS API + Sigma.js; loads pre-computed co-occurrence JSON, builds graphology graph, renders subgraph on search/filter
-7. **`worker/worker.js`** — existing Worker unchanged for HTML/CSS/JS; PMTiles served via a separate Protomaps Cloudflare Worker template with Range request pass-through
-
-See `.planning/research/ARCHITECTURE.md` for full data flow diagrams, build-step-by-step ordering (15 steps), and complete file structure changes.
+1. `scripts/generate-content.js` (NEW) — reads raw + pre-computed JSON; writes enriched `assets/hugo-data/` files; highest-risk new component; must produce fully denormalised records
+2. `content/{section}/_content.gotmpl` ×3 — Hugo content adapters; one per section; reads enriched JSON via `resources.Get`; calls `$.AddPage` per record; replaces Eleventy pagination
+3. `layouts/{section}/single.html` ×3 — Go templates porting 13 Nunjucks templates; returning partials in `layouts/partials/filters/` replace all 15 custom Eleventy filters
+4. `deploy.yml` — removes `NODE_OPTIONS` heap override; adds Hugo Extended setup; replaces `npx eleventy` with `hugo --minify`; updates upload source from `_site/` to `public/`
 
 ### Critical Pitfalls
 
-1. **Node.js heap exhaustion from integrated build** — entities.json is 29.9 MB; adding 92K entity pages to the same Eleventy process as 106K description pages will exceed the 7 GB RAM of GitHub Actions runners. Avoid by running entity/place pages as a separate Eleventy build with its own Node process.
-
-2. **PMTiles CORS/Range request failure through the existing Worker** — the existing site Worker has no Range request pass-through. R2 bucket CORS settings do not apply to custom-domain requests routed through a Worker. Deploy a dedicated Protomaps Worker on `tiles.zasqua.org` using the official template; do not modify the site Worker.
-
-3. **Pagefind index bloat from entity/place pages** — indexing 206K pages (including entity `history` text fields) will produce a 500 MB+ index and degrade first-search latency. Use `data-pagefind-ignore` on entity/place pages, or build entity/place search as separate in-memory filtering against pre-built JSON rather than relying on Pagefind.
-
-4. **Force-directed graph layout computed in the browser** — ForceAtlas2 on 1,000+ nodes blocks the main thread and triggers "page unresponsive" prompts. Pre-compute layout positions at build time using graphology-layout-forceatlas2 in Node.js and bake positions into the co-occurrence JSON. Sigma.js renders from pre-computed positions instantly.
-
-5. **Rendering all places as a full-metadata GeoJSON source** — loading the full 3.1 MB places.json as a MapLibre source causes a 1–3 second render stall. Build a coordinates-only `places-map.json` at build time (strip to `place_code`, `display_name`, `lat`, `lon`); load as an external URL, not inline; cap coordinate precision at 4 decimal places.
-
-See `.planning/research/PITFALLS.md` for complete pitfall profiles, warning signs, recovery steps, and a "looks done but isn't" verification checklist.
-
----
+1. **`.Site.Data` OOM from large JSON corpus** — never put the 370 MB combined JSON in Hugo's `data/` directory; load via `resources.Get` in content adapters; must be decided before any template work (Phase 1)
+2. **Content adapters cannot access `.Site.Pages`** — any cross-referencing inside `_content.gotmpl` causes a fatal build error; all enrichment must be pre-computed in `generate-content.js` (Phase 1)
+3. **Hugo Extended not installed in CI** — standard `hugo` binary silently omits `css.TailwindCSS`; CSS processes without error but produces raw unprocessed output; always install with `extended: true` (Phase 1)
+4. **`hugo_stats.json` excluded by `.gitignore`** — Tailwind v4 respects `.gitignore` and silently skips the file, producing CSS missing most dynamic classes; remove from `.gitignore` or add explicit `@source` override (Phase 1)
+5. **Spanish date formatting has no native Hugo equivalent** — `time.Format` produces English-only months; ISAD(G) date expressions are not parseable as `time.Time`; pre-compute `date_formatted` in `generate-content.js` (Phase 2)
+6. **Go template variable scope inside `with`/`range`** — variables declared with `:=` inside a block are invisible outside it; declare all output variables before conditionals, use `=` reassignment inside blocks (Phase 3, description template)
 
 ## Implications for Roadmap
 
-Dependencies cascade clearly from data pipeline through templates through visualisations. The order below is non-negotiable — no phase can begin until its dependencies are confirmed working.
+Based on research, the migration organises into four phases with two parallel work streams (pre-build pipeline and Hugo templates) converging at a full production build.
 
-### Phase 1: Build architecture and data pipeline
+### Phase 1: Hugo Scaffolding and Data Architecture
 
-**Rationale:** Every other feature depends on build-time aggregates and on knowing whether a separate Eleventy build is needed. Getting this wrong late in the milestone means rebuilding templates and CI configuration. Address Node OOM risk first.
+**Rationale:** Every subsequent step depends on two foundational decisions: (a) large JSON loaded via `resources.Get` not `data/`, and (b) content adapters as the page-generation mechanism. These are expensive to reverse once templates are ported. CI scaffolding (Hugo Extended, `hugo_stats.json` fix) must also be validated before any template work — otherwise CSS regressions will be invisible until near the end of the migration.
 
-**Delivers:** Separate Eleventy build for entity/place pages confirmed working in CI; `precompute-links.js` producing correct per-entity/place JSON shards; entity/place JSON downloads in `build.sh` and `deploy.yml`; confirmed build time within GitHub Actions 60-minute timeout.
+**Delivers:** Working Hugo project skeleton building a subset of pages (DEV_LIMIT mode) with correct CSS output in CI; verified Hugo Extended installation; `hugo_stats.json` not excluded.
 
-**Addresses:** Pre-built description aggregates (P1), build architecture decision (P1)
+**Addresses:** Content adapters (P1), Tailwind v4 CSS compilation (P1), `hugo.toml` configuration
 
-**Avoids:** Node OOM (Pitfall 1), Pagefind index bloat (Pitfall 4), incremental build data staleness (Pitfall 2)
+**Avoids:** `.Site.Data` OOM (Pitfall 1), stub file filesystem pressure (Pitfall 7), Hugo Extended missing (Pitfall 4), `hugo_stats.json` exclusion (Pitfall 5)
 
-**Research flag:** Standard patterns — Eleventy parallel build, Node.js scripts. No phase-level research needed.
+### Phase 2: Pre-Build Enrichment Script
 
----
+**Rationale:** `generate-content.js` is the architectural keystone — templates cannot be fully validated until this script produces correct, denormalised JSON with all display values pre-computed (Spanish dates, number formatting, ancestor chains). Developing this script before or in parallel with template porting avoids rework when templates need fields that the enrichment script does not yet produce.
 
-### Phase 2: PMTiles infrastructure
+**Delivers:** `assets/hugo-data/descriptions.json`, `entities.json`, `places.json` with all enrichment fields pre-computed; validated against production data counts; `date_formatted` and `number_formatted` fields avoiding Go template date/number complexity.
 
-**Rationale:** Both the place detail embedded map and the place explorer heatmap depend on PMTiles on R2. This is shared infrastructure — set it up once before writing any map template code. The Worker must be deployed and range requests verified on the production domain before MapLibre templates are written.
+**Addresses:** Go template data lookups (P1), Spanish date formatting, number formatting, ancestor chain computation
 
-**Delivers:** `zasqua-places.pmtiles` generated by Tippecanoe from `places.json`; dedicated Protomaps Cloudflare Worker on `tiles.zasqua.org`; end-to-end range request verification (HTTP 206, correct CORS headers in Firefox and Safari); PMTiles upload added to CI.
+**Avoids:** Content adapters accessing `.Site.Pages` (Pitfall 2), Spanish date logic in Go templates (Pitfall 6), regex-heavy template logic (anti-pattern)
 
-**Uses:** Tippecanoe 2.17+, pmtiles 4.4.0, MapLibre GL JS 5.x (smoke test only in this phase)
+### Phase 3: Template Porting
 
-**Avoids:** PMTiles CORS/Range failure (Pitfall 3), GeoJSON render stall (Pitfall 5)
+**Rationale:** With a working skeleton (Phase 1) and correct enriched JSON (Phase 2), template porting is the bulk of the migration work. The description template is the highest-risk file and should be ported last. Port order: base layout → header/footer/breadcrumb partials → returning-partial filter library → entity and place templates → description template. This order surfaces Go template syntax issues on simple templates before encountering the 413-line description template.
 
-**Research flag:** MEDIUM concern — the Pitfalls research explicitly flags the gap between "bucket CORS works" and "Worker CORS works". Plan for troubleshooting time on first Worker deploy. Official Protomaps Cloudflare template is the verified path.
+**Delivers:** All 13 Nunjucks templates ported as Go templates; all 15 custom filters as returning partials; Pagefind metadata attributes (`data-pagefind-filter`, `data-pagefind-meta`, `data-pagefind-sort`) preserved in all layouts; full 192K-page build validated against production data.
 
----
+**Addresses:** Go template data lookups (P1), Pagefind index parity (P1)
 
-### Phase 3: Entity and place detail pages
+**Avoids:** Go template variable scope breakage (Pitfall 3), Pagefind metadata double-escaping (Pitfall 8)
 
-**Rationale:** Detail pages are the link targets for both explorers. They must exist before explorer list views can link anywhere. They also validate that the pre-computed aggregate shards (Phase 1) are correct and complete.
+### Phase 4: CI Pipeline and R2 Diff Upload
 
-**Delivers:** ~92K entity pages at `/entidad/{code}/` and ~8K place pages at `/lugar/{name}/` with correct Pagefind metadata, authority links, linked-description list (fetched client-side from JSON shards), breadcrumb navigation. Embedded map on place detail pages using MapLibre + PMTiles infrastructure from Phase 2.
+**Rationale:** CI changes and the diff-based upload are both architecturally independent of Hugo templates and can be developed in parallel with Phase 3. They belong in the same final phase because both require a working full build for end-to-end validation. The upload path change (`_site/` → `public/`) is a one-line change but a silent failure mode if missed.
 
-**Addresses:** Place detail pages (P1), entity detail pages (P1)
+**Delivers:** Updated `deploy.yml` with clean full build; R2 diff upload replacing full sync; full CI run verified end-to-end; dry-run mode for upload validation.
 
-**Avoids:** Loading all 308K links into Eleventy template memory (Architecture anti-pattern 1); MapLibre loaded on non-map pages (Performance trap)
+**Addresses:** Diff-based R2 upload (P1), CI pipeline correctness
 
-**Research flag:** Standard patterns — Eleventy pagination, Nunjucks templates, Pagefind metadata attributes. No phase-level research needed.
-
----
-
-### Phase 4: Place explorer
-
-**Rationale:** Place explorer is simpler than entity explorer (list + map vs. list + network graph). Build it first to validate the MapLibre + Pagefind integration pattern before the more complex entity explorer.
-
-**Delivers:** `/explorar/lugares/` — searchable place index with facet filters (place type, has coordinates, has authority links, colonial division); heatmap map using MapLibre + PMTiles; place metadata loaded once on init from Pagefind, filtered in-memory; cluster view at low zoom, heatmap at overview zoom.
-
-**Addresses:** Place explorer (P1), heatmap visualization (P2)
-
-**Avoids:** Pagefind queried on every filter change (Architecture anti-pattern 2); GeoJSON render stall (Pitfall 5 — coordinates-only GeoJSON built separately in Phase 1)
-
-**Research flag:** Standard patterns for map/filter integration. No phase-level research needed.
-
----
-
-### Phase 5: Entity explorer — list view
-
-**Rationale:** Build the entity explorer list and filter UI before adding the network graph. This lets the feature ship with v0.5.0 while the graph pipeline is validated separately. List view with Pagefind-backed search is well-understood; graph is high risk.
-
-**Delivers:** `/explorar/entidades/` — searchable entity index with facet filters (entity type, primary function, date range, minimum description count, repository); alphabetical sort; virtual/paginated list view (never render all 92K items to DOM).
-
-**Addresses:** Entity explorer list view (P1)
-
-**Avoids:** Rendering 92K entity names in DOM (Performance trap); Pagefind index bloat confirmed by this point
-
-**Research flag:** Standard patterns. No phase-level research needed.
-
----
-
-### Phase 6: Entity network graph (v0.5.x — post-launch)
-
-**Rationale:** Deferred from launch to allow inspection of co-occurrence data at scale. Graph threshold parameters (minimum description count, minimum edge weight) cannot be set in advance without seeing the actual distribution. Build this after v0.5.0 entity/place pages are live and co-occurrence data can be audited.
-
-**Delivers:** Network graph on entity explorer using Sigma.js 3.x; pre-computed ForceAtlas2 layout positions in `entity-cooccurrence.json`; ego-network expansion on node click; graph filtered by current search/facet state; hover shows entity name; click navigates to entity detail page.
-
-**Uses:** Sigma.js 3.0.2, graphology 0.25.4, graphology-layout-forceatlas2 (Node.js build step only)
-
-**Addresses:** Entity network graph (P2), pre-computed graph layout (P2)
-
-**Avoids:** Force layout in browser (Pitfall 6); full 92K-node graph (anti-feature); community detection presented as factual groupings
-
-**Research flag:** MEDIUM concern — graph threshold tuning is empirical. Run `precompute-cooccurrence.js` against real data and inspect node/edge count distributions before committing to a threshold. Plan for iteration.
-
----
+**Avoids:** R2 upload targeting wrong output directory (Pitfall mapping), full-sync upload at 192K files on every build
 
 ### Phase Ordering Rationale
 
-- **Data pipeline before templates:** Pre-computed aggregates (Phase 1) are required by every downstream phase. Starting here also forces early resolution of the build time risk.
-- **Infrastructure before consumers:** PMTiles Worker (Phase 2) must be deployed and verified before any MapLibre code is written. Discovering Worker issues after templates are built is expensive.
-- **Detail pages before explorers:** Explorers link to detail pages; building them first also validates that the aggregate JSON shards are correct.
-- **Simple visualization before complex:** Place heatmap (Phase 4) before entity graph (Phase 6) — both use Pagefind JS API; map is simpler than graph; lessons carry over.
-- **List view before graph:** Entity explorer ships at v0.5.0 without graph; graph ships at v0.5.x after co-occurrence data is audited.
+- Phase 1 must precede all other phases — data architecture and CI scaffolding decisions are foundational and expensive to reverse
+- Phase 2 can overlap with Phase 1 (enrichment script is independent of Hugo) but its output is required before Phase 3 can be validated against real data
+- Phase 3 is the longest phase and has an internal order: base/partials first, description template last (highest risk)
+- Phase 4 is final integration; CI and upload changes require a working full build as their validation environment
 
 ### Research Flags
 
-Phases needing deeper research or troubleshooting time during planning:
-- **Phase 2 (PMTiles infrastructure):** The Protomaps Worker + custom domain CORS chain has a known gap between what bucket CORS settings suggest and what actually works. Allow time for debugging. Test on Firefox and Safari, not just Chrome.
-- **Phase 6 (Entity network graph):** Co-occurrence threshold parameters must be calibrated against real data. Inspect graph density before choosing node/edge caps. Also, graphology-layout-forceatlas2 convergence time at the final threshold needs profiling.
+Phases with standard, well-documented patterns — skip `/gsd-research-phase`:
+- **Phase 1 (scaffolding):** Hugo content adapters and `css.TailwindCSS` are thoroughly documented in official Hugo docs; the Extended edition requirement and `hugo_stats.json` gotcha are explicitly noted in official documentation
+- **Phase 3 (templates):** Nunjucks-to-Go template porting is a known migration path with extensive Hugo community documentation; filter equivalences are fully mapped in ARCHITECTURE.md
+- **Phase 4 (CI/R2):** Diff-based R2 upload uses the existing `@aws-sdk/client-s3` SDK; ETag comparison logic verified against Cloudflare's documented S3-compatible API
 
-Phases with well-documented patterns (no phase-level research needed):
-- **Phase 1** — Node.js scripts + Eleventy parallel builds are standard
-- **Phase 3** — Eleventy pagination + Nunjucks + Pagefind metadata attributes already in use
-- **Phase 4** — MapLibre heatmap from GeoJSON: official example exists; pattern is established
-- **Phase 5** — Pagefind JS API already in use on the site; list/filter UI is standard
-
----
+Phases that may benefit from targeted investigation during implementation:
+- **Phase 2 (enrichment script):** Memory profile of building the ancestor-chain lookup map for 106K descriptions simultaneously needs to be profiled on a GitHub Actions runner; if it approaches the limit, a two-pass approach will be needed
+- **Phase 3 (description template):** The `countryName` filter equivalent needs a `data/countries.json` lookup; enumerate the ~10 country codes from production data before building the lookup
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All critical versions verified against official npm and docs; CDN snippet patterns confirmed working |
-| Features | MEDIUM | Core patterns drawn from verified DH projects; static-site-specific patterns extrapolated from confirmed technology capabilities; some feature decisions require real data inspection (graph thresholds) |
-| Architecture | HIGH | Core patterns verified against official docs and existing codebase; Pagefind metadata API and MapLibre range request behaviour confirmed |
-| Pitfalls | HIGH (critical), MEDIUM (performance thresholds) | OOM, PMTiles Worker, and Pagefind bloat pitfalls verified against official docs and community reports; performance thresholds (e.g. exact node count at which graph freezes) are estimates |
+| Stack | HIGH | Hugo v0.160.1, Pagefind v1.5.2, `@tailwindcss/cli` approach all verified against official docs, official GitHub issues, and Hugo core maintainer reference repo |
+| Features | HIGH | All six P1 features directly derived from the OOM failure mode and existing site requirements; no speculative features |
+| Architecture | HIGH (patterns) / MEDIUM (scale) | Content adapter pattern, data flow, component boundaries verified against official Hugo docs; 192K-page performance extrapolated from 100K community benchmarks (linear scaling confirmed but not tested at exact scale) |
+| Pitfalls | HIGH | All eight critical pitfalls verified against official docs, official GitHub issues, or Hugo Discourse with maintainer responses |
 
-**Overall confidence:** HIGH for implementation direction; MEDIUM for exact performance thresholds and graph threshold calibration.
+**Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Co-occurrence graph density:** Until `precompute-cooccurrence.js` runs against the real `entity_links.json` export, the actual node/edge count at different weight thresholds is unknown. Build the script early (Phase 1 or Phase 2) and profile before committing to graph scope.
-- **Entity/place build time:** The 14-minute baseline for 106K pages suggests ~14 minutes for 100K entity/place pages, giving ~16 minutes parallel. This estimate depends on Eleventy's per-page cost being consistent across template types. Profile a DEV_LIMIT build before committing to the parallel build architecture.
-- **Pagefind index size with entity pages included:** The Pitfalls research recommends excluding entity pages from Pagefind; the Architecture research suggests using Pagefind metadata on entity/place pages for map/graph driving. These goals are in tension. Resolve in Phase 1: decide whether entity/place pages are pagefind-indexed (with `data-pagefind-ignore` on long-form text fields) or excluded entirely in favour of separate JSON filtering. Both are viable; the choice affects the entity explorer search UX.
-- **`entity_links.json` and `place_links.json` export format:** The Architecture research assumes a `[{entity_code, reference_code, title, date_start}]` structure. Confirm this against the actual backend export before writing `precompute-links.js`.
-
----
+- **192K-page build time on GitHub Actions:** Community benchmarks confirm 100K pages; 192K is an extrapolation. First full CI build may reveal the need to tune `HUGO_MEMORYLIMIT`. Monitor closely and adjust before shipping.
+- **`lang.FormatNumber` with Colombian Spanish separators:** `lang.FormatNumber 0 $num` with `language = "es-CO"` in `hugo.toml` needs verification before relying on it. If it produces comma-separated output instead of period-separated (`1.234`), pre-compute in `generate-content.js`.
+- **URL path compatibility:** Content adapter `path` values are relative to the adapter's location in `content/`. Verify that description, entity, and place URLs match existing published URLs before full cutover to avoid breaking inbound links.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- MapLibre GL JS npm — v5.21.1 current version
-- pmtiles npm — v4.4.0 current version
-- sigma npm — v3.0.2 current version
-- Protomaps PMTiles docs (cloud storage, MapLibre integration, Cloudflare deployment)
-- Cloudflare R2 CORS docs and HTTP 206 release notes
-- Pagefind JS API docs (metadata, filtering, null query)
-- Eleventy incremental build docs (data file tracking limitation confirmed)
-- MapLibre heatmap layer official example
+- [Hugo content adapters docs](https://gohugo.io/content-management/content-adapters/) — `_content.gotmpl`, `.AddPage`, adapter limitations including `.Site.Pages` constraint
+- [Hugo `css.TailwindCSS` docs](https://gohugo.io/functions/css/tailwindcss/) — `build.writeStats`, `hugo_stats.json`, `@source` directive, `.gitignore` conflict
+- [Hugo issue #13617](https://github.com/gohugoio/hugo/issues/13617) — PATH regression for standalone Tailwind binary, v0.146.0+, closed as docs-only
+- [bep/hugo-testing-tailwindcss-v4](https://github.com/bep/hugo-testing-tailwindcss-v4) — Hugo core maintainer reference repo confirming npm approach
+- [Pagefind changelog](https://github.com/CloudCannon/pagefind/blob/main/CHANGELOG.md) — v1.5.2 confirmed latest; v1.5.0 features documented
+- [Pagefind discussion #831](https://github.com/Pagefind/pagefind/discussions/831) — incremental indexing not supported, architectural constraint confirmed by maintainer
+- [Cloudflare R2 aws-sdk-js-v3 docs](https://developers.cloudflare.com/r2/examples/aws/aws-sdk-js-v3/) — `ListObjectsV2` support, ETag format, single-part MD5
+- [Hugo data sources docs](https://gohugo.io/content-management/data-sources/) — `data/` memory behaviour, `resources.Get` as alternative
 
 ### Secondary (MEDIUM confidence)
-- Sigma.js v3 release announcement (Ouestware, March 2024)
-- Peripleo, Nodegoat, DIMES/RAC, WHG, HGIS de las Indias — DH project feature analysis
-- Sigma.js vs Cytoscape.js performance comparison (third-party benchmark)
-- Frontiers / DHQ — network graph uncertainty and ethical visualization
+- [Hugo Discourse: content adapters performance](https://discourse.gohugo.io/t/content-adapters-examples-and-performance/49830) — linear scaling benchmarks to 100K pages
+- [Hugo Discourse: memory tracking](https://discourse.gohugo.io/t/how-to-track-and-reduce-hugo-memory-usage-on-build-getting-oom/47245) — `HUGO_MEMORYLIMIT`, streaming builds v0.123.0+
+- [Hugo Discourse: Tailwind binary PATH](https://discourse.gohugo.io/t/how-to-configure-hugo-to-use-the-tailwindcss-v4-binary-instead-of-npm/53018) — Hugo Extended requirement for Hugo Pipes
+- [Hugo Discourse: Spanish date parsing](https://discourse.gohugo.io/t/parsing-custom-date-format-french-spanish/39463) — `time.Format` locale limitations
 
-### Tertiary (informational)
-- Community Cloudflare forum — R2 CORS with custom domain and Worker routing
-- GitHub issues — Eleventy pagination OOM, parallel build discussions
+### Tertiary (LOW confidence)
+- [r2sync v0.0.4](https://github.com/Songmu/r2sync) — evaluated and ruled out (experimental, unproven at 192K-file scale)
+- [rclone R2 sync issues](https://github.com/rclone/rclone/issues/7881) — `--checksum` HEAD-request cost evaluated and ruled out
 
 ---
-
-*Research completed: 2026-03-26*
+*Research completed: 2026-04-16*
 *Ready for roadmap: yes*

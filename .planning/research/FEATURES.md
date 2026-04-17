@@ -1,233 +1,213 @@
 # Feature Research
 
-**Domain:** Spatial discovery and entity network exploration for static archival sites
-**Researched:** 2026-03-26
-**Confidence:** MEDIUM — core patterns drawn from verified DH projects (Peripleo, WHG, DIMES/RAC, HGIS de las Indias, Nodegoat, Sigma.js docs); static-site-specific patterns extrapolated from verified technology capabilities
+**Domain:** Hugo migration and build pipeline sustainability for a 192K-page static archival site
+**Researched:** 2026-04-16
+**Confidence:** HIGH for Hugo core patterns (verified via official docs, discourse, and release notes); MEDIUM for Pagefind multi-index behaviour at this scale (verified from Pagefind docs and maintainer statements); MEDIUM for diff-based R2 deploy (S3-compatible API confirmed, specific tooling still needs vetting)
 
 ---
 
 ## Context
 
-This research covers four distinct but interrelated feature areas being added to an existing 106K-page static archival discovery site (Zasqua Frontend v0.5.0):
+This research covers four capability areas required for v0.6.0 — migrating the Zasqua Frontend from Eleventy to Hugo. Eleventy OOMs on GitHub Actions at 192K pages even with a 7 GB heap (exit code 134). The migration must:
 
-1. **Place detail pages** — `/lugar/{name}/` — authority links, coordinates, embedded map, linked descriptions
-2. **Entity detail pages** — `/entidad/{code}/` — structured name, dates, function, linked descriptions
-3. **Place explorer** — `/explorar/lugares/` — searchable/filterable index with heatmap map
-4. **Entity explorer** — `/explorar/entidades/` — searchable/filterable index with network graph
+1. **Hugo large-scale builds** — generate 192K+ pages from JSON data within GitHub Actions memory limits
+2. **Go template data lookups** — replicate 15 Nunjucks filters and complex data-enrichment lookups in Go templates
+3. **Pagefind indexing** — retain three separate Pagefind indices (descriptions, entities, places) after the Hugo build
+4. **Diff-based R2 deployment** — replace full-sync upload with ETag/MD5 delta upload to cut CI time
 
-Data available: 8,177 places (5,574 with coordinates), 3,704 Wikidata links, 4,932 WHG links, 2,801 HGIS links, 92,042 entities, 308K entity-description links, 85K place-description links.
-
-Constraint: fully static site — no runtime server, everything pre-built at build time.
+Existing infrastructure: Cloudflare R2 bucket, Cloudflare Worker, GitHub Actions, Backblaze B2 (data source), Node.js pre-build enrichment scripts, Tailwind CSS v4 standalone CLI.
 
 ---
 
 ## Feature Landscape
 
-### 1. Place Detail Pages
+### 1. Hugo Large-Scale Build
 
-#### Table Stakes (Users Expect These)
+#### Table Stakes (Required for Migration to Work)
 
-| Feature | Why Expected | Complexity | Notes |
+| Feature | Why Required | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Place name and type prominently displayed | First thing users want to know | LOW | Display `display_name`, `place_type`, `fclass` |
-| Embedded map showing the place's location | Any geocoded item in a modern site shows a map | MEDIUM | MapLibre + PMTiles on R2; only needed for 5,574 places with coordinates — show static message for the rest |
-| Name variants / alternate forms | Places change names; researchers look by multiple names | LOW | Already in `name_variants` field |
-| Authority links to external gazetteers | Users expect to link out to Wikidata, WHG, etc. | LOW | Wikidata, WHG, HGIS IDs already in places.json; construct URLs at build time |
-| Count of linked archival descriptions | Users want to know how many records mention this place | LOW | Pre-compute at build time from place-description links |
-| Linked descriptions list | Core discovery value: find documents about this place | MEDIUM | 85K place-description links; paginate or limit to top N on the static page |
-| Administrative context | Users need to orient the place geographically | LOW | `admin levels`, `colonial divisions` already in data |
-| Breadcrumb / back navigation | Users arrive via search or explorer; need to return | LOW | Standard nav pattern |
+| Content adapters (`_content.gotmpl`) | Primary mechanism for generating 192K pages from JSON data without individual markdown files — introduced Hugo v0.126.0 | MEDIUM | `AddPage` iterates over JSON array; one adapter per content subdirectory. Page collisions if duplicate paths — must guard against |
+| Sub-linear memory growth | Eleventy OOMs at 192K pages on 7 GB heap; Hugo must stay well under GitHub Actions' ~7 GB limit | LOW (Hugo handles it) | Hugo 0.123+ uses disk-based rendering by default, which offloads memory. Community benchmarks: 100K pages in ~20 seconds, < 2 GB RAM. `--renderToMemory` flag available but adds memory pressure — leave off |
+| Parallel page rendering | Hugo renders pages in parallel by default, using all CPU cores | LOW | Built-in; no configuration needed. Build time scales with CPU cores, not just page count |
+| JSON data loading via `transform.Unmarshal` or content adapters | Load large JSON exports (e.g., 31 MB entities.json) as build-time data sources | MEDIUM | Hugo reads data into memory once and reuses it. For very large files (31 MB+), prefer loading via content adapter `resources.Get` rather than `site.Data` to enable LRU garbage collection |
+| `partialCached` for repeated partials | Shared navigation, breadcrumbs, metadata sections rendered once and cached per variant — critical for 192K iterations | MEDIUM | Replace all `partial` calls with `partialCached` where output is deterministic per section/type. Measurable 40% reduction in template render time on large sites |
+| Build stats for Tailwind v4 | Hugo must emit `hugo_stats.json` listing all used HTML classes so the Tailwind v4 standalone CLI can purge correctly | LOW | Requires `build.buildStats: true` in `hugo.toml` and a cache buster on `hugo_stats.json`. Hugo's native `css.TailwindCSS` function supports the standalone CLI binary |
 
-#### Differentiators
+#### Differentiators (Improve Build Speed Beyond Baseline)
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Colonial administrative context displayed alongside modern context | Zasqua's materials are colonial-era; showing both colonial divisions and modern admin levels adds interpretive value found in few archival interfaces | LOW | Data already in places.json; just surface it clearly |
-| HGIS de las Indias link | Specific to Spanish American colonial history — a differentiator vs generic gazetteers | LOW | IDs already in data; link to `hgis.es` authority pages |
-| Geographic feature classification (fclass) displayed in plain language | Bridges technical gazetteer vocabulary and researcher expectations | LOW | Map `fclass` codes to human-readable labels at build time |
-| Link count broken down by repository | Helps researchers identify which archive holds the most material for this place | MEDIUM | Requires aggregation across place-description links and description metadata |
+| `--gc` flag in CI | Garbage-collects unused cache files after each build, preventing cache bloat over many CI runs | LOW | Add to `hugo --gc --minify` in CI workflow |
+| Template metrics profiling | `--templateMetrics --templateMetricsHints` flags identify which templates execute most often and which have high cache potential — points to optimisation targets before they become problems | LOW | Run once after migration to baseline; not needed in every CI build |
+| Content adapter per content type | One `_content.gotmpl` in `content/descripcion/`, one in `content/entidad/`, one in `content/lugar/` — keeps adapters small and debuggable rather than one monolithic adapter | LOW | Hugo allows one adapter per directory; splitting by type is the natural structure |
 
 #### Anti-Features
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Live Wikidata panel fetching biographical/place data at page load | Rich contextual enrichment looks appealing | Breaks the static constraint; adds runtime dependency; Wikidata API can be slow or unavailable; creates CORS and caching headaches | Include Wikidata link so users can navigate there; if enrichment is desired, fetch and bake it into the JSON at build time |
-| Full-text search scoped to a single place page | Power-user request for "search within documents about this place" | Pagefind cannot be scoped to a dynamic subset at page load without a separate index build | Link to the existing Pagefind search with the place name pre-filled as a filter or query |
-| Inline IIIF viewer for documents about this place | Showcases archival richness | Each item's viewer is already on its own description page; duplicating it here adds significant complexity and page weight | Show thumbnails or a preview strip linking to the description pages |
+| `--renderToMemory` flag | Faster on SSD-limited machines | Negates Hugo's disk-based rendering optimization; reintroduces OOM risk on GitHub Actions with 192K pages | Leave off by default; only test if disk I/O becomes the bottleneck (unlikely on GitHub Actions which uses SSD-backed runners) |
+| Storing all JSON data under `data/` directory | Convenient — `site.Data.entities` is globally accessible | Hugo loads `data/` entirely into memory and holds it for the full build. A 31 MB JSON in `data/` adds 31 MB minimum to build heap. At three large files (descriptions, entities, places) this could add 100+ MB | Load large JSON via content adapter's `resources.Get` instead; Hugo can garbage-collect those resources via LRU cache |
+| Hugo modules for theme sharing | Standard recommendation in Hugo tutorials | Adds `go.sum` dependency management and `go` toolchain requirement to CI; unnecessary for a single-repo site with no shared theme | Keep templates in `layouts/` directly; no Hugo module needed |
 
 ---
 
-### 2. Entity Detail Pages
+### 2. Go Template Data Lookups
 
-#### Table Stakes (Users Expect These)
+#### Table Stakes (Required to Replicate Existing Filters)
 
-| Feature | Why Expected | Complexity | Notes |
+| Feature | Why Required | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Display name and entity type (person / corporate body) | Immediate disambiguation | LOW | `display_name`, `entity_type` from entities.json |
-| Structured name breakdown (given name, surname, honorific) | Persons are frequently found under multiple name forms; archival norm | LOW | Fields already in entities.json |
-| Dates of existence | Expected for any person or institution record | LOW | `date_earliest`, `date_latest`, `dates_of_existence` |
-| Historical/biographical note | Users expect context; DIMES/RAC user research found even minimal text dramatically increases engagement | LOW | `history` field already in entities.json |
-| Function / occupation | Corporate bodies need their purpose; persons need their role | LOW | `primary_function` already in entities.json |
-| Name variants / alternative forms | Critical for colonial-era names with multiple spellings, Latin forms, religious names | LOW | `name_variants` already in entities.json |
-| Count and list of linked archival descriptions | The primary discovery value — what did they create or appear in? | MEDIUM | 308K entity-description links; pre-aggregate at build time; show top N with link to full list if paginated |
-| Breadcrumb / back navigation | Users arrive via entity explorer or linked descriptions | LOW | Standard nav pattern |
+| Date formatting via `time.Format` | Replaces `formatDate` Nunjucks filter — display archival dates as "16 April 2026", "1650", etc. | LOW | Hugo uses Go reference time layout (`Mon Jan 2 2006`). Unlike Nunjucks/moment, the layout string uses a specific reference date, not format tokens like `YYYY`. Requires learning the idiom once |
+| Number formatting via `lang.FormatNumber` / `lang.FormatNumberCustom` | Replaces `numberFormat` Nunjucks filter — display "106,432" with locale-appropriate separators | LOW | Hugo provides `lang.FormatNumber` (uses current language locale) and `lang.FormatNumberCustom` (explicit separator control). Both are built-in; no custom function needed |
+| String splitting via `split` | Replaces `splitPipe` Nunjucks filter — many fields store multiple values pipe-separated | LOW | Go templates have `split` built-in: `{{ $parts := split .Params.field "|" }}` |
+| Map lookup via `index` function | Replaces inline logic that maps role codes or place type codes to human-readable labels | LOW | `{{ index $roleLabels .role_code }}` where `$roleLabels` is a dict defined in a partial or front matter |
+| Partials as function substitutes | Hugo has no user-defined custom functions — all reusable logic must be encapsulated as partials | MEDIUM | Partials accept a context map (`.`) and return a value via `return`. This is the idiomatic Hugo equivalent of Nunjucks filters for complex logic. For simple transforms, built-in functions suffice |
+| `range` / `where` / `sort` pipelines | Replaces Nunjucks `for`, filter, and sort operations | LOW | All built-in. `where` filters slices by field value. `sort` sorts slices by key. `first N` limits results |
+| `dict` for building context maps | Passing structured data into partials (equivalent to Nunjucks macro parameters) | LOW | `{{ partial "my-partial" (dict "key" $value "other" $other) }}` |
 
-#### Differentiators
+#### Differentiators (Improve Template Maintainability)
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Sort name displayed and explained | Colonial naming conventions are opaque; showing `sort_name` and explaining the inversion convention helps researchers | LOW | `sort_name` already in data |
-| Cross-references to co-occurring entities | Shows which persons and bodies frequently appear in the same documents — a soft network signal even without a full graph | MEDIUM | Requires pre-computing top co-occurring entities per entity at build time; limited to top 5–10 |
-| Repository breakdown for linked descriptions | Tells researchers which archives hold the most material for this entity | MEDIUM | Pre-aggregate entity-description links by repository at build time |
-| Authority link to SNAC or VIAF if available | Connects to the wider archival authority ecosystem; modelled on DIMES/RAC's expanded agent pages | MEDIUM | Data not currently in entities.json — would require a data enrichment step to add VIAF/SNAC identifiers |
+| Centralised label-map partials | Define `yearRange`, `centuryRange`, `decadeRange` equivalents as partials that accept a year integer and return a formatted string — reusable across description, entity, place templates | LOW | One partial per filter; called with `partialCached` for performance. Keeps label logic out of every template |
+| `hugo_stats.json`-driven Tailwind purge | Hugo emits used class names; Tailwind v4 reads them to purge unused CSS — ensures the CSS bundle only contains classes actually used across 192K pages | LOW | Already the recommended setup per Hugo's `css.TailwindCSS` docs; requires `@source "hugo:vars"` in the CSS entry file |
 
 #### Anti-Features
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Live Wikipedia/Wikidata panel at page load | Enriches sparse biographical records | Runtime dependency; breaks static constraint; Wikidata QID not currently stored for entities | Bake enrichment at build time if QIDs are added to the data model; link out to Wikidata search |
-| Full network graph on the entity detail page itself | Looks impressive in demos | Rendering a graph for a single entity requires loading the full edge dataset or a large per-entity slice; 92K entities × N edges is not manageable per-page without heavy pre-processing | Reserve graphs for the dedicated explorer page; show only top co-occurrences as a list on the detail page |
-| Timeline of appearances by date | Appealing for historians | Requires date data on individual descriptions, which is often sparse or imprecise in colonial archives; visualising gaps as data is misleading | Show date range of earliest/latest linked description as text |
+| Sprig library functions | Many Hugo tutorials mention Sprig for extended template functions (string padding, regex, etc.) | Sprig is only available in Helm charts, not Hugo. Hugo has its own function set. Tutorials conflating the two cause confusion | Verify each needed function against the Hugo functions reference at gohugo.io/functions before concluding something is missing |
+| Custom Go plugin for template functions | Some developers compile custom Hugo binaries to add functions | Requires maintaining a forked Hugo build; breaks on Hugo upgrades; not supported in standard CI | Implement all filter logic as partials; push complex transformations into the pre-build Node.js pipeline instead |
+| Regex-heavy template logic | Nunjucks allows complex string manipulation inline | Hugo's regex functions exist (`findRE`, `replaceRE`) but are slow in tight loops over 192K pages | Move string normalisation and complex transformations into the pre-build Node.js enrichment script; write clean values to JSON |
 
 ---
 
-### 3. Place Explorer
+### 3. Pagefind Indexing
 
-#### Table Stakes (Users Expect These)
+#### Table Stakes (Retain Existing Search Functionality)
 
-| Feature | Why Expected | Complexity | Notes |
+| Feature | Why Required | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Searchable place index | Any index page in a modern interface has search | MEDIUM | Pagefind can index place pages; alternatively a pre-built JSON index with client-side filter; Pagefind preferred for consistency |
-| Faceted filtering by place type | Users expect to narrow by settlement, region, administrative unit, etc. | MEDIUM | `place_type` / `fclass` fields; pre-build filter lists at build time |
-| Faceted filtering by presence/absence of coordinates | Researchers want geocoded places; they need to know coverage | LOW | Boolean filter; pre-aggregate at build time |
-| Faceted filtering by authority link availability | Researchers using Wikidata or WHG want to find linkable places | LOW | Pre-aggregate counts per authority at build time |
-| Map showing place distribution | Expected from any geocoded collection; establishes geographic scope immediately | HIGH | MapLibre + PMTiles on R2; 5,574 geocoded places as GeoJSON or vector tiles |
-| Count display ("8,177 places, 5,574 geocoded") | Sets expectations; standard in digital collections | LOW | Pre-computed at build time |
-| Link to individual place pages | The explorer is an entry point, not an endpoint | LOW | Standard list item → detail page pattern |
+| Three separate Pagefind index runs after Hugo build | Descriptions, entities, and places each have their own Pagefind index for independent search widgets | LOW | Run `pagefind --site public --output-path public/pagefind-descriptions`, etc., targeting different HTML subtrees via `--glob` or `--root` per index. Order matters: Hugo must complete before any Pagefind run |
+| `data-pagefind-body` on indexable content | Once any page on the site uses this attribute, pages without it are excluded — prevents nav, footer, and sidebar text from polluting search results | LOW | Add `data-pagefind-body` to the main content region in each Hugo layout template. Critical that all three content types use it consistently |
+| `data-pagefind-ignore` on repeated non-content elements | Breadcrumbs, related-items lists, metadata labels repeat identical text across pages — excluding them improves result quality | LOW | Add `data-pagefind-ignore` to navigation, related-descriptions panels, and UI labels. The `all` value also suppresses filter/metadata processing within the element |
+| Pagefind filters preserved post-migration | Existing faceted filters (repository, level, date, country, language) are driven by `data-pagefind-filter` attributes — must survive the template rewrite | MEDIUM | Map each Nunjucks `data-pagefind-filter` attribute to the equivalent Hugo template output. Audit all five filter attributes before migration is considered complete |
+| CI index build order | Pagefind must run after Hugo generates HTML; three index passes must complete before R2 upload | LOW | Enforce in GitHub Actions with explicit step ordering: `hugo` → `pagefind (descriptions)` → `pagefind (entities)` → `pagefind (places)` → upload |
 
-#### Differentiators
+#### Differentiators (Improve at Scale)
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Heatmap visualisation on the explorer map | Shows document density geographically, not just place presence — tells researchers where the archive's coverage is concentrated | MEDIUM | MapLibre heatmap layer weighted by description count per place; GeoJSON with pre-computed weights; 5,574 points is well within MapLibre's performance envelope without tiling |
-| Dot/cluster toggle alongside heatmap | Heatmap is good for overview; individual dots are better for locating specific places | MEDIUM | MapLibre layer toggle; dots default to cluster mode at low zoom; expand at high zoom |
-| Filter by colonial administrative division | Specific to the Latin American colonial archive domain; no generic DH tool offers this | MEDIUM | `colonial divisions` field in places.json; pre-build facet list |
-| Link count displayed on each place card/row | Researchers want to know which places are well-documented before clicking through | LOW | Pre-computed at build time from place-description aggregates |
+| Pagefind `--exclude-selectors` for CI-time exclusion | Alternative to `data-pagefind-ignore` on templates — can suppress element types globally without template changes, useful when fixing indexing quality post-launch | LOW | Pass via `pagefind.yml` config file; complements but does not replace `data-pagefind-ignore` on templates |
+| Multisite index merging in the browser | Pagefind supports `mergeIndex` to load a secondary index bundle at runtime — if descriptions and entities ever need to be queried together, this is the mechanism | MEDIUM | Not needed now but documented for future cross-index search. Requires CORS headers on the R2 bucket if indices are loaded cross-origin |
+| Pagefind custom ranking weights per index | `indexWeight` in `mergeIndex` lets one index's results rank higher than another's — useful if entity search results should rank above place results in a unified query | LOW | Currently each index is independent; relevant only if merged index approach is adopted later |
 
 #### Anti-Features
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Full-text search of place descriptions from the explorer | Sounds like a power feature | Would require Pagefind to index and expose description text per place, creating a redundant search interface alongside the existing main search | Pre-fill the main site search with the place name as a query; link to it from the explorer |
-| Drawing/bounding-box search on the map | Peripleo and other tools offer this; it looks sophisticated | High implementation complexity for limited benefit given the modest 8,177 place count; bounding-box filtering of a static JSON dataset is possible but adds significant JS complexity | Provide faceted filtering by colonial region/admin level as a proxy for geographic scoping |
-| Time slider on the place explorer map | HGIS de las Indias and WHG v3 both offer this | Document dates in Zasqua are often sparse or decade-level; animating a timeline would misrepresent data precision; very high implementation cost | Show date range metadata in the place card; link to filtered main search by date range |
+| Incremental Pagefind indexing | "Only re-index changed pages" to speed up CI | Pagefind's index structure means nearly any page change invalidates most index chunks; the maintainers have explicitly ruled this out as a goal. CI environments also reset modification times, making change detection unreliable | Accept full re-index per build. At Zasqua's scale (Unity docs: 30K pages in 42 seconds), a full descriptions index at 106K pages should complete in under 3 minutes — well within GitHub Actions limits |
+| Single unified Pagefind index for all content types | Simpler build step; one index to query | Mixes archival descriptions, entities, and places into one result set without clear type separation. Faceted filters work poorly across heterogeneous content types. All three explorers currently have independent search widgets | Retain three separate indices. The complexity cost is two additional `pagefind` invocations, which is trivial |
+| Pagefind as the data layer for explorers | The entity and place explorers use Pagefind for filtering, not just search | Already the current approach and a good one — but do not extend this to use Pagefind as the primary data store for features like the co-occurrence graph or the description aggregates. Those must remain pre-computed JSON | Keep Pagefind for search and filtering; keep pre-computed JSON for structured data lookups |
 
 ---
 
-### 4. Entity Explorer
+### 4. Diff-Based R2 Deployment
 
-#### Table Stakes (Users Expect These)
+#### Table Stakes (Required to Reduce CI Time)
 
-| Feature | Why Expected | Complexity | Notes |
+| Feature | Why Required | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Searchable entity index | Any index of 92K items requires search | MEDIUM | Pagefind for consistency with rest of site; may need separate Pagefind index for entity sub-site if build architecture splits |
-| Filter by entity type (person / corporate body) | Fundamental disambiguation | LOW | Binary filter; pre-aggregate at build time |
-| Filter by primary function | Researchers look for notaries, scribes, religious orders, etc. | MEDIUM | `primary_function` field; pre-build facet list; may require normalisation |
-| Filter by date range | Historians need temporal scoping | MEDIUM | `date_earliest`/`date_latest`; range slider or decade facets; many entities will have no dates — must handle gracefully |
-| Alphabetical browsing / sort | Standard for authority file-type indexes | LOW | Pre-sort by `sort_name` at build time |
-| Count display ("92,042 entities") | Sets expectations | LOW | Pre-computed at build time |
-| Link to individual entity pages | Explorer as entry point | LOW | Standard pattern |
+| MD5/ETag comparison before PUT | The current parallel upload script uploads every file on every deploy (~192K files). A diff using MD5 hashes against R2 ETags skips unchanged files — a typical content update touches <1% of pages | MEDIUM | R2 exposes ETags via `ListObjectsV2` (S3-compatible API). Compute MD5 of local file; compare to ETag from R2 list response; only PUT on mismatch |
+| R2 `ListObjectsV2` for remote manifest | Build a map of `{path → ETag}` for all objects currently in the bucket before computing the diff | MEDIUM | Standard S3 API, works with R2 via S3-compatible endpoint + R2 API token. Paginated — must handle `ContinuationToken` for buckets with 192K+ objects |
+| Deletion of removed files | Files removed from the build (renamed pages, restructured URLs) must be deleted from R2 to prevent stale content | MEDIUM | Collect paths in the R2 manifest that have no local counterpart; batch-delete them after uploads complete. Limit deletions per run (Hugo's native deploy caps at 256 — a sensible default) |
+| Parallel upload retained for new/changed files | The existing 345 files/s parallel upload speed should be preserved for the subset of changed files | LOW | Keep the existing `p-limit`-based parallel upload logic; just apply it to the diff-filtered file list instead of all files |
+| Cache-Control headers preserved | HTML files need `max-age=0` (or short TTL); assets (JS, CSS, fonts, images) can have long TTLs. The diff logic must not silently drop these | LOW | Pass `Cache-Control` as custom metadata on each PUT. Keep a content-type → header map as currently implemented |
 
-#### Differentiators
+#### Differentiators (Improve Deploy Reliability)
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Network graph showing entity co-occurrence through shared documents | Core differentiator — turns a list into a discovery tool; reveals networks of colonial actors invisible in hierarchical description | HIGH | Sigma.js 3.0 (WebGL, production-ready for thousands of nodes); pre-build graph JSON (nodes + edges with co-occurrence weight) at build time; limit to entities with ≥ N descriptions to keep graph manageable; ego-network view on node click |
-| Filter entities by minimum description count | Lets researchers focus on well-documented actors | LOW | Pre-compute description counts at build time |
-| Repository filter on entity index | Tells researchers which archive their entity appears in | MEDIUM | Pre-aggregate by repository at build time |
-| Graph interactivity: hover shows name, click loads detail page | Standard for DH network graphs; modelled on Nodegoat and Sigma.js examples | MEDIUM | Sigma.js built-in hover; click handler loads entity detail page |
+| Dry-run mode (`--dry-run`) | Show which files would be uploaded/deleted without executing — useful for validating the diff logic before first production use | LOW | Log planned actions to stdout; skip actual AWS SDK calls. A one-flag addition to the existing upload script |
+| Summary metrics logged in CI | "Uploaded: 432 files, Skipped: 191,890 files, Deleted: 12 files, Duration: 47s" — makes CI logs interpretable | LOW | Counters maintained during the loop; logged at the end. Helps catch runaway diff logic early |
+| ETag normalisation for multipart uploads | R2 ETags for large files uploaded via multipart differ from single-part MD5. For static site assets (all small files < 5 MB) this is not a concern, but the diff logic should document this assumption | LOW | Document the limitation. For this site's file profile (HTML, JSON, JS, CSS — all small), single-part ETags match MD5 reliably |
 
 #### Anti-Features
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Full 92K-entity graph rendered at once | "Show me all the connections" | Graphs above ~150 nodes become unmanageable for users; 92K nodes with 308K edges would render as an unusable hairball; WebGL can technically handle it but the UX value collapses entirely | Pre-filter to entities with ≥ 5 descriptions; cluster remaining nodes; provide progressive expansion via ego-network on click |
-| Automatic community detection displayed as fixed clusters | Looks analytically sophisticated | Community detection algorithms (Louvain, etc.) produce different results with different parameters and are sensitive to edge weighting choices; presenting algorithmic output as factual groupings misleads researchers about what the archive actually contains | If communities are desired, document the algorithm and parameters prominently; flag as exploratory, not authoritative |
-| Force-layout calculated in the browser at load time | D3 force simulation on large graphs | D3 force simulation on 5K+ nodes blocks the main thread; using a Web Worker helps but adds complexity; 92K nodes is out of the question | Pre-compute layout coordinates at build time (e.g. with ForceAtlas2 via graphology-layout-forceatlas2 in a build script); bake positions into the graph JSON; Sigma.js renders from pre-computed positions instantly |
-| Network search as a replacement for text search | Some DH tools conflate graph exploration with search | Graph exploration is non-linear and not suitable for known-item searching | Keep text search (Pagefind) separate; graph is for serendipitous discovery only |
+| `rclone sync` | Standard tool for S3-compatible sync with diff | rclone has a 30ms/file round-trip cost at sequential upload — benchmarked at 30 files/s for this bucket vs the current 345 files/s parallel script. Also lacks fine-grained `Cache-Control` per content type | Retain the custom Node.js upload script with S3-compatible `@aws-sdk/client-s3`; add ETag diff on top of existing parallelism |
+| `aws s3 sync` CLI | Built-in, well-documented | Relies on file timestamps, not content hashes. Hugo regenerates all files on every build (timestamps updated even when content is identical), so `aws s3 sync` uploads everything every time — the exact problem being solved | Use MD5/ETag comparison |
+| `hugo deploy` built-in | Hugo has a native deploy command with MD5 diff | Hugo deploy only officially supports Amazon S3, Azure Blob Storage, and Google Cloud Storage. Cloudflare R2 is not mentioned in the documentation; endpoint-url configuration is undocumented for R2. Also: `hugo deploy` removes the parallel upload performance gains | Keep the custom Node.js upload script; implement ETag diff within it |
+| Wrangler for R2 uploads | Cloudflare-native tool for R2 | Wrangler uploads one file at a time; documentation confirms no bulk parallel upload. No ETag comparison capability | Use the S3-compatible API with `@aws-sdk/client-s3` (already in use) |
 
 ---
 
 ## Feature Dependencies
 
 ```
-Place detail page
-    └──requires──> Pre-built description aggregates (place → descriptions)
-    └──requires──> PMTiles on R2 (for embedded map)
-    └──enhanced by──> MapLibre GL JS (map rendering)
+Hugo build (content adapters)
+    └──requires──> Pre-build Node.js enrichment scripts (ancestor chains, entity/place link data)
+    └──requires──> JSON exports downloaded from B2 at CI start
+    └──produces──> public/ directory with 192K+ HTML files
 
-Entity detail page
-    └──requires──> Pre-built description aggregates (entity → descriptions)
+Go template data lookups
+    └──requires──> Hugo build setup (layouts/, partials/)
+    └──requires──> JSON data loaded via content adapters or resources.Get
+    └──enhanced by──> partialCached for repeated lookup partials
 
-Place explorer
-    └──requires──> Place detail pages (link targets)
-    └──requires──> Pre-built place index JSON (for faceted filter)
-    └──requires──> PMTiles on R2 (for heatmap map)
-    └──requires──> MapLibre GL JS
-    └──enhanced by──> Pre-computed description counts per place (for heatmap weight)
+Tailwind CSS v4 compilation
+    └──requires──> Hugo build (hugo_stats.json must be generated first)
+    └──requires──> Tailwind v4 standalone CLI on PATH in CI
+    └──enhanced by──> Hugo css.TailwindCSS function (native integration)
 
-Entity explorer
-    └──requires──> Entity detail pages (link targets)
-    └──requires──> Pre-built entity index JSON (for faceted filter)
-    └──requires──> Pre-computed graph JSON (nodes + edges + layout positions)
-    └──requires──> Sigma.js 3.x (WebGL graph rendering)
-    └──enhanced by──> Pre-computed co-occurrence counts per entity
+Pagefind indexing (3 indices)
+    └──requires──> Hugo build complete (needs HTML output in public/)
+    └──requires──> data-pagefind-body/ignore attributes in Hugo layout templates
+    └──produces──> public/pagefind-descriptions/, public/pagefind-entities/, public/pagefind-places/
 
-Pre-built description aggregates
-    └──required by──> All four features
+Diff-based R2 upload
+    └──requires──> Hugo build complete
+    └──requires──> Pagefind indices complete (they are also files to diff and upload)
+    └──requires──> R2 ListObjectsV2 to build remote ETag manifest
+    └──enhanced by──> Dry-run mode for validation
 
-Pre-computed graph JSON
-    └──requires──> Build-time ForceAtlas2 layout (graphology-layout-forceatlas2 or similar)
-    └──filtered by──> Minimum description count threshold (quality gate on graph size)
-
-Pagefind search index
-    └──enhanced by──> Entity/place pages in the index (existing Pagefind works; large page
-                      count increase may require build architecture changes)
+CI pipeline (GitHub Actions)
+    └──orchestrates──> All of the above in sequence
+    └──depends on──> B2 download, Node.js enrichment, Hugo build, Pagefind ×3, R2 upload
 ```
 
 ### Dependency Notes
 
-- **Pre-built aggregates are the foundation**: Every feature depends on build-time aggregation of entity-description and place-description links. This is the first thing to implement — it unblocks all four features.
-- **PMTiles unblocks both map features**: Place detail pages and the place explorer both need PMTiles on R2. Setting up the PMTiles file and R2 hosting is a shared prerequisite.
-- **Graph layout must be pre-computed**: Rendering from pre-computed positions is non-negotiable at 5K+ nodes. ForceAtlas2 via graphology at build time is the recommended path. This adds a build step before the entity explorer can function.
-- **Build architecture decision precedes everything**: The existing build is ~14 minutes for 106K pages. Adding ~100K entity/place pages could push this past 30+ minutes. The build architecture decision (separate builds merged before upload vs. incremental) must be resolved before any entity/place page generation begins.
-- **Sigma.js is isolated to the entity explorer**: It does not need to be loaded on any other page. Dynamic import or a separate JS bundle keeps it off the critical path for all other pages.
+- **Content adapters are the architectural keystone**: Every page type (description, entity, place) must be generated via content adapters before any other step can proceed. This is the highest-risk item to get right first.
+- **Build order is strict**: B2 download → Node.js enrichment → Hugo (generates HTML + `hugo_stats.json`) → Tailwind CSS compilation → Pagefind ×3 → R2 diff upload. Each step depends on the previous.
+- **Tailwind v4 standalone binary must be on PATH in CI**: Not available as an npm package without Node.js overhead. Must be installed as a binary in the CI workflow before the Hugo build step.
+- **Pagefind runs after Hugo, not during**: Hugo does not invoke Pagefind; they are separate processes. Pagefind processes the finished HTML output.
+- **Diff-based upload is independent of Hugo**: The upload script only cares about the final `public/` directory contents. It can be developed and tested independently of the Hugo migration.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v0.5.0)
+### Launch With (v0.6.0)
 
-- [ ] Pre-built description aggregates — unblocks all other features
-- [ ] Place detail pages with name, type, variants, authority links, admin context, linked description list — core discovery value
-- [ ] Entity detail pages with structured name, dates, function, note, linked description list — core discovery value
-- [ ] Place explorer with searchable index and heatmap map — spatial entry point
-- [ ] Entity explorer with searchable/filterable index — list-based entry point (graph is v0.5.x)
-- [ ] PMTiles on R2 — shared infrastructure for all map features
+- [ ] Content adapters for all three page types (descriptions, entities, places) — unblocks everything
+- [ ] Go template partials replicating all 15 Nunjucks filters — no regressions in rendered output
+- [ ] Tailwind v4 compilation wired through `css.TailwindCSS` with `hugo_stats.json` — CSS output preserved
+- [ ] Three Pagefind index builds in CI — existing search functionality retained
+- [ ] `data-pagefind-body` / `data-pagefind-ignore` attributes in all Hugo layout templates — index quality preserved
+- [ ] Diff-based R2 upload replacing full sync — deploy time reduced from ~10 minutes to under 2 minutes on typical content updates
 
-### Add After Validation (v0.5.x)
+### Add After Validation (v0.6.x)
 
-- [ ] Entity network graph on entity explorer — add once entity pages are live and the graph build pipeline is proven; graph data may reveal unexpected density/sparsity requiring threshold tuning
-- [ ] Repository breakdown on entity and place pages — adds analytical depth; depends on aggregates being correct first
-- [ ] Colonial division facet on place explorer — depends on data quality audit of `colonial_divisions` field
-- [ ] Top co-occurring entities on entity detail page — lightweight once graph edges are pre-computed
+- [ ] Template metrics profiling pass (`--templateMetrics`) — identify and cache hot partials once migration is stable
+- [ ] Dry-run deploy mode — validate diff logic against production bucket before relying on it
 
-### Future Consideration (v0.6+)
+### Future Consideration
 
-- [ ] Build-time Wikidata enrichment baked into entity/place pages — requires data model changes to add QIDs to entities; good candidate for a dedicated enrichment sprint
-- [ ] SNAC/VIAF authority links on entity pages — requires identifier matching pipeline
-- [ ] Dot/cluster toggle on place explorer map — quality-of-life improvement after map basics are solid
+- [ ] Multisite Pagefind index merging — if cross-content-type unified search becomes a requirement
+- [ ] Hugo's native `hugo deploy` with R2 support — if Cloudflare officially documents R2 endpoint configuration
 
 ---
 
@@ -235,78 +215,39 @@ Pagefind search index
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| Pre-built description aggregates | HIGH | MEDIUM | P1 |
-| Build architecture decision + spike | HIGH (unblocks everything) | MEDIUM | P1 |
-| Place detail pages | HIGH | MEDIUM | P1 |
-| Entity detail pages | HIGH | MEDIUM | P1 |
-| PMTiles on R2 | HIGH (unblocks maps) | MEDIUM | P1 |
-| Place explorer (list + map) | HIGH | HIGH | P1 |
-| Entity explorer (list only) | HIGH | MEDIUM | P1 |
-| Heatmap on place explorer | MEDIUM | MEDIUM | P2 |
-| Entity network graph | HIGH | HIGH | P2 |
-| Pre-computed graph layout | HIGH (unblocks graph) | MEDIUM | P2 |
-| Repository breakdown on detail pages | MEDIUM | LOW | P2 |
-| Colonial division facet on place explorer | MEDIUM | LOW | P2 |
-| Top co-occurring entities on entity detail | MEDIUM | MEDIUM | P2 |
-| Wikidata enrichment at build time | MEDIUM | HIGH | P3 |
-| SNAC/VIAF authority links | MEDIUM | HIGH | P3 |
-| Time slider on place explorer | LOW | HIGH | P3 |
+| Content adapters (all 3 page types) | HIGH — builds the site | HIGH | P1 |
+| Go template partials (filter equivalents) | HIGH — output parity | MEDIUM | P1 |
+| Tailwind v4 CSS compilation | HIGH — visual parity | LOW | P1 |
+| Pagefind index ×3 in CI | HIGH — search retained | LOW | P1 |
+| `data-pagefind-body` in Hugo layouts | HIGH — search quality | LOW | P1 |
+| Diff-based R2 upload | HIGH — CI sustainability | MEDIUM | P1 |
+| `partialCached` optimisation | MEDIUM — build speed | LOW | P2 |
+| Template metrics profiling pass | MEDIUM — ongoing health | LOW | P2 |
+| Dry-run deploy mode | MEDIUM — operational safety | LOW | P2 |
+| Multisite Pagefind merging | LOW — not currently needed | MEDIUM | P3 |
 
 **Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
+- P1: Must have for v0.6.0 launch
+- P2: Should have, add once P1 items are stable
 - P3: Nice to have, future consideration
-
----
-
-## DH Project Feature Analysis
-
-| Feature | Peripleo / Pelagios | Nodegoat | DIMES (RAC) | HGIS de las Indias | WHG v3 | Zasqua Approach |
-|---------|---------------------|----------|-------------|-------------------|--------|-----------------|
-| Map-first discovery | Yes — map is primary interface | Yes — map + graph combined | No — list-first | Yes — interactive WebGIS with timeline | Yes — with time slider | Map as secondary to list; heatmap on explorer, small map on detail page |
-| Network graph | No | Yes — core feature | No | No | No | Yes — on entity explorer; ego-network on click |
-| Authority links on place pages | Yes — Pelagios URIs are the backbone | Via linked data | No | HGIS is itself an authority | Yes — WHG indexes other authorities | Yes — Wikidata, WHG, HGIS links from existing data |
-| Time slider | Yes (Peripleo) | Yes | No | Yes | Yes (v3) | Deferred — data precision insufficient |
-| Faceted filtering | Yes — time, dataset, type | Yes | Yes | Limited | Limited | Yes — type, admin level, authority presence |
-| Linked descriptions on place/entity pages | Yes (items per place) | Yes | Yes | No | Via linked datasets | Yes — core feature |
-| Pre-computed / static delivery | No — runtime API | No — dynamic database | No — ArchivesSpace backend | No — ArcGIS platform | No — Django backend | Yes — fully static; differentiator vs all above |
-| Colonial/Latin American context | HGIS de las Indias as partner | No | No | Core focus | Partial | Yes — colonial divisions, HGIS links |
-
-### What DH Projects Do Well
-
-- **Peripleo**: Geographic browsing as the primary entry point is powerful for heterogeneous collections. The combination of keyword + spatial + temporal filtering is the gold standard for spatio-temporal discovery.
-- **Nodegoat**: Combining map, timeline, and network graph in a single interface demonstrates that researchers use all three simultaneously. Its ego-network expansion pattern (click a node, see its immediate neighbourhood) is the correct UX for large graphs.
-- **DIMES/RAC**: Agent pages with Wikidata enrichment significantly improve researcher engagement even with minimal text. The bidirectional linking (agent ↔ collection) is a table-stakes pattern confirmed by user testing.
-- **WHG**: The principle that no place record is singular — concatenating all linked attestations — models how place data should be presented when multiple authority sources exist.
-
-### Where DH Projects Fail
-
-- **Performance on large datasets**: Almost all DH tools require a runtime server. Static delivery at scale is a genuine gap and a Zasqua differentiator.
-- **Uncertainty representation**: Network graphs rarely communicate that relationships are inferred from co-occurrence, not documented facts. Zasqua should be explicit: "these entities appear in the same documents" not "these entities are connected."
-- **Graph overload**: Most tools that add a network graph render too many nodes by default and offer no path in for new users. Threshold filtering and ego-network expansion on click are the correct mitigations.
-- **Time sliders over sparse data**: HGIS de las Indias and WHG v3 both offer timeline animation. For colonial archives with decade-level date precision, this creates false precision. Better to show date coverage as text.
-- **Mobile maps**: Most DH map interfaces are desktop-only. PMTiles + MapLibre works on mobile; the map UI should be designed for thumb use from the start.
 
 ---
 
 ## Sources
 
-- Peripleo features: [Peripleo README](https://github.com/pelagios/peripleo/blob/main/README.md); [Code4Lib article on Peripleo](https://journal.code4lib.org/articles/11144); [Springer DH article on Peripleo principles](https://link.springer.com/article/10.1007/s42803-025-00112-w)
-- DIMES/RAC agent pages: [Rockarch blog: Agent pages enhanced](https://blog.rockarch.org/dimes-agent-pages-enhanced)
-- Network graph pitfalls: [Frontiers: Uncertainty in humanities network visualization](https://www.frontiersin.org/journals/communication/articles/10.3389/fcomm.2023.1305137/full); [Inria: Pitfalls in historical network modeling](https://inria.hal.science/hal-03784532v1); [DHQ: Ethical visualization of knowledge networks](https://www.digitalhumanities.org/dhq/vol/16/3/000629/000629.html)
-- Graph size usability: [ITAL: Knowledge graph visualization for digital heritage](https://ital.corejournals.org/index.php/ital/article/view/16719)
-- Sigma.js 3.0: [Ouestware: Sigma.js 3.0 announcement](https://www.ouestware.com/2024/03/21/sigma-js-3-0-en/); [Sigma.js GitHub](https://github.com/jacomyal/sigma.js/)
-- Nodegoat features: [Nodegoat](https://nodegoat.net/); [Digital Orientalist: Introduction to Nodegoat](https://digitalorientalist.com/2024/04/12/exploring-the-depths-of-data-an-introduction-to-nodegoat/)
-- WHG: [WHG v3 announcement](https://www.worldhistory.pitt.edu/news/version-3-world-historical-gazetteer-live); [WHG place records](https://whgazetteer.org/)
-- HGIS de las Indias: [Oxford Research Encyclopedia entry](https://oxfordre.com/latinamericanhistory/display/10.1093/acrefore/9780199366439.001.0001/acrefore-9780199366439-e-822); [HGIS Interactive](https://experience.arcgis.com/experience/e95574f1ad5048c5991ed150dfcc7593)
-- Layered archival description / linked data UX: [SAA Description blog](https://saadescription.wordpress.com/2026/03/24/six-degrees-of-separation-using-linked-data-to-create-layered-archival-description/)
-- MapLibre heatmap: [MapLibre heatmap example](https://maplibre.org/maplibre-gl-js/docs/examples/create-a-heatmap-layer/)
-- PMTiles: [Protomaps PMTiles for MapLibre](https://docs.protomaps.com/pmtiles/maplibre); [Simon Willison on PMTiles](https://til.simonwillison.net/gis/pmtiles)
-- Pagination vs infinite scroll: [LogRocket: Pagination vs infinite scroll](https://blog.logrocket.com/ux-design/pagination-vs-infinite-scroll-ux/)
-- Large graph rendering: [Medium: Best libraries for large force-directed graphs](https://weber-stephen.medium.com/the-best-libraries-and-methods-to-render-large-force-directed-graphs-on-the-web-d122ece2f4dc)
-- Wikidata authority integration: [Wikidata in Collections](https://medium.com/freely-sharing-the-sum-of-all-knowledge/wikidata-in-collections-building-a-universal-language-for-connecting-glam-catalogs-59b14aa3214c)
+- Hugo content adapters: [gohugo.io/content-management/content-adapters](https://gohugo.io/content-management/content-adapters/)
+- Content adapter performance benchmarks: [Hugo Discourse: Content adapters examples and performance](https://discourse.gohugo.io/t/content-adapters-examples-and-performance/49830)
+- Hugo data sources: [gohugo.io/content-management/data-sources](https://gohugo.io/content-management/data-sources/)
+- Hugo build performance: [gohugo.io/troubleshooting/performance](https://gohugo.io/troubleshooting/performance/)
+- Hugo partialCached: [gohugo.io/functions/partials/includecached](https://gohugo.io/functions/partials/includecached/)
+- Hugo Tailwind v4 integration: [gohugo.io/functions/css/tailwindcss](https://gohugo.io/functions/css/tailwindcss/)
+- Pagefind selective indexing: [pagefind.app/docs/indexing](https://pagefind.app/docs/indexing/)
+- Pagefind multisite merging: [pagefind.app/docs/multisite](https://pagefind.app/docs/multisite/)
+- Pagefind incremental indexing (maintainer position): [GitHub Pagefind discussion #831](https://github.com/Pagefind/pagefind/discussions/831)
+- s3deploy (ETag-based diff for Hugo sites): [github.com/bep/s3deploy](https://github.com/bep/s3deploy)
+- Hugo deploy (native, S3 only): [gohugo.io/host-and-deploy/deploy-with-hugo-deploy](https://gohugo.io/host-and-deploy/deploy-with-hugo-deploy/)
 
 ---
 
-*Feature research for: spatial discovery and entity network exploration, static archival site*
-*Researched: 2026-03-26*
+*Feature research for: Hugo migration and build pipeline sustainability, 192K-page static archival site*
+*Researched: 2026-04-16*
