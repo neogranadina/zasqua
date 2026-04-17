@@ -16,14 +16,14 @@
   Every other byte — Google Fonts <link>s, favicon, Cloudflare beacon,
   body classes, <script src="/js/header.js"> — preserved verbatim.
 
-  Version: v1.0.0
+  Version: v1.0.1
 */}}
 <!DOCTYPE html>
 <html lang="{{ site.Language.Lang }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ if .Title }}{{ .Title }} | {{ end }}{{ site.Title }}</title>
+  <title>{{ block "title" . }}{{ if .Title }}{{ .Title }} | {{ end }}{{ site.Title }}{{ end }}</title>
   <meta name="description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ site.Params.description }}{{ end }}">
   <link rel="icon" type="image/png" href="/img/favicon.png">
 
@@ -57,4 +57,4 @@
   <!-- End Cloudflare Web Analytics -->
 </body>
 </html>
-{{/* Version: v1.0.0 */}}
+{{/* Version: v1.0.1 */}}
