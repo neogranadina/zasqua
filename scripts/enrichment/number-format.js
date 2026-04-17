@@ -16,7 +16,11 @@
  * Version: v1.0.0
  */
 
-export function numberFormat(num) {
+'use strict';
+
+function numberFormat(num) {
   if (num === null || num === undefined) return '0';
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
+
+module.exports = { numberFormat };

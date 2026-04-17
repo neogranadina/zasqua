@@ -1,6 +1,9 @@
 _site/
+public/
 node_modules/
 exports/
+assets/hugo-data/*.json
+assets/hugo-data/descriptions/
 src/_data/export/
 .DS_Store
 *.log

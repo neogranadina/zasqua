@@ -10,12 +10,14 @@
  * ships with a prebuilt `ancestor_chain: Array<{reference_code, title,
  * description_level}>` in the enriched JSON.
  *
- * This test is RED until Plan 13-02 Task 2 writes
- * `assets/hugo-data/descriptions.json`. Once the file exists, the test
- * asserts (1) every record has an `ancestor_chain` array and (2) on a
- * sample of 10 records, walking `parent_reference_code` up the index
- * reconstructs the same chain — catching any enrichment bug that would
- * skip ancestors or invent fake ones.
+ * Enriched descriptions are sharded by repository_code so no single
+ * file exceeds V8's 512 MiB max-string limit. This test loads every
+ * shard, asserts the array-of-link-records shape on every record, and
+ * then verifies on 10 sampled records that walking
+ * `parent_reference_code` across the combined shards reconstructs the
+ * exact chain. Since Phase 13 does not model cross-repository parent
+ * links, the walk happens within a single shard at a time — which
+ * matches how Hugo will resolve breadcrumbs at render time.
  *
  * Version: v1.0.0
  */
@@ -24,46 +26,64 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ENRICHED = path.resolve(process.cwd(), 'assets/hugo-data/descriptions.json');
+const SHARDS_DIR = path.resolve(process.cwd(), 'assets/hugo-data/descriptions');
+
+function loadAllShards() {
+  const shards = {};
+  for (const file of fs.readdirSync(SHARDS_DIR)) {
+    if (!file.endsWith('.json')) continue;
+    const code = file.replace(/\.json$/, '');
+    shards[code] = JSON.parse(fs.readFileSync(path.join(SHARDS_DIR, file), 'utf8'));
+  }
+  return shards;
+}
 
 describe('ancestor_chain invariant (I2)', () => {
-  it('enriched descriptions file exists', () => {
-    expect(fs.existsSync(ENRICHED)).toBe(true);
+  it('descriptions shard directory exists', () => {
+    expect(fs.existsSync(SHARDS_DIR)).toBe(true);
   });
 
-  it('every record carries an ancestor_chain array of {reference_code, title, description_level}', () => {
-    const descs = JSON.parse(fs.readFileSync(ENRICHED, 'utf8'));
-    expect(descs.length).toBeGreaterThan(0);
-    for (const d of descs) {
-      expect(Array.isArray(d.ancestor_chain)).toBe(true);
-      for (const link of d.ancestor_chain) {
-        expect(typeof link.reference_code).toBe('string');
-        expect(typeof link.title).toBe('string');
-        expect(typeof link.description_level).toBe('string');
+  it('every record across every shard carries an ancestor_chain array of {reference_code, title, description_level}', () => {
+    const shards = loadAllShards();
+    let totalChecked = 0;
+    for (const records of Object.values(shards)) {
+      for (const d of records) {
+        expect(Array.isArray(d.ancestor_chain)).toBe(true);
+        for (const link of d.ancestor_chain) {
+          expect(typeof link.reference_code).toBe('string');
+          expect(typeof link.title).toBe('string');
+          expect(typeof link.description_level).toBe('string');
+        }
+        totalChecked++;
       }
     }
+    expect(totalChecked).toBeGreaterThan(0);
   });
 
-  it('ancestor_chain matches a fresh walk via parent_reference_code for 10 random samples', () => {
-    const descs = JSON.parse(fs.readFileSync(ENRICHED, 'utf8'));
-    const byCode = new Map(descs.map(d => [d.reference_code, d]));
-    const sample = [];
-    const step = Math.max(1, Math.floor(descs.length / 10));
-    for (let i = 0; i < descs.length && sample.length < 10; i += step) {
-      if (descs[i].parent_reference_code) sample.push(descs[i]);
-    }
-    for (const d of sample) {
-      const walked = [];
-      let cursor = byCode.get(d.parent_reference_code);
-      while (cursor) {
-        walked.unshift({
-          reference_code: cursor.reference_code,
-          title: cursor.title,
-          description_level: cursor.description_level,
-        });
-        cursor = cursor.parent_reference_code ? byCode.get(cursor.parent_reference_code) : null;
+  it('ancestor_chain matches a fresh walk via parent_reference_code for 10 sampled records per shard', () => {
+    const shards = loadAllShards();
+    for (const [shardCode, records] of Object.entries(shards)) {
+      const byCode = new Map(records.map(d => [d.reference_code, d]));
+      const sample = [];
+      const step = Math.max(1, Math.floor(records.length / 10));
+      for (let i = 0; i < records.length && sample.length < 10; i += step) {
+        if (records[i].parent_reference_code && byCode.has(records[i].parent_reference_code)) {
+          sample.push(records[i]);
+        }
       }
-      expect(d.ancestor_chain).toEqual(walked);
+      for (const d of sample) {
+        const walked = [];
+        let cursor = byCode.get(d.parent_reference_code);
+        while (cursor) {
+          walked.unshift({
+            reference_code: cursor.reference_code,
+            title: cursor.title,
+            description_level: cursor.description_level,
+          });
+          cursor = cursor.parent_reference_code ? byCode.get(cursor.parent_reference_code) : null;
+        }
+        expect(d.ancestor_chain, `shard ${shardCode}, record ${d.reference_code}`).toEqual(walked);
+      }
     }
   });
 });

@@ -10,9 +10,12 @@
  * `role_label`; every `place_links[*]` must include `place_code` and
  * `display_name`.
  *
- * RED until Plan 13-02 Task 2 writes `assets/hugo-data/descriptions.json`.
- * The test only asserts the shape — downstream tests verify record
- * counts and end-to-end URL resolution.
+ * Descriptions are sharded by repository_code — the test walks every
+ * shard and asserts link shape on every record that carries links. It
+ * additionally requires at least one non-empty `entity_links` and one
+ * non-empty `place_links` somewhere in the corpus, which catches a
+ * pipeline that silently produced empty arrays everywhere. Individual
+ * records without links (legitimately) pass through unremarked.
  *
  * Version: v1.0.0
  */
@@ -21,15 +24,25 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ENRICHED = path.resolve(process.cwd(), 'assets/hugo-data/descriptions.json');
+const SHARDS_DIR = path.resolve(process.cwd(), 'assets/hugo-data/descriptions');
+
+function iterAllRecords() {
+  const out = [];
+  for (const file of fs.readdirSync(SHARDS_DIR)) {
+    if (!file.endsWith('.json')) continue;
+    const records = JSON.parse(fs.readFileSync(path.join(SHARDS_DIR, file), 'utf8'));
+    out.push(...records);
+  }
+  return out;
+}
 
 describe('link enrichment invariant (I2)', () => {
-  it('enriched descriptions file exists', () => {
-    expect(fs.existsSync(ENRICHED)).toBe(true);
+  it('descriptions shard directory exists', () => {
+    expect(fs.existsSync(SHARDS_DIR)).toBe(true);
   });
 
   it('every entity_links[*] carries entity_code, display_name, role_label', () => {
-    const descs = JSON.parse(fs.readFileSync(ENRICHED, 'utf8'));
+    const descs = iterAllRecords();
     let checked = 0;
     for (const d of descs) {
       const links = d.entity_links || [];
@@ -44,7 +57,7 @@ describe('link enrichment invariant (I2)', () => {
   });
 
   it('every place_links[*] carries place_code, display_name', () => {
-    const descs = JSON.parse(fs.readFileSync(ENRICHED, 'utf8'));
+    const descs = iterAllRecords();
     let checked = 0;
     for (const d of descs) {
       const links = d.place_links || [];

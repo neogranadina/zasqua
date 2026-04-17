@@ -25,12 +25,14 @@
  * Version: v1.0.0
  */
 
-export const SPANISH_MONTHS = [
+'use strict';
+
+const SPANISH_MONTHS = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
 ];
 
-export function formatDateNarrative(dateStr) {
+function formatDateNarrative(dateStr) {
   if (!dateStr) return '';
 
   if (dateStr.indexOf(' .. ') !== -1) {
@@ -53,3 +55,5 @@ export function formatDateNarrative(dateStr) {
 
   return dateStr;
 }
+
+module.exports = { SPANISH_MONTHS, formatDateNarrative };
