@@ -1,16 +1,25 @@
 #!/bin/bash
-set -e
-
-# Zasqua frontend local build script.
-# CI builds run in GitHub Actions — see .github/workflows/deploy.yml.
-# This script is a convenience for running the full pipeline locally.
+# Zasqua Frontend Local Build Script
 #
-# Downloads exported data from B2, builds the site with Eleventy,
-# then indexes with Pagefind.
+# Runs the end-to-end pipeline on a developer machine the way CI would: it
+# pulls the current data exports from Backblaze B2 (a low-cost object store),
+# runs the link-precomputation step, builds the Eleventy site, and then
+# indexes it three times with Pagefind (one index per discovery surface:
+# descriptions, entity explorer, place explorer). GitHub Actions runs the
+# same pipeline in CI — see `.github/workflows/deploy.yml` — so this script
+# is meant for local iteration, not production.
+#
+# Pipeline context: writes all downloaded and derived data under `exports/`
+# (renamed from `data/` in Phase 13 so Hugo's default `data/` directory can
+# host small UI strings without colliding with the 900 MB archive export).
+# The Eleventy output lands in `_site/`; Plan 05 rewires this to Hugo.
 #
 # Required environment variables:
 #   B2_APPLICATION_KEY_ID  — read-only key ID for zasqua-export bucket
 #   B2_APPLICATION_KEY     — read-only application key
+#
+# Version: v1.0.0
+set -e
 
 # Increase Node heap for large Eleventy builds (free tier has 8 GB)
 export NODE_OPTIONS="--max-old-space-size=7168"
@@ -22,28 +31,28 @@ echo "=== Authenticating with B2 ==="
 b2 account authorize "$B2_APPLICATION_KEY_ID" "$B2_APPLICATION_KEY"
 
 echo "=== Downloading export data ==="
-mkdir -p data/children data/entity-links data/place-links
+mkdir -p exports/children exports/entity-links exports/place-links
 
-b2 file download b2://zasqua-export/descriptions.json data/descriptions.json
-b2 file download b2://zasqua-export/repositories.json data/repositories.json
-b2 sync b2://zasqua-export/children/ data/children/
+b2 file download b2://zasqua-export/descriptions.json exports/descriptions.json
+b2 file download b2://zasqua-export/repositories.json exports/repositories.json
+b2 sync b2://zasqua-export/children/ exports/children/
 
 echo "=== Data downloaded ==="
-ls -lh data/descriptions.json data/repositories.json
-echo "Children files: $(ls data/children/ | wc -l)"
+ls -lh exports/descriptions.json exports/repositories.json
+echo "Children files: $(ls exports/children/ | wc -l)"
 
 echo "=== Downloading entity and place data ==="
-b2 file download b2://zasqua-export/entities.json data/entities.json
-b2 file download b2://zasqua-export/places.json data/places.json
-b2 file download b2://zasqua-export/entity_links.json data/entity_links.json
-b2 file download b2://zasqua-export/place_links.json data/place_links.json
-ls -lh data/entities.json data/places.json data/entity_links.json data/place_links.json
+b2 file download b2://zasqua-export/entities.json exports/entities.json
+b2 file download b2://zasqua-export/places.json exports/places.json
+b2 file download b2://zasqua-export/entity_links.json exports/entity_links.json
+b2 file download b2://zasqua-export/place_links.json exports/place_links.json
+ls -lh exports/entities.json exports/places.json exports/entity_links.json exports/place_links.json
 
 echo "=== Pre-computing entity/place link shards and index files ==="
 node scripts/precompute-links.js
-echo "Entity shards: $(ls data/entity-links/ | wc -l)"
-echo "Place shards: $(ls data/place-links/ | wc -l)"
-ls -lh data/entity-index.json data/place-index.json
+echo "Entity shards: $(ls exports/entity-links/ | wc -l)"
+echo "Place shards: $(ls exports/place-links/ | wc -l)"
+ls -lh exports/entity-index.json exports/place-index.json
 
 echo "=== Installing npm dependencies ==="
 npm ci

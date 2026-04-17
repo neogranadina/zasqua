@@ -1,9 +1,33 @@
 'use strict';
 
+/**
+ * Convert Places JSON to GeoJSON
+ *
+ * Historical places in the Zasqua corpus are stored as plain JSON records
+ * with latitude/longitude fields. Map tooling — MapLibre in the browser and
+ * PMTiles on the CDN — speaks GeoJSON, which packages each place as a
+ * "feature" with a geometry and a properties bag. This tiny script bridges
+ * the two by turning `exports/places.json` into `exports/places.geojson`.
+ *
+ * Pipeline context: runs inside `build.sh` alongside `precompute-links.js`,
+ * after the B2 download stage. The emitted GeoJSON feeds the PMTiles tile
+ * pipeline used by the place explorer map.
+ *
+ * Implementation notes: GeoJSON's coordinate order is [longitude, latitude],
+ * the opposite of how humans usually write them — the spot-check log at the
+ * end flags this explicitly so a reviewer notices if the export ever ships
+ * swapped coordinates. Places without coordinates are skipped, not invented.
+ *
+ * Env flags:
+ *   DATA_DIR — override the default exports directory
+ *
+ * Version: v1.0.0
+ */
+
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'exports');
 
 function main() {
   const placesPath = path.join(DATA_DIR, 'places.json');

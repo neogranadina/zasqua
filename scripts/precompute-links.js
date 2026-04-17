@@ -1,9 +1,40 @@
 'use strict';
 
+/**
+ * Precompute Entity and Place Link Shards
+ *
+ * Zasqua's archival records link to historical entities (people, organisations)
+ * and places. Those links are stored in large JSON files as flat lists, but at
+ * page-render time the site needs a fast reverse index: "given an entity code,
+ * which descriptions link to it?" and "given a description reference, which
+ * entities and places are mentioned, with what roles?". This script produces
+ * those reverse indexes and writes per-code shards to disk so the Eleventy
+ * build (later Hugo build) can pick them up without re-deriving on each run.
+ *
+ * Pipeline context: runs after the B2 download stage of `build.sh` and before
+ * the static-site build. Reads the canonical exports under `exports/` and
+ * writes per-entity/per-place shards plus enriched lookup files back into
+ * `exports/` — never into Hugo's `data/` directory, which is reserved for
+ * small UI strings (see Phase 13 Pitfall 1 in RESEARCH.md).
+ *
+ * Reads:
+ *   exports/{entities,places,entity_links,place_links}.json
+ * Writes:
+ *   exports/entity-links/{code}.json, exports/place-links/{code}.json
+ *   exports/{entity-index,place-index,desc-entity-lookup,desc-place-lookup}.json
+ *
+ * Env flags:
+ *   DATA_DIR   — override the default exports directory (absolute or relative path)
+ *   DEV_MODE   — "true" to limit output to DEV_LIMIT shards per type (faster local iteration)
+ *   DEV_LIMIT  — integer shard cap when DEV_MODE is enabled (default 500)
+ *
+ * Version: v1.0.0
+ */
+
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'exports');
 const DEV_MODE = process.env.DEV_MODE === 'true';
 const DEV_LIMIT = parseInt(process.env.DEV_LIMIT || '500', 10);
 
