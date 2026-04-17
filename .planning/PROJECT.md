@@ -34,10 +34,10 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ### Validated
 
-- Place detail pages (`/lugar/{name}/`) with authority links, coordinates, embedded map, linked descriptions — v0.5.0
-- Entity detail pages (`/entidad/{code}/`) with structured name, dates, function, linked descriptions — v0.5.0
-- Place explorer (`/explorar/lugares/`) with search, faceted filtering, clustered marker map — v0.5.0
-- Entity explorer (`/explorar/entidades/`) with infinite bipartite graph, search, faceted filtering — v0.5.0
+- Place detail pages (`/{place_code}/`, e.g. `/nl-xxxxxx/`) with authority links, coordinates, embedded map, linked descriptions — v0.5.0
+- Entity detail pages (`/{entity_code}/`, e.g. `/ne-xxxxxx/`) with structured name, dates, function, linked descriptions — v0.5.0
+- Place explorer (`/lugares/`) with search, faceted filtering, clustered marker map — v0.5.0
+- Entity explorer (`/entidades/`) with infinite bipartite graph, search, faceted filtering — v0.5.0
 - Description-to-entity/place linking on description pages — v0.5.0
 - Pre-built description aggregates for entities and places (build-time, no runtime API) — v0.5.0
 - PMTiles on R2 for serverless maps (MapLibre GL JS) — v0.5.0

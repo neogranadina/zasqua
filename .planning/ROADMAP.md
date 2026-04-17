@@ -43,7 +43,7 @@ Phases 4–12 are documented in the v0.5.0 roadmap. All complete. The last phase
   2. A description detail page shows all ISAD(G) sections, linked entity and place names with role labels, correct Spanish dates, the IIIF viewer embed, Miller columns, and breadcrumb navigation — verified on a spot-checked sample from each of the five repositories
   3. Entity and place detail pages render correctly: entity shows timeline/graph views, role filter pills, and bipartite graph initialisation; place shows the authority links section, embedded map, and description list
   4. All 15 Nunjucks filters are replaced — either as returning partials in `layouts/partials/filters/` or as pre-computed fields in the enrichment JSON — no Nunjucks-only logic remains
-  5. A full build (`hugo --minify`) on production-scale data completes without error and all existing published URLs (`/descripcion/`, `/entidad/`, `/lugar/`, `/explorar/`, `/buscar/`, `/repositorio/`) resolve to pages in the Hugo build output — no redirects needed
+  5. A full build (`hugo --minify`) on production-scale data completes without error and all existing published URLs resolve to pages in the Hugo build output — descriptions at `/{reference_code}/`, entities at `/{entity_code}/` (e.g. `/ne-xxxxxx/`), places at `/{place_code}/` (e.g. `/nl-xxxxxx/`), repositories at `/{repo_code}/`, explorers at `/entidades/` and `/lugares/`, search at `/buscar/` — no redirects needed
 **Plans**: TBD
 **UI hint**: yes
 

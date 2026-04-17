@@ -52,7 +52,7 @@ Requirements for the Build Pipeline Sustainability milestone. Each maps to roadm
 
 ### Place Detail Pages
 
-- [x] **PLACE-01**: User can view a place detail page at `/lugar/{display_name}/` showing display name and place type label in Spanish
+- [x] **PLACE-01**: User can view a place detail page at `/{place_code}/` (e.g. `/nl-xxxxxx/`) showing display name and place type label in Spanish
 - [x] **PLACE-02**: Place detail page shows name variants when available
 - [x] **PLACE-03**: Place detail page shows an embedded interactive map (MapLibre + PMTiles) for places with coordinates
 - [x] **PLACE-04**: Place detail page shows clickable authority links (Wikidata, WHG) and HGIS identifier, only for those that exist
@@ -60,7 +60,7 @@ Requirements for the Build Pipeline Sustainability milestone. Each maps to roadm
 
 ### Entity Detail Pages
 
-- [x] **ENT-01**: User can view an entity detail page at `/entidad/{entity_code}/` showing display name and entity type in Spanish
+- [x] **ENT-01**: User can view an entity detail page at `/{entity_code}/` (e.g. `/ne-xxxxxx/`) showing display name and entity type in Spanish
 - [x] **ENT-02**: Entity detail page shows structured name (given name, surname, honorific), date range, and primary function
 - [x] **ENT-03**: Entity detail page shows name variants when available
 - [x] **ENT-04**: Entity detail page shows dates of existence and history when available
@@ -68,14 +68,14 @@ Requirements for the Build Pipeline Sustainability milestone. Each maps to roadm
 
 ### Place Explorer
 
-- [x] **PEXP-01**: User can search places by name on `/explorar/lugares/`
+- [x] **PEXP-01**: User can search places by name on `/lugares/`
 - [x] **PEXP-02**: User can filter places by facets (place type, has coordinates, has authority links)
 - [x] **PEXP-03**: Place explorer renders filtered results as a heatmap on an interactive map (MapLibre + PMTiles)
 - [x] **PEXP-04**: Place explorer shows a results list alongside the map
 
 ### Entity Explorer
 
-- [x] **EEXP-01**: User can search entities by name on `/explorar/entidades/`
+- [x] **EEXP-01**: User can search entities by name on `/entidades/`
 - [x] **EEXP-02**: User can filter entities by facets (entity type, primary function, date range)
 - [x] **EEXP-03**: Entity explorer shows a paginated/virtual results list (never renders all 92K to DOM)
 
