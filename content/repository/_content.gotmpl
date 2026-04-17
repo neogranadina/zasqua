@@ -1,0 +1,65 @@
+{{/*
+  Zasqua repository content adapter
+
+  Runs during Hugo's content-loading phase, reads
+  assets/hugo-data/repositories.json (copied verbatim from
+  exports/repositories.json by scripts/generate-content.js), and calls
+  AddPage once per repository record so Hugo registers every
+  repository landing as a routable page.
+
+  URL scheme: /{code}/ per D-18 (flat short-codes). This override is
+  applied via the `url` field on the page dict — the same technique
+  Plan 13-03's descripcion/entidad/lugar adapters use to override the
+  /repository/ section prefix.
+
+  Data shape (per record in repositories.json): code, name,
+  description_count, country_code, country, city, root_descriptions
+  (array of fonds-level description stubs).
+
+  Layout resolution: Hugo uses layouts/repository/single.html because
+  the page's internal kind is "page" and its section is "repository".
+
+  Notes:
+  - The page dict does NOT set "title" — Eleventy's src/repository.njk
+    has no title front-matter, so its <title> falls back to site.title
+    ("Zasqua"). Leaving Hugo .Title empty preserves that behaviour.
+
+  Version: v1.0.0
+*/}}
+
+{{ $data := slice }}
+{{ with resources.Get "hugo-data/repositories.json" }}
+  {{ with try (. | transform.Unmarshal) }}
+    {{ with .Err }}
+      {{ errorf "[repository adapter] Unable to parse repositories.json: %s" . }}
+    {{ else }}
+      {{ $data = .Value }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ if not $data }}
+  {{ errorf "[repository adapter] No repository data found at assets/hugo-data/repositories.json — has scripts/generate-content.js run yet?" }}
+{{ end }}
+
+{{ range $data }}
+  {{ $params := dict
+      "code" .code
+      "name" .name
+      "description_count" .description_count
+      "country" .country
+      "country_code" .country_code
+      "city" .city
+      "root_descriptions" .root_descriptions
+  }}
+  {{ $page := dict
+      "kind" "page"
+      "path" .code
+      "params" $params
+      "content" (dict "mediaType" "text/html" "value" "")
+  }}
+  {{/* D-18: flat-code URL override */}}
+  {{ $page = merge $page (dict "url" (printf "/%s/" .code)) }}
+  {{ $.AddPage $page }}
+{{ end }}
+{{/* Version: v1.0.0 */}}
