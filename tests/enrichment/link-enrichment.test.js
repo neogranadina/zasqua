@@ -53,7 +53,12 @@ describe('link enrichment invariant (I2)', () => {
         checked++;
       }
     }
-    expect(checked).toBeGreaterThan(0);
+    // The corpus-wide "at least one" invariant only makes sense on the
+    // full dataset — DEV_LIMIT slices can legitimately pick records with
+    // no entity_links.
+    if (!process.env.DEV_LIMIT) {
+      expect(checked).toBeGreaterThan(0);
+    }
   });
 
   it('every place_links[*] carries place_code, display_name', () => {
@@ -67,6 +72,8 @@ describe('link enrichment invariant (I2)', () => {
         checked++;
       }
     }
-    expect(checked).toBeGreaterThan(0);
+    if (!process.env.DEV_LIMIT) {
+      expect(checked).toBeGreaterThan(0);
+    }
   });
 });

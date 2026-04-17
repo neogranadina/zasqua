@@ -30,13 +30,17 @@
  *   place-links/{code}.json  (same for places)
  *
  * Outputs (under assets/hugo-data/):
- *   descriptions/{repository_code}.json — enriched records for one
- *                        repository; every record carries ancestor_chain,
- *                        date_formatted, repository (inline), entity_links,
- *                        place_links, plus pass-through ISAD(G) fields.
- *                        Sharded by repository so no single file exceeds
- *                        V8's 512 MiB max-string limit on the full corpus.
- *   descriptions-index.json — { reference_code: repository_code } lookup
+ *   descriptions/NNN.json — enriched records for one fixed-size shard
+ *                        (SHARD_SIZE = 20,000); every record carries
+ *                        ancestor_chain, date_formatted, repository
+ *                        (inline), entity_links, place_links, plus
+ *                        pass-through ISAD(G) fields. Fixed record-count
+ *                        sharding is universal — any corpus, any repo
+ *                        distribution, always under V8's 512 MiB max-
+ *                        string limit. Records are sorted by
+ *                        (repository_code, reference_code) before
+ *                        sharding so shards remain locally browsable.
+ *   descriptions-index.json — { reference_code: shard_filename } lookup
  *                        so templates and tests can locate any record's
  *                        shard in O(1).
  *   entities.json     — display_name, date_formatted range, _linked_count,
@@ -174,32 +178,46 @@ async function main() {
 
   const descStart = Date.now();
   const enrichedDescs = enrichDescriptions(descSlice, byRefCode, reposByCode, descEntityLookup, descPlaceLookup, rolesMap);
-  // Shard by repository_code. One unified descriptions.json at the full
-  // 106,529-record scale would weigh ~610 MB, which is over V8's 512 MiB
-  // max string length — so neither Node nor vitest can JSON.parse it. The
-  // source data already carves cleanly by repository; five shards stay
-  // well under the limit. A companion index maps reference_code to
-  // repository_code so Plan 13-03's Hugo adapter can look up any record
-  // without loading all shards at once.
+  // Shard by a fixed record count. One unified descriptions.json at the
+  // full scale would weigh ~610 MB — over V8's 512 MiB max-string limit,
+  // which means no Node consumer could JSON.parse it. Sharding by
+  // `repository_code` happens to work on the current corpus (biggest
+  // repo 302 MB) but is data-dependent and fragile: a future lopsided
+  // ingest could produce a single 650 MB repo and re-break everything.
+  //
+  // A fixed record-count shard is universal — it's bounded by design
+  // regardless of how records are distributed across repositories.
+  // SHARD_SIZE is chosen so the compressed-output size stays well
+  // under 512 MiB with comfortable headroom: at ~6 KB per enriched
+  // record, 20,000 records ≈ 120 MB. Records are sorted by
+  // `(repository_code, reference_code)` first so each shard is locally
+  // browsable (same-repo records cluster together) — the shard filename
+  // itself carries no semantic meaning.
+  //
+  // The companion descriptions-index.json maps every reference_code to
+  // its shard filename so Plan 13-03's Hugo adapter (or any consumer)
+  // can locate a record in O(1) without iterating shards.
+  const SHARD_SIZE = 20000;
   fs.mkdirSync(path.join(OUT_DIR, 'descriptions'), { recursive: true });
-  const byRepo = new Map();
-  for (const d of enrichedDescs) {
-    const code = d.repository_code || '_unknown';
-    if (!byRepo.has(code)) byRepo.set(code, []);
-    byRepo.get(code).push(d);
-  }
-  for (const [code, records] of byRepo) {
-    writeJSON(path.join('descriptions', `${code}.json`), records);
-  }
+  const sortedDescs = [...enrichedDescs].sort((a, b) => {
+    const ra = a.repository_code || '_unknown';
+    const rb = b.repository_code || '_unknown';
+    if (ra !== rb) return ra < rb ? -1 : 1;
+    return a.reference_code < b.reference_code ? -1 : a.reference_code > b.reference_code ? 1 : 0;
+  });
+  const shardCount = Math.max(1, Math.ceil(sortedDescs.length / SHARD_SIZE));
+  const padWidth = Math.max(3, String(shardCount - 1).length);
   const descIndex = {};
-  for (const d of enrichedDescs) {
-    descIndex[d.reference_code] = d.repository_code || '_unknown';
+  const shardSizes = [];
+  for (let i = 0; i < shardCount; i++) {
+    const chunk = sortedDescs.slice(i * SHARD_SIZE, (i + 1) * SHARD_SIZE);
+    const shardName = `${String(i).padStart(padWidth, '0')}.json`;
+    writeJSON(path.join('descriptions', shardName), chunk);
+    for (const d of chunk) descIndex[d.reference_code] = shardName;
+    shardSizes.push(`${shardName}=${numberFormat(chunk.length)}`);
   }
   writeJSON('descriptions-index.json', descIndex);
-  const shardBreakdown = [...byRepo.entries()]
-    .map(([code, recs]) => `${code}=${numberFormat(recs.length)}`)
-    .join(', ');
-  console.log(`[generate-content] descriptions: ${numberFormat(enrichedDescs.length)} enriched in ${((Date.now() - descStart) / 1000).toFixed(1)}s (shards: ${shardBreakdown})`);
+  console.log(`[generate-content] descriptions: ${numberFormat(enrichedDescs.length)} enriched in ${((Date.now() - descStart) / 1000).toFixed(1)}s (${shardCount} shard${shardCount === 1 ? '' : 's'} × ${numberFormat(SHARD_SIZE)}/shard: ${shardSizes.join(', ')})`);
 
   const entStart = Date.now();
   const entityCounts = loadLinkedCounts('entity-index.json', 'entity_code');
