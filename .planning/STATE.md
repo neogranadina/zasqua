@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0.0
 milestone_name: milestone
 status: executing
-stopped_at: "Plan 13-06 complete (404 + buscar templates); 6/15 plans done — Plan 13-07 next (home page)"
-last_updated: "2026-04-17T19:15:00.000Z"
-last_activity: 2026-04-17 -- Plan 13-06 complete (layouts/404.html + content/buscar/_index.md + layouts/buscar/list.html + baseof title-block patch; zero WARNs)
+stopped_at: "Plan 13-07 complete (home page); 7/15 plans done — Plan 13-08 next (repository detail)"
+last_updated: "2026-04-17T20:30:00.000Z"
+last_activity: 2026-04-17 -- Plan 13-07 complete (home page port with hero + intro + 5-card repo grid; count formatting matches Eleventy; A/B confirmed vs zasqua.org)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 15
-  completed_plans: 6
-  percent: 40
+  completed_plans: 7
+  percent: 47
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Current Position
 
 Phase: 13 (hugo-foundation + full template port) — EXECUTING
-Plan: 7 of 15 (Plan 13-06 just completed)
-Status: Executing Phase 13 — Plan 13-07 next (home page: hero + logo + search form + intro + repo grid)
-Last activity: 2026-04-17 -- Plan 13-06 complete (404 + buscar ported, baseof title block added; buscar chrome match vs zasqua.org; search.js runtime error expected until Phase 15 builds Pagefind indices)
+Plan: 8 of 15 (Plan 13-07 just completed)
+Status: Executing Phase 13 — Plan 13-08 next (repository detail pages at /{repo_code}/)
+Last activity: 2026-04-17 -- Plan 13-07 complete (layouts/index.html + generate-content.js repo copy; home renders identically to zasqua.org except one data-freshness count)
 
-Progress: ████░░░░░░ 40% (0/3 phases complete; 6/15 plans complete within reshaped Phase 13)
+Progress: ████░░░░░░ 47% (0/3 phases complete; 7/15 plans complete within reshaped Phase 13)
 
 ## Accumulated Context
 
@@ -74,5 +74,5 @@ v1.0.0 decisions:
 ## Session Continuity
 
 Last session: 2026-04-17
-Stopped at: Plan 13-06 complete (404 + buscar templates). 6/15 plans done within reshaped Phase 13. Hugo server running on port 1313. Plan 13-07 next (home page — the big visual win with hero + logo + search form + repo grid).
-Resume file: .planning/phases/13-hugo-foundation/13-06-SUMMARY.md (forward pointer at bottom names the repositories data-source decision Plan 13-07 needs to make)
+Stopped at: Plan 13-07 complete (home page). 7/15 plans done within reshaped Phase 13. Hugo server running on port 1313 with /, /buscar/, /404.html all matching zasqua.org. Plan 13-08 next (repository detail pages at /{repo_code}/).
+Resume file: .planning/phases/13-hugo-foundation/13-07-SUMMARY.md (forward pointer at bottom names the content-adapter pattern Plan 13-08 needs)
