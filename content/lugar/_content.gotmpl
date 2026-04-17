@@ -36,6 +36,7 @@
 
 {{ range $data }}
   {{ $params := dict
+      "id" .id
       "place_code" .place_code
       "label" .label
       "display_name" .display_name

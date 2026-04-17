@@ -46,6 +46,7 @@ title = "Zasqua"
 [params]
   description = "Zasqua es la plataforma de consulta de materiales de archivo, libros, revistas e instrumentos de consulta digitalizados y sistematizados por Neogranadina y sus aliados."
   version = "0.4.0"
+  protomaps_key = "264dbbf1fa6f497d"
 
 [build]
   writeStats = true
