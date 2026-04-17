@@ -56,7 +56,12 @@
  * Exits 0 on success, 1 on any IO error, 2 on an ancestor-chain cycle
  * (a backend data bug — fail loudly so it gets fixed upstream).
  *
- * Version: v1.0.0
+ * Side-step: copies repositories.json verbatim from exports/ to
+ * assets/hugo-data/ so the Hugo home-page template can load it via
+ * `resources.Get` and render description counts identical to what
+ * Eleventy emits.
+ *
+ * Version: v1.0.1
  */
 
 'use strict';
@@ -157,6 +162,18 @@ async function main() {
 
   console.log(`[generate-content] DATA_DIR=${DATA_DIR}`);
   if (DEV_LIMIT) console.log(`[generate-content] DEV_LIMIT=${DEV_LIMIT}`);
+
+  // Copy repositories.json verbatim to assets/hugo-data/ so the Hugo
+  // home-page template can load it via `resources.Get` and keep
+  // description counts identical to the Eleventy build's behaviour.
+  const repositoriesSrc = path.join(DATA_DIR, 'repositories.json');
+  const repositoriesDst = path.join(OUT_DIR, 'repositories.json');
+  if (fs.existsSync(repositoriesSrc)) {
+    fs.copyFileSync(repositoriesSrc, repositoriesDst);
+    console.log(`[generate-content] repositories.json copied (${fs.statSync(repositoriesDst).size.toLocaleString()} bytes)`);
+  } else {
+    console.warn(`[generate-content] WARN: ${repositoriesSrc} not found — home page repo grid will fail until this file exists`);
+  }
 
   const descriptions = readJSON('descriptions.json');
   const entities = readJSON('entities.json');
