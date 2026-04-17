@@ -29,7 +29,7 @@ Phases 4–12 are documented in the v0.5.0 roadmap. All complete. The last phase
 **Success Criteria** (what must be TRUE):
   1. Running `DEV_LIMIT=100 hugo --minify` locally produces HTML output for a capped subset of descriptions, entities, and places without error; content adapters (`_content.gotmpl`) in `content/descripcion/`, `content/entidad/`, and `content/lugar/` generate pages via `resources.Get` + `transform.Unmarshal` — no stub markdown files exist on disk
   2. `hugo.toml` uses `resources.Get` data loading and has `build.writeStats = true`; no large JSON is placed under the `data/` directory; Hugo Extended is confirmed in CI with `hugo version` output containing `+extended`
-  3. `generate-content.js` writes `assets/hugo-data/descriptions.json`, `entities.json`, and `places.json`; record counts match the source exports (spot-checked against known totals: ~106K descriptions, ~83K entities, ~7K places)
+  3. `generate-content.js` writes `assets/hugo-data/descriptions.json`, `entities.json`, and `places.json`; record counts match the source exports (verified 2026-04-16 against B2 export: 106,529 descriptions, 78,476 entities, 6,722 places)
   4. Every description record includes a pre-computed `ancestor_chain` array; every date field includes a pre-computed `date_formatted` string in Colombian Spanish narrative format; entity and place link records include pre-computed `display_name` and `role_label` strings — no formatting logic remains for Go templates to handle
   5. `DEV_LIMIT` mode truncates all three datasets so a local enrichment + build cycle completes in under 60 seconds
 **Plans**: TBD

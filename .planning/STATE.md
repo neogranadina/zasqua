@@ -1,9 +1,10 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0.0
-milestone_name: Build Pipeline Sustainability
-status: Roadmap defined
-last_updated: "2026-04-16"
+milestone_name: milestone
+status: Ready to begin Phase 13
+last_updated: "2026-04-17T04:49:19.083Z"
+last_activity: 2026-04-16 — Roadmap revised to 3 phases (13–15)
 progress:
   total_phases: 3
   completed_phases: 0
@@ -59,7 +60,7 @@ v1.0.0 decisions:
 
 ### Pending Todos
 
-- Entity data is stale (entities.json has 92K records; canonical count from zasqua-entities Phase 10 is 83K) — will be resolved upstream before or during Phase 13
+- B2 export counts verified 2026-04-16 against `data/*.json` (2026-04-15 export): 106,529 descriptions, 78,476 entities, 6,722 places — these are the canonical numbers for Phase 13 validation. Prior drafts cited 92K (stale entities.json) and 83K (zasqua-entities Phase 10 estimate); both are superseded.
 - v0.5.1 is blocked from deploying to zasqua.org by CI OOM — this milestone unblocks it
 
 ### Blockers/Concerns
