@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0.0
 milestone_name: milestone
 status: executing
-stopped_at: "Plan 13-04 complete (static asset relocation); 4/15 plans done in reshaped Phase 13 — Plan 13-05 next (base layout + global partials)"
-last_updated: "2026-04-17T17:05:00.000Z"
-last_activity: 2026-04-17 -- Plan 13-04 complete (28 static renames + CSS port to assets/css/main.css)
+stopped_at: "Plan 13-05 complete (base layout + global partials); 5/15 plans done in reshaped Phase 13 — Plan 13-06 next (404 + buscar pages)"
+last_updated: "2026-04-17T17:45:00.000Z"
+last_activity: 2026-04-17 -- Plan 13-05 complete (baseof + header + footer + breadcrumb + css.html + 2 bridge stubs; zero WARNs; A/B chassis match vs zasqua.org)
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 15
-  completed_plans: 4
-  percent: 27
+  completed_plans: 5
+  percent: 33
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 ## Current Position
 
 Phase: 13 (hugo-foundation + full template port) — EXECUTING
-Plan: 5 of 15 (Plan 13-04 just completed)
-Status: Executing Phase 13 — Plan 13-05 next (base layout + global partials: baseof.html, header.html, footer.html, breadcrumb.html, css.html)
-Last activity: 2026-04-17 -- Plan 13-04 complete (28 static renames + CSS port; byte identity verified through Hugo build)
+Plan: 6 of 15 (Plan 13-05 just completed)
+Status: Executing Phase 13 — Plan 13-06 next (404 + buscar pages)
+Last activity: 2026-04-17 -- Plan 13-05 complete (baseof + header + footer + breadcrumb + css.html + 2 bridge stubs; zero Hugo WARNs; A/B chassis indistinguishable from zasqua.org)
 
-Progress: ██░░░░░░░░ 27% (0/3 phases complete; 4/15 plans complete within reshaped Phase 13)
+Progress: ███░░░░░░░ 33% (0/3 phases complete; 5/15 plans complete within reshaped Phase 13)
 
 ## Accumulated Context
 
@@ -74,5 +74,5 @@ v1.0.0 decisions:
 ## Session Continuity
 
 Last session: 2026-04-17
-Stopped at: Plan 13-04 complete (assets relocated to static/, CSS ported to assets/css/main.css). 4/15 plans done within reshaped Phase 13. Hugo server may be running on port 1313 — continue there or restart before 13-05 execution.
-Resume file: .planning/phases/13-hugo-foundation/13-04-SUMMARY.md (forward pointer at bottom names the literal asset paths Plan 13-05 can reference in the ported base layout)
+Stopped at: Plan 13-05 complete (chassis porting: baseof, header, footer, breadcrumb, css.html, bridge stubs). 5/15 plans done within reshaped Phase 13. Hugo server running on port 1313 with the fully ported chassis — A/B-verified against zasqua.org.
+Resume file: .planning/phases/13-hugo-foundation/13-05-SUMMARY.md (forward pointer at bottom names the 404 + buscar data contracts Plan 13-06 implements)
