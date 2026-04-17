@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Static archival discovery site for the Zasqua platform. Built with Eleventy and Pagefind, served from Cloudflare R2. Presents 104K+ archival descriptions across 5 repositories with IIIF deep-zoom viewers, full-text search including OCR content, faceted filtering, and Miller columns tree navigation.
+Static archival discovery site for the Zasqua platform. Built with Eleventy and Pagefind, served from Cloudflare R2. Presents 192K+ pages (106K descriptions, 78K entities, 7K places) across 5 repositories with IIIF deep-zoom viewers, full-text search including OCR content, faceted filtering, entity/place explorers, and Miller columns tree navigation.
 
 ## Core Value
 
@@ -27,29 +27,30 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ### Active
 
-- Place detail pages (`/lugar/{name}/`) with authority links, coordinates, embedded map, linked descriptions
-- Entity detail pages (`/entidad/{code}/`) with structured name, dates, function, linked descriptions
-- Place explorer (`/explorar/lugares/`) with search, faceted filtering, heatmap map
-- Entity explorer (`/explorar/entidades/`) with search, faceted filtering — currently crashes browsers, needs UX redesign (Phase 10)
-- Pre-built description aggregates for entities and places (build-time, no runtime API)
-- PMTiles on R2 for serverless maps (MapLibre GL JS)
-- Fix missing nav keys in public repo ui.js (Acerca, Catalogación)
-- Build pipeline OOM verification — single vs parallel Eleventy build decision (deferred from Phase 4 to Phase 6, when entity/place templates exist to profile)
-- Description-to-entity/place linking on description pages (Phase 11 — deferred until entity data stabilises)
+- Hugo migration — replace Eleventy with Hugo for sustainable builds at 192K+ pages
+- Pagefind optimisation — assess and fix 3-index scanning scalability post-Hugo
+- R2 diff-based upload — only PUT changed files instead of full sync
+- CI pipeline rewrite — GitHub Actions workflow for Hugo build chain
 
-### Recently Validated
+### Validated
 
-- Entity explorer (`/explorar/entidades/`) with Pagefind-powered search, entity type/function/date facets, pagination, URL state — v0.5.0 Phase 8 (needs UX redesign in Phase 10)
-- Place explorer migrated from in-memory JSON filtering to Pagefind place index — v0.5.0 Phase 8 (needs UX redesign in Phase 10)
-- Three separate Pagefind indices (descriptions, entities, places) built in CI — v0.5.0 Phase 8
-- Pre-compute scripts for entity/place link shards, index files (D-06/D-07), and co-occurrence graph — v0.5.0 Phase 4
-- Build pipeline wiring (B2 downloads, pre-compute steps, passthrough copies) — v0.5.0 Phase 4
-
-- New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals — v0.4.0 Phase 1
-- All hardcoded hex colours replaced with Tailwind stone-scale tokens and brand colour variables — v0.4.0 Phase 2
-- Redesigned header, footer, and interactive elements to match Figma visual identity spec — v0.4.0 Phase 2
-- AHRB notarial volume import (542 volumes, ~106K pages live) — v0.4.0 Phase 3
-- Homepage masonry grid preserved — v0.4.0 Phase 2
+- Place detail pages (`/lugar/{name}/`) with authority links, coordinates, embedded map, linked descriptions — v0.5.0
+- Entity detail pages (`/entidad/{code}/`) with structured name, dates, function, linked descriptions — v0.5.0
+- Place explorer (`/explorar/lugares/`) with search, faceted filtering, clustered marker map — v0.5.0
+- Entity explorer (`/explorar/entidades/`) with infinite bipartite graph, search, faceted filtering — v0.5.0
+- Description-to-entity/place linking on description pages — v0.5.0
+- Pre-built description aggregates for entities and places (build-time, no runtime API) — v0.5.0
+- PMTiles on R2 for serverless maps (MapLibre GL JS) — v0.5.0
+- Entity explorer with Pagefind-powered search, entity type/function/date facets, pagination, URL state — v0.5.0
+- Place explorer migrated from in-memory JSON filtering to Pagefind place index — v0.5.0
+- Three separate Pagefind indices (descriptions, entities, places) built in CI — v0.5.0
+- Pre-compute scripts for entity/place link shards, index files, and co-occurrence graph — v0.5.0
+- Build pipeline wiring (B2 downloads, pre-compute steps, passthrough copies) — v0.5.0
+- New visual identity — DM Sans body text, Crimson Text logotype, burgundy/periwinkle palette, warm gray neutrals — v0.4.0
+- All hardcoded hex colours replaced with Tailwind stone-scale tokens and brand colour variables — v0.4.0
+- Redesigned header, footer, and interactive elements to match Figma visual identity spec — v0.4.0
+- AHRB notarial volume import (542 volumes, ~106K pages live) — v0.4.0
+- Homepage masonry grid preserved — v0.4.0
 
 ### Out of Scope
 
@@ -58,8 +59,8 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 ## Context
 
-- **Codebase:** Eleventy 3, Nunjucks, Tailwind CSS v4 (standalone CLI), Pagefind, TIFY, vanilla JS
-- **Shipped:** v0.4.0 (2026-03-25) — visual identity + AHRB volumes, 106K pages live
+- **Codebase:** Eleventy 3, Nunjucks, Tailwind CSS v4 (standalone CLI), Pagefind, TIFY, vanilla JS — migrating to Hugo in v0.6.0
+- **Shipped:** v0.5.1 (2026-04-16) — entity/place discovery, explorers, description linking. Deploy to zasqua.org blocked by CI OOM
 - **Data:** 106K description pages, 7,068 places (2,237 with coordinates), 83,412 entities (pending further cleanup in zasqua-entities phases 10.1–10.2), 292K entity-description links, 194K place-description links
 - **Infrastructure:** Cloudflare R2 (`zasqua-site` bucket), Cloudflare Worker, GitHub Actions CI/CD
 - **Data source:** JSON exports from Django backend, downloaded from Backblaze B2 at build time
@@ -70,8 +71,8 @@ Open-access discovery interface for digitised historical archives — fast, cach
 
 - **No runtime server** — everything is static, pre-built
 - **Client-side search only** — Pagefind indexes at build time
-- **Build time** — ~14 minutes for Eleventy + Pagefind at 106K pages; adding ~100K entity/place pages will significantly increase this unless build architecture is reworked
-- **Build architecture (open question)** — Phase 4 wired a single Eleventy build; parallel split deferred to Phase 6 when entity/place templates exist and build times can be profiled
+- **Build time** — Eleventy OOMs at 192K pages with 7 GB heap on GitHub Actions (exit code 134). Hugo migration planned for v0.6.0
+- **Build architecture** — Hugo replaces Eleventy; data enrichment moves to pre-build Node.js scripts, content stubs generated for Hugo
 - **File count** — exceeds Cloudflare Pages' 100K limit, hence R2 + Worker
 
 ## Key Decisions
@@ -84,22 +85,17 @@ Open-access discovery interface for digitised historical archives — fast, cach
 | R2 + Worker over Netlify | No file count limits, faster deploys | Good — 10 min deploys vs 2+ hours |
 | Parallel upload over rclone | rclone bottlenecked at 30ms/file RTT | Good — 345 files/s |
 | Tailwind v4 standalone CLI over npm | No npm dependency, single binary | Good — fast compilation, no build chain complexity |
+| Eleventy → Hugo migration | Eleventy OOMs at 192K pages; Hugo handles 500K in <1 GB | Pending — v0.6.0 |
 
-## Current Milestone: v0.5.0 Entity & Place Discovery
+## Current Milestone: v0.6.0 Build Pipeline Sustainability
 
-**Goal:** Add entity and place detail pages plus spatial and network discovery interfaces, with all data pre-built at build time.
+**Goal:** Migrate the frontend build from Eleventy to Hugo so the site builds reliably at 192K+ pages without hitting memory or time limits, and remains sustainable as the catalogue grows towards 500K pages.
 
 **Target features:**
-- Place detail pages (`/lugar/{name}/`) — authority links, coordinates with embedded PMTiles/MapLibre map, linked descriptions
-- Entity detail pages (`/entidad/{code}/`) — structured name, dates, function, linked descriptions
-- Place explorer (`/explorar/lugares/`) — search, faceted filtering, heatmap map
-- Entity explorer (`/explorar/entidades/`) — search, faceted filtering, UX redesign (Phase 10)
-- Place explorer (`/explorar/lugares/`) — search, faceted filtering, map, UX redesign (Phase 10)
-- Description-to-entity/place linking on description pages (Phase 11)
-- Pre-built description aggregates (build-time, no runtime API)
-- PMTiles hosted on R2 for serverless maps
-- Build architecture exploration — independent builds, incremental builds, or integrated
-- Fix missing ui.js nav keys in public repo
+- Hugo migration — pre-build data enrichment script, content file generation, Go template rewrites for all page templates
+- Pagefind optimisation — assess whether 3-index scanning remains viable post-Hugo; if not, implement incremental indexing or JSON-based index generation
+- R2 diff-based upload — only PUT changed files instead of full sync
+- CI pipeline update — GitHub Actions workflow rewritten for the Hugo build chain
 
 ## Tech Debt
 
@@ -123,4 +119,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-12 — Phase 10.2 complete (explorer parity: Protomaps basemap, place explorer grid layout, entity detail accordion + focal node colour fix)*
+*Last updated: 2026-04-16 — Milestone v0.6.0 started (Build Pipeline Sustainability)*
