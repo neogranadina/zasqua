@@ -18,17 +18,20 @@ date_completed: 2026-04-17
 
 ## Record counts (full run)
 
-| Output | Records | File / shard sizes |
+Descriptions are sharded by a **fixed record count** (`SHARD_SIZE = 20,000`), sorted by `(repository_code, reference_code)` before sharding so each shard stays locally browsable. Fixed-count sharding is data-distribution-agnostic — works on any corpus, including heavily lopsided ones.
+
+| Output | Records | Size |
 |---|---|---|
-| `descriptions/pe-bn.json` | 14,776 | 144 MB |
-| `descriptions/co-cihjml.json` | 25,549 | 105 MB |
-| `descriptions/co-ahrb.json` | 10,569 | 58 MB |
-| `descriptions/co-ahjci.json` | 276 | 1.2 MB |
-| `descriptions/co-ahr.json` | 55,359 | 302 MB |
-| **Total descriptions** | **106,529** | **610 MB across 5 shards** |
+| `descriptions/000.json` | 20,000 | 109 MB |
+| `descriptions/001.json` | 20,000 | 109 MB |
+| `descriptions/002.json` | 20,000 | 108 MB |
+| `descriptions/003.json` | 20,000 | 89 MB |
+| `descriptions/004.json` | 20,000 | 123 MB |
+| `descriptions/005.json` | 6,529 | 70 MB |
+| **Total descriptions** | **106,529** | **608 MB across 6 shards** |
 | `entities.json` | 78,476 | 35 MB |
 | `places.json` | 6,722 | 2.4 MB |
-| `descriptions-index.json` | 106,529 keys | 3.7 MB |
+| `descriptions-index.json` | 106,529 keys | 3.8 MB |
 
 ## Timings
 
@@ -52,9 +55,11 @@ The plan specified a single `assets/hugo-data/descriptions.json`. After a succes
 - `JSON.parse(fs.readFileSync(path, 'utf8'))` throws the same.
 - Every test assertion in the plan that loads the full file would fail.
 
-Since the source data already carves cleanly on `repository_code` (5 repositories), switching to a sharded output under `assets/hugo-data/descriptions/` was the smallest-possible deviation that keeps the data model intact. A companion `descriptions-index.json` provides O(1) `reference_code → repository_code` lookup so Plan 13-03's Hugo adapter can locate any record's shard. Max shard size is 302 MB, well inside the 512 MiB limit.
+The output is now sharded by a **fixed record count** (`SHARD_SIZE = 20,000`): `assets/hugo-data/descriptions/000.json` through `005.json`. A companion `descriptions-index.json` provides O(1) `reference_code → shard_filename` lookup so Plan 13-03's Hugo adapter (or any consumer) can locate a record without iterating shards. Records are sorted by `(repository_code, reference_code)` before sharding, so each shard stays locally browsable.
 
-User approved this route via AskUserQuestion during execution.
+Fixed-count sharding was chosen over per-repository sharding after a review by the user. Per-repo sharding happens to work on the current corpus (biggest shard 302 MB) but is data-dependent: a future lopsided ingest with a single 650 MB repo would re-break enrichment. A record-count shard is universal — bounded by design regardless of how records are distributed across repositories or how big individual records grow in future enrichment passes.
+
+User approved this route via two AskUserQuestion rounds during execution.
 
 ### 2. `_linked_count` via pre-aggregated index
 
@@ -65,10 +70,11 @@ The plan called for counting linked descriptions by reading each entity's per-co
 The plan's success criterion #6 called for a single commit `phase 13-02: port enrichment logic to generate-content.js`. In practice the execute-plan protocol commits atomically per task:
 
 - `c9706b7` — port formatDateNarrative and numberFormat (Task 1)
-- `655f149` — port full enrichment pipeline with sharded output (Task 2)
+- `655f149` — port full enrichment pipeline (initial per-repo sharding)
+- `139da49` — switch to fixed record-count shards (universal bound)
 
 ## Forward pointer for Plan 13-03
 
-The Hugo adapter (`content/descripcion/_content.gotmpl`) must now iterate **every shard** under `assets/hugo-data/descriptions/` and emit one page per record across all shards. Access to an arbitrary description by `reference_code` (e.g. for cross-links from an entity page) should go through `descriptions-index.json` to find the right shard. Entities and places remain single-file loads.
+The Hugo adapter (`content/descripcion/_content.gotmpl`) must now iterate **every shard** under `assets/hugo-data/descriptions/` (glob the directory; shard filenames are opaque zero-padded indices like `000.json`, not semantic repo codes) and emit one page per record across all shards. Access to an arbitrary description by `reference_code` (e.g. for cross-links from an entity page) should go through `descriptions-index.json` to find the right shard. Entities and places remain single-file loads.
 
 The `repository` field is inlined per description (D-10), so content-detail templates don't need a separate lookup — but a global `data/repositories.yaml` still makes sense for the index/home page if Plan 13-03 wants a repository listing.
