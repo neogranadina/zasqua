@@ -1,6 +1,7 @@
 _site/
 public/
 resources/_gen/
+.hugo_build.lock
 node_modules/
 exports/
 assets/hugo-data/*.json
