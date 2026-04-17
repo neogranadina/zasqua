@@ -21,7 +21,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { formatDateNarrative } from '../../scripts/generate-content.js';
+import { formatDateNarrative, SPANISH_MONTHS } from '../../scripts/enrichment/date-format.js';
+import { numberFormat } from '../../scripts/enrichment/number-format.js';
 
 describe('formatDateNarrative (I4)', () => {
   const cases = [
@@ -32,12 +33,36 @@ describe('formatDateNarrative (I4)', () => {
     ['',                           ''],
     ['fecha desconocida',          'fecha desconocida'],
     [null,                         ''],
+    [undefined,                    ''],
     ['1723-03-15 .. 1723-03-15',   '15 de marzo de 1723 – 15 de marzo de 1723'],
   ];
 
   for (const [input, expected] of cases) {
     it(`formats ${JSON.stringify(input)} → ${JSON.stringify(expected)}`, () => {
       expect(formatDateNarrative(input)).toBe(expected);
+    });
+  }
+
+  it('exports SPANISH_MONTHS in the canonical lowercase Colombian Spanish order', () => {
+    expect(SPANISH_MONTHS).toEqual([
+      'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+    ]);
+  });
+});
+
+describe('numberFormat (D-17)', () => {
+  const cases = [
+    [1000,     '1.000'],
+    [106529,   '106.529'],
+    [0,        '0'],
+    [null,     '0'],
+    [undefined, '0'],
+  ];
+
+  for (const [input, expected] of cases) {
+    it(`formats ${JSON.stringify(input)} → ${JSON.stringify(expected)}`, () => {
+      expect(numberFormat(input)).toBe(expected);
     });
   }
 });
