@@ -1,0 +1,28 @@
+{{/*
+  Zasqua site footer partial
+
+  Port of src/_includes/footer.njk. Renders the credits paragraph,
+  copyright + version + last-updated line, and two seal images
+  (Neogranadina logo + AMPL logo).
+
+  The {year} placeholder in hugo.Data.ui.footer.copyright is replaced
+  at build time with `now.Format "2006"` (the current year). The
+  "Última actualización" date is `now.Format "2006-01-02"` (YYYY-MM-DD,
+  matching Eleventy's new Date().toISOString().split('T')[0] output).
+
+  Version: v1.0.0
+*/}}
+<footer class="site-footer bg-burgundy-dark text-white">
+  <div class="container">
+    <div class="footer-left text-sm">
+      <p>Zasqua es una plataforma de consulta de materiales de archivo desarrollada por <a href="https://neogranadina.org" target="_blank" class="text-white font-semibold hover:text-periwinkle">Neogranadina</a> y el <a href="https://ampl.clair.ucsb.edu" target="_blank" class="text-white font-semibold hover:text-periwinkle">Laboratorio de Archivos, Memoria y Preservación (AMPL)</a> de la Universidad de California, Santa Barbara.</p>
+      <p class="footer-copyright">{{ replace hugo.Data.ui.footer.copyright "{year}" (now.Format "2006") }}.
+      <br><a href="https://github.com/neogranadina/zasqua-frontend/releases/tag/v{{ site.Params.version }}" class="text-white hover:text-periwinkle">Zasqua v{{ site.Params.version }}</a>. Última actualización: {{ now.Format "2006-01-02" }}.</p>
+    </div>
+    <div class="footer-right">
+      <img src="/img/logo_grande.svg" alt="Neogranadina" class="footer-seal">
+      <img src="/img/ampl-cropped-1.png" alt="AMP Lab, UC Santa Barbara" class="footer-seal">
+    </div>
+  </div>
+</footer>
+{{/* Version: v1.0.0 */}}

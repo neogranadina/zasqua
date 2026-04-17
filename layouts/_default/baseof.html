@@ -1,0 +1,60 @@
+{{/*
+  Zasqua base HTML layout
+
+  Port of src/_layouts/base.njk. Renders the HTML skeleton every page
+  inherits: <head> (meta, fonts, favicon, styles), <body> with header
+  partial, a <main class="page-content"> block, footer partial, the
+  /js/header.js script for hamburger/dropdown behaviour, and the
+  Cloudflare Web Analytics beacon.
+
+  Differences from base.njk (see 13-05-PLAN.md <deliberate_divergences>):
+  - CSS <link> resolves via the css.html partial (Hugo Pipes + Tailwind)
+  - site.description fallback uses Hugo's site.Params.description
+  - block names: `content` -> `main` (Hugo convention — page templates
+    define {{`{{`}} define "main" {{`}}`}})
+
+  Every other byte — Google Fonts <link>s, favicon, Cloudflare beacon,
+  body classes, <script src="/js/header.js"> — preserved verbatim.
+
+  Version: v1.0.0
+*/}}
+<!DOCTYPE html>
+<html lang="{{ site.Language.Lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ if .Title }}{{ .Title }} | {{ end }}{{ site.Title }}</title>
+  <meta name="description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ site.Params.description }}{{ end }}">
+  <link rel="icon" type="image/png" href="/img/favicon.png">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600&family=Crimson+Text:wght@400;700&family=Cormorant+Garamond:wght@300;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+
+  <!-- Styles -->
+  {{ with (templates.Defer (dict "key" "global")) }}
+    {{ partial "css.html" . }}
+  {{ end }}
+
+  {{ block "head" . }}{{ end }}
+</head>
+<body class="bg-bg font-sans text-stone-600">
+  {{ partial "header.html" . }}
+
+  <main class="page-content">
+    {{ block "main" . }}{{ end }}
+  </main>
+
+  {{ partial "footer.html" . }}
+
+  <script src="/js/header.js"></script>
+  {{ block "scripts" . }}{{ end }}
+
+  <!-- Cloudflare Web Analytics -->
+  <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "bd05fe4ac01547849248727c0598306e"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+</body>
+</html>
+{{/* Version: v1.0.0 */}}
