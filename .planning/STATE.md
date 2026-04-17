@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0.0
 milestone_name: milestone
 status: executing
-stopped_at: "Plan 13-07 complete (home page); 7/15 plans done — Plan 13-08 next (repository detail)"
-last_updated: "2026-04-17T20:30:00.000Z"
-last_activity: 2026-04-17 -- Plan 13-07 complete (home page port with hero + intro + 5-card repo grid; count formatting matches Eleventy; A/B confirmed vs zasqua.org)
+stopped_at: "Plan 13-08 complete (repository landings); 8/15 plans done — Plan 13-09 next (description skeleton + ISAD(G))"
+last_updated: "2026-04-17T21:00:00.000Z"
+last_activity: 2026-04-17 -- Plan 13-08 complete (5 repo landing pages at /{code}/; A/B structural match vs zasqua.org). Batch-mode activated — 13-09 through 13-14 run without per-plan checkpoints; 13-15 pauses for user approval before Eleventy deletion.
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 15
-  completed_plans: 7
-  percent: 47
+  completed_plans: 8
+  percent: 53
 ---
 
 # Project State
