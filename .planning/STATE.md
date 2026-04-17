@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0.0
 milestone_name: milestone
 status: executing
-stopped_at: "Plan 13-08 complete (repository landings); 8/15 plans done — Plan 13-09 next (description skeleton + ISAD(G))"
-last_updated: "2026-04-17T21:00:00.000Z"
-last_activity: 2026-04-17 -- Plan 13-08 complete (5 repo landing pages at /{code}/; A/B structural match vs zasqua.org). Batch-mode activated — 13-09 through 13-14 run without per-plan checkpoints; 13-15 pauses for user approval before Eleventy deletion.
+stopped_at: "Plans 13-09 through 13-14 batch complete (description + entity + place + explorers all ported); 14/15 plans done — Plan 13-15 pending user approval (Eleventy removal)"
+last_updated: "2026-04-17T22:45:00.000Z"
+last_activity: 2026-04-17 -- Batch port complete. All Eleventy templates (base, partials, home, 404, buscar, repository, description, entity, place, entity+place explorers) ported to Hugo with visual+functional identity. Zero WARNs. Eleventy src/ still on disk — Plan 13-15 is the destructive cutover.
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 15
-  completed_plans: 8
-  percent: 53
+  completed_plans: 14
+  percent: 93
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 
 ## Current Position
 
-Phase: 13 (hugo-foundation + full template port) — EXECUTING
-Plan: 8 of 15 (Plan 13-07 just completed)
-Status: Executing Phase 13 — Plan 13-08 next (repository detail pages at /{repo_code}/)
-Last activity: 2026-04-17 -- Plan 13-07 complete (layouts/index.html + generate-content.js repo copy; home renders identically to zasqua.org except one data-freshness count)
+Phase: 13 (hugo-foundation + full template port) — AWAITING USER CHECKPOINT for Plan 13-15
+Plan: 15 of 15 (batch 13-09 through 13-14 just completed)
+Status: Template port complete. Plan 13-15 (integration + Eleventy removal) requires user approval before execution — destructive cutover.
+Last activity: 2026-04-17 -- Batch template port complete across 13-09 through 13-14. All page types ported with visual+functional identity to zasqua.org. See 13-BATCH-SUMMARY.md.
 
-Progress: ████░░░░░░ 47% (0/3 phases complete; 7/15 plans complete within reshaped Phase 13)
+Progress: █████████░ 93% (0/3 phases complete; 14/15 plans complete within reshaped Phase 13)
 
 ## Accumulated Context
 
@@ -74,5 +74,5 @@ v1.0.0 decisions:
 ## Session Continuity
 
 Last session: 2026-04-17
-Stopped at: Plan 13-07 complete (home page). 7/15 plans done within reshaped Phase 13. Hugo server running on port 1313 with /, /buscar/, /404.html all matching zasqua.org. Plan 13-08 next (repository detail pages at /{repo_code}/).
-Resume file: .planning/phases/13-hugo-foundation/13-07-SUMMARY.md (forward pointer at bottom names the content-adapter pattern Plan 13-08 needs)
+Stopped at: 14/15 plans done. Batch port of 13-09 through 13-14 complete — description, entity, place, and both explorer pages all ported with visual+functional identity. Plan 13-15 (Eleventy removal) awaits user checkpoint before destructive operations.
+Resume file: .planning/phases/13-hugo-foundation/13-BATCH-SUMMARY.md (consolidated summary of batch work); Plan 13-15 is the final scoped plan to execute after approval.
