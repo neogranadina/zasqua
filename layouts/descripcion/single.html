@@ -32,6 +32,37 @@
 {{ $levelLabel := index hugo.Data.ui.levels .Params.description_level }}
 {{ if not $levelLabel }}{{ $levelLabel = .Params.description_level }}{{ end }}
 
+{{/* Pagefind metadata — filters, sort, meta. Hidden from users. */}}
+<div style="display:none">
+  <span data-pagefind-filter="repository">{{ with $repo }}{{ or .short_name .name }}{{ else }}{{ $.Params.repository_code }}{{ end }}</span>
+  <span data-pagefind-filter="level">{{ $levelLabel }}</span>
+  <span data-pagefind-filter="digital_status">{{ if .Params.has_digital }}zasqua{{ else }}none{{ end }}</span>
+  {{ $startYear := "" }}
+  {{ with .Params.date_start }}{{ $startYear = (substr . 0 4) }}{{ end }}
+  {{ with $startYear }}<span data-pagefind-filter="year">{{ . }}</span>{{ end }}
+  <span data-pagefind-sort="title">{{ .Title }}</span>
+  <span data-pagefind-sort="date">{{ $startYear }}</span>
+  <span data-pagefind-meta="reference_code">{{ .Params.reference_code }}</span>
+  <span data-pagefind-meta="repository_code">{{ .Params.repository_code }}</span>
+  <span data-pagefind-filter="parent_reference_code">{{ or .Params.parent_reference_code "" }}</span>
+  <span data-pagefind-meta="repository_name">{{ with $repo }}{{ or .short_name .name }}{{ else }}{{ $.Params.repository_code }}{{ end }}</span>
+  <span data-pagefind-meta="description_level">{{ .Params.description_level }}</span>
+  <span data-pagefind-meta="date_expression">{{ or .Params.date_expression "" }}</span>
+  <span data-pagefind-meta="digital_status">{{ if .Params.has_digital }}zasqua{{ else }}none{{ end }}</span>
+  {{ with .Params.country }}<span data-pagefind-filter="country">{{ . }}</span>{{ end }}
+  <span data-pagefind-filter="ancestor">{{ .Params.repository_code }}</span>
+  {{ range .Params.ancestor_chain }}
+    <span data-pagefind-filter="ancestor">{{ .reference_code }}</span>
+  {{ end }}
+  <span data-pagefind-filter="ancestor">{{ .Params.reference_code }}</span>
+  {{ range .Params.entity_links }}
+    <span data-pagefind-filter="entidad">{{ .code }}</span>
+  {{ end }}
+  {{ range .Params.place_links }}
+    <span data-pagefind-filter="lugar">{{ .place_code }}</span>
+  {{ end }}
+</div>
+
 {{/* Breadcrumb */}}
 <nav class="breadcrumb" aria-label="Breadcrumb" data-pagefind-ignore>
   <div class="container">
@@ -380,6 +411,11 @@
   </div>
 </div>
 
+{{/* OCR text: indexed for search but never displayed */}}
+{{ with .Params.ocr_text }}
+<div data-pagefind-body data-pagefind-weight="0.5" hidden>{{ . }}</div>
+{{ end }}
+
 {{ end }}
 
 {{ define "head" }}
@@ -397,4 +433,4 @@
     <script src="/js/tree.js"></script>
   {{ end }}
 {{ end }}
-{{/* Version: v1.0.1 */}}
+{{/* Version: v1.0.2 */}}
